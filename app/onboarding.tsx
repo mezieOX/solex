@@ -1,0 +1,310 @@
+import { Button } from "@/components/ui/button";
+import { SafeAreaView } from "@/components/ui/safe-area-view";
+import { AppColors } from "@/constants/theme";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  PanResponder,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const AUTO_SCROLL_INTERVAL = 4000; // 4 seconds
+
+const onboardingData = [
+  {
+    title: "You're in Control",
+    subtitle: "Powering Fast, Smart & Secure Giftcard and Crypto Exchange",
+  },
+  {
+    title: "Intelligent Trading",
+    subtitle: "Exchange Giftcards & Crypto Seamlessly Anytime, Anywhere",
+  },
+  {
+    title: "Innovation Meets Security",
+    subtitle: "Smart, Fast & Secure Giftcard and Crypto Exchange",
+  },
+  {
+    title: "Unlock Your Edge",
+    subtitle:
+      "Elevate Your Trading Experience, Effortless Digital Asset Trading",
+  },
+];
+
+export default function OnboardingScreen() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const router = useRouter();
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    autoScrollTimer.current = setInterval(() => {
+      if (currentIndex < onboardingData.length - 1) {
+        goToNext();
+      } else {
+        // Reset to first slide or navigate to login
+        goToSlide(0);
+      }
+    }, AUTO_SCROLL_INTERVAL);
+
+    return () => {
+      if (autoScrollTimer.current) {
+        clearInterval(autoScrollTimer.current);
+      }
+    };
+  }, [currentIndex]);
+
+  const animateTransition = (toIndex: number, direction: "next" | "prev") => {
+    // Fade out and slide
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: direction === "next" ? -50 : 50,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setCurrentIndex(toIndex);
+      // Reset and fade in
+      slideAnim.setValue(direction === "next" ? 50 : -50);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  };
+
+  const goToNext = () => {
+    if (currentIndex < onboardingData.length - 1) {
+      animateTransition(currentIndex + 1, "next");
+    }
+  };
+
+  const goToPrev = () => {
+    if (currentIndex > 0) {
+      animateTransition(currentIndex - 1, "prev");
+    }
+  };
+
+  const goToSlide = (index: number) => {
+    if (index !== currentIndex && index >= 0 && index < onboardingData.length) {
+      const direction = index > currentIndex ? "next" : "prev";
+      animateTransition(index, direction);
+    }
+  };
+
+  // Pan responder for swipe gestures
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond to horizontal swipes
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond if horizontal movement is significant
+        return (
+          Math.abs(gestureState.dx) > 10 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy)
+        );
+      },
+      onPanResponderGrant: () => {
+        // Pause auto-scroll when user starts swiping
+        if (autoScrollTimer.current) {
+          clearInterval(autoScrollTimer.current);
+          autoScrollTimer.current = null;
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        const { dx, vx } = gestureState;
+        const SWIPE_THRESHOLD = 50;
+        const VELOCITY_THRESHOLD = 0.5;
+
+        // Check if swipe is significant enough
+        if (
+          Math.abs(dx) > SWIPE_THRESHOLD ||
+          Math.abs(vx) > VELOCITY_THRESHOLD
+        ) {
+          if (dx > 0 || vx > 0) {
+            // Swipe right - go to previous
+            goToPrev();
+          } else {
+            // Swipe left - go to next
+            goToNext();
+          }
+        }
+
+        // Restart auto-scroll after a delay
+        setTimeout(() => {
+          if (!autoScrollTimer.current) {
+            autoScrollTimer.current = setInterval(() => {
+              if (currentIndex < onboardingData.length - 1) {
+                goToNext();
+              } else {
+                goToSlide(0);
+              }
+            }, AUTO_SCROLL_INTERVAL);
+          }
+        }, 2000);
+      },
+      onPanResponderTerminate: () => {
+        // Restart auto-scroll if gesture is terminated
+        if (!autoScrollTimer.current) {
+          autoScrollTimer.current = setInterval(() => {
+            if (currentIndex < onboardingData.length - 1) {
+              goToNext();
+            } else {
+              goToSlide(0);
+            }
+          }, AUTO_SCROLL_INTERVAL);
+        }
+      },
+    })
+  ).current;
+
+  const handleNext = () => {
+    if (currentIndex < onboardingData.length - 1) {
+      goToNext();
+    } else {
+      router.replace("/auth/login");
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" />
+      <View style={styles.swipeContainer} {...panResponder.panHandlers}>
+        <Image
+          source={require("@/assets/images/onboarding-3d-background.png")}
+          style={styles.backgroundImage}
+          contentFit="cover"
+        />
+        <View style={styles.content}>
+          <Animated.View
+            style={[
+              styles.animatedContent,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateX: slideAnim }],
+              },
+            ]}
+          >
+            <Text style={styles.title}>
+              {onboardingData[currentIndex].title}
+            </Text>
+            <Text style={styles.subtitle}>
+              {onboardingData[currentIndex].subtitle}
+            </Text>
+          </Animated.View>
+
+          {/* Pagination Dots */}
+          <View style={styles.pagination}>
+            {onboardingData.map((_, index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentIndex && styles.activeDot,
+                  {
+                    width: index === currentIndex ? 40 : 32,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+
+          <Button
+            title={
+              currentIndex === onboardingData.length - 1
+                ? "Get Started"
+                : "Next"
+            }
+            onPress={handleNext}
+            style={styles.button}
+          />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+  },
+  swipeContainer: {
+    flex: 1,
+    width: "100%",
+  },
+  backgroundImage: {
+    position: "absolute",
+    top: 40,
+    left: 0,
+    right: 0,
+    height: "60%",
+    width: "100%",
+  },
+  content: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingHorizontal: 32,
+    paddingBottom: 60,
+  },
+  animatedContent: {
+    alignItems: "center",
+    width: "100%",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: AppColors.text,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: AppColors.textSecondary,
+    textAlign: "center",
+    marginBottom: 40,
+    lineHeight: 24,
+  },
+  pagination: {
+    flexDirection: "row",
+    marginBottom: 40,
+    gap: 8,
+    alignItems: "center",
+  },
+  dot: {
+    height: 4,
+    backgroundColor: AppColors.surface,
+    borderRadius: 2,
+  },
+  activeDot: {
+    backgroundColor: AppColors.primary,
+  },
+  button: {
+    width: "100%",
+    marginTop: 20,
+  },
+});
