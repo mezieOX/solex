@@ -25,6 +25,12 @@ export const AppColors = {
   orange: "#FF9500",
   blue: "#007AFF",
   green: "#34C759",
+  // Additional colors
+  redAccent: "#F94B32",
+  orangeAccent: "#FF6900",
+  blueAccent: "#155DFC",
+  greenAccent: "#00C950",
+  blueDark: "#00419C",
 };
 
 const tintColorLight = "#0a7ea4";

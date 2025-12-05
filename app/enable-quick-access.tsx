@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-import { AppColors } from '@/constants/theme';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
+import { AppColors } from "@/constants/theme";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function EnableQuickAccessScreen() {
   const router = useRouter();
@@ -14,25 +14,28 @@ export default function EnableQuickAccessScreen() {
       <StatusBar style="light" />
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <View style={styles.iconBackground}>
-            <Ionicons name="finger-print" size={64} color={AppColors.orange} />
-          </View>
+          <Image
+            source={require("@/assets/images/fingerprint.png")}
+            style={styles.icon}
+            contentFit="contain"
+          />
         </View>
 
         <Text style={styles.title}>Enable Quick Access</Text>
         <Text style={styles.subtitle}>
-          Enable Face ID or Touch for fast and more secure access to your account
+          Enable Face ID or Touch for fast and more secure access to your
+          account
         </Text>
 
         <View style={styles.buttons}>
           <Button
             title="Enable Now"
-            onPress={() => router.push('/(tabs)')}
+            onPress={() => router.push("/(tabs)")}
             style={styles.enableButton}
           />
           <Button
             title="Maybe Later"
-            onPress={() => router.push('/(tabs)')}
+            onPress={() => router.push("/(tabs)")}
             variant="outline"
             style={styles.laterButton}
           />
@@ -49,39 +52,34 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 32,
   },
   iconContainer: {
     marginBottom: 40,
   },
-  iconBackground: {
-    width: 120,
-    height: 120,
-    borderRadius: 24,
-    backgroundColor: AppColors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: AppColors.orange,
+  icon: {
+    width: 160,
+    height: 160,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: "bold",
     color: AppColors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: AppColors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
     marginBottom: 48,
   },
   buttons: {
-    width: '100%',
+    marginTop: 120,
+    width: "100%",
     gap: 16,
   },
   enableButton: {
@@ -91,4 +89,3 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
 });
-

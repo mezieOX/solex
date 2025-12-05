@@ -1,19 +1,53 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { AppColors } from '@/constants/theme';
+import { AppColors } from "@/constants/theme";
+import React from "react";
+import {
+  ImageBackground,
+  StyleProp,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
-  variant?: 'default' | 'gradient';
+  style?: StyleProp<ViewStyle>;
+  variant?: "default" | "gradient";
+  backgroundImage?: any; // For require() image sources
 }
 
-export function Card({ children, style, variant = 'default' }: CardProps) {
-  return (
-    <View style={[styles.card, variant === 'gradient' && styles.gradientCard, style]}>
+export function Card({
+  children,
+  style,
+  variant = "default",
+  backgroundImage,
+}: CardProps) {
+  const cardContent = (
+    <View
+      style={[
+        styles.card,
+        variant === "gradient" && styles.gradientCard,
+        backgroundImage && styles.cardWithBackground,
+        style,
+      ]}
+    >
       {children}
     </View>
   );
+
+  if (backgroundImage) {
+    return (
+      <ImageBackground
+        source={backgroundImage}
+        style={[styles.backgroundImage, style]}
+        imageStyle={styles.backgroundImageStyle}
+        resizeMode="stretch"
+      >
+        {cardContent}
+      </ImageBackground>
+    );
+  }
+
+  return cardContent;
 }
 
 const styles = StyleSheet.create({
@@ -26,5 +60,15 @@ const styles = StyleSheet.create({
   gradientCard: {
     backgroundColor: AppColors.surfaceLight,
   },
+  backgroundImage: {
+    borderRadius: 16,
+    marginVertical: 8,
+    overflow: "hidden",
+  },
+  backgroundImageStyle: {
+    borderRadius: 16,
+  },
+  cardWithBackground: {
+    backgroundColor: "transparent",
+  },
 });
-

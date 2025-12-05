@@ -1,63 +1,245 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { AppColors } from '@/constants/theme';
-import { Card } from '@/components/ui/card';
+import { Card } from "@/components/ui/card";
+import { CryptoIcon } from "@/components/ui/icons/crypto-icon";
+import { ReceiptIcon } from "@/components/ui/icons/receipt-icon";
+import { QuickActions } from "@/components/ui/quick-actions";
+import { SectionHeader } from "@/components/ui/section-header";
+import { TransactionItem } from "@/components/ui/transaction-item";
+import { WalletSelectBottomSheet } from "@/components/ui/wallet-select-bottom-sheet";
+import { AppColors } from "@/constants/theme";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useRef, useState } from "react";
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const cryptoData = [
-  { name: 'Bitcoin', symbol: 'BTC', price: '$45,230.50', change: '+2.45%', icon: '🟠', color: AppColors.orange },
-  { name: 'Ethereum', symbol: 'ETH', price: '$2,456.80', change: '+1.23%', icon: '🔵', color: AppColors.blue },
-  { name: 'Tether', symbol: 'USDT', price: '$1.00', change: '0.00%', icon: '🟢', color: AppColors.green },
+const getCryptoData = () => [
+  {
+    name: "Bitcoin",
+    symbol: "BTC",
+    price: "$45,230.50",
+    change: "+2.45%",
+    icon: (
+      <Image
+        source={require("@/assets/images/bitcoin.png")}
+        style={{ width: 32, height: 32 }}
+        contentFit="contain"
+      />
+    ),
+    color: AppColors.orange,
+  },
+  {
+    name: "Ethereum",
+    symbol: "ETH",
+    price: "$2,456.80",
+    change: "+1.23%",
+    icon: (
+      <Image
+        source={require("@/assets/images/eth.png")}
+        style={{ width: 32, height: 32 }}
+        contentFit="contain"
+      />
+    ),
+    color: AppColors.blue,
+  },
+  {
+    name: "Tether",
+    symbol: "USDT",
+    price: "$1.00",
+    change: "0.00%",
+    icon: (
+      <Image
+        source={require("@/assets/images/usdt.png")}
+        style={{ width: 32, height: 32 }}
+        contentFit="contain"
+      />
+    ),
+    color: AppColors.green,
+  },
 ];
 
 const transactions = [
-  { id: 1, title: 'Data Subscription', amount: '-$450.00', type: 'debit' },
+  {
+    id: 1,
+    title: "Fiat Wallet Deposit",
+    time: "10:30PM",
+    amount: "250,000.00",
+    type: "credit" as const,
+    icon: {
+      name: "wallet" as const,
+      backgroundColor: AppColors.primary,
+    },
+  },
+  {
+    id: 2,
+    title: "Data Subscription",
+    time: "2:45PM",
+    amount: "450.00",
+    type: "debit" as const,
+  },
 ];
+
+const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [showBalance, setShowBalance] = useState(true);
+  const [showFiatBalance, setShowFiatBalance] = useState(true);
+  const cryptoBalance = showBalance ? "$250.00" : "********";
+  const fiatBalance = showFiatBalance ? "₦250,000.00" : "********";
+
+  const walletSelectBottomSheetRef = useRef<BottomSheetModal>(null);
+
+  const quickActionsData = [
+    {
+      title: "Crypto Exchange",
+      customIcon: <CryptoIcon size={28} color="#fff" />,
+      iconBackgroundColor: AppColors.redAccent,
+      onPress: () => router.push("/exchange-crypto"),
+    },
+    {
+      title: "Gift Card Exchange",
+      icon: "gift-outline" as const,
+      iconColor: "#fff",
+      iconBackgroundColor: AppColors.redAccent,
+      onPress: () => router.push("/exchange-giftcard"),
+    },
+    {
+      title: "Pay Bills",
+      customIcon: <ReceiptIcon size={32} color="#fff" />,
+      iconBackgroundColor: AppColors.redAccent,
+    },
+  ];
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.profileSection}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={24} color={AppColors.text} />
-            </View>
-            <Text style={styles.greeting}>Hi, Sunday</Text>
+      {/* Sticky Header */}
+      <View style={styles.header}>
+        <View style={styles.profileSection}>
+          <View style={styles.avatar}>
+            <Image
+              source={require("@/assets/images/profile.png")}
+              style={styles.avatar}
+              contentFit="cover"
+            />
           </View>
-          <TouchableOpacity>
-            <Ionicons name="notifications-outline" size={24} color={AppColors.text} />
-          </TouchableOpacity>
+          <Text style={styles.greeting}>Hi, Sunday</Text>
         </View>
-
+        <TouchableOpacity>
+          <Ionicons
+            name="notifications-outline"
+            size={24}
+            color={AppColors.text}
+          />
+        </TouchableOpacity>
+      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Balance Cards */}
         <View style={styles.balanceContainer}>
-          <Card style={[styles.balanceCard, { backgroundColor: AppColors.red }]}>
-            <Text style={styles.balanceLabel}>Crypto Balance</Text>
-            <Text style={styles.balanceAmount}>$250.00</Text>
+          <Card
+            style={[
+              styles.balanceCard,
+              { backgroundColor: AppColors.red },
+              styles.gradientCard,
+            ]}
+          >
+            <View style={styles.balanceHeader}>
+              <Text style={styles.balanceLabel}>Crypto Balance</Text>
+              <TouchableOpacity>
+                <Feather name="arrow-right" size={24} color={AppColors.text} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.balanceHeader}>
+              <Text style={styles.balanceAmountCrypto}>{cryptoBalance}</Text>
+              <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
+                <Feather
+                  name={showBalance ? "eye" : "eye-off"}
+                  size={20}
+                  color={AppColors.text}
+                />
+              </TouchableOpacity>
+            </View>
           </Card>
 
-          <Card style={[styles.balanceCard, styles.fiatCard, { backgroundColor: AppColors.primary }]}>
+          <Card
+            backgroundImage={require("@/assets/images/fiat-background.png")}
+            style={[
+              styles.balanceCard,
+              styles.fiatCard,
+              { backgroundColor: "transparent" },
+            ]}
+          >
             <View style={styles.fiatHeader}>
-              <Text style={styles.balanceLabel}>Fiat Account</Text>
+              <Text
+                style={[
+                  styles.balanceLabel,
+                  {
+                    color: "#000",
+                  },
+                ]}
+              >
+                Fiat Account
+              </Text>
               <View style={styles.currencyTag}>
                 <Text style={styles.currencyText}>NGN</Text>
               </View>
             </View>
-            <Text style={styles.balanceAmount}>₦250,000.00</Text>
+            <View style={styles.balanceHeader}>
+              <Text style={[styles.balanceAmount, { color: "#000" }]}>
+                {fiatBalance}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowFiatBalance(!showFiatBalance)}
+              >
+                <Feather
+                  name={showFiatBalance ? "eye" : "eye-off"}
+                  size={24}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.actionButton}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => walletSelectBottomSheetRef.current?.present()}
+              >
+                <Feather
+                  name="download"
+                  size={20}
+                  style={{ marginTop: -2 }}
+                  color={"#fff"}
+                />
                 <Text style={styles.actionButtonText}>Deposit</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionButtonText}>Withdraw</Text>
+              <TouchableOpacity style={styles.actionButtonWithGradient}>
+                <LinearGradient
+                  colors={["#000000", "#000000", "#F94B32"]}
+                  start={{ x: 0.5, y: 0.5 }}
+                  end={{ x: 1, y: 1 }}
+                  locations={[0, 0.3, 1]}
+                  style={styles.gradientButton}
+                >
+                  <Feather
+                    name="upload"
+                    size={20}
+                    style={{ marginTop: -2 }}
+                    color={"#fff"}
+                  />
+                  <Text style={styles.actionButtonText}>Withdraw</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </Card>
@@ -65,74 +247,65 @@ export default function HomeScreen() {
 
         {/* Recent Transactions */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transaction</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionLink}>Sell All</Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader title="Recent Transaction" actionText="Sell All" />
           {transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <Text style={styles.transactionTitle}>{transaction.title}</Text>
-              <Text style={[styles.transactionAmount, { color: AppColors.red }]}>
-                {transaction.amount}
-              </Text>
-            </View>
+            <TransactionItem
+              key={transaction.id}
+              title={transaction.title}
+              time={transaction.time}
+              amount={transaction.amount}
+              type={transaction.type}
+              icon={transaction.icon}
+            />
           ))}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Action</Text>
-          <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.quickActionCard}
-              onPress={() => router.push('/exchange-crypto')}
-            >
-              <Ionicons name="swap-horizontal" size={32} color={AppColors.red} />
-              <Text style={styles.quickActionText}>Crypto Exchange</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.quickActionCard}
-              onPress={() => router.push('/exchange-giftcard')}
-            >
-              <Ionicons name="gift" size={32} color={AppColors.red} />
-              <Text style={styles.quickActionText}>Gift Card Exchange</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="receipt" size={32} color={AppColors.red} />
-              <Text style={styles.quickActionText}>Pay Bills</Text>
-            </TouchableOpacity>
-          </View>
+          <QuickActions title="Quick Action" actions={quickActionsData} />
         </View>
 
         {/* Market */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Market</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionLink}>Price</Text>
-            </TouchableOpacity>
-          </View>
-          {cryptoData.map((crypto, index) => (
-            <View key={index} style={styles.marketItem}>
-              <View style={[styles.cryptoIcon, { backgroundColor: crypto.color }]}>
-                <Text style={styles.cryptoIconText}>{crypto.icon}</Text>
-              </View>
-              <View style={styles.cryptoInfo}>
-                <Text style={styles.cryptoName}>{crypto.name}</Text>
-                <Text style={styles.cryptoSymbol}>{crypto.symbol}</Text>
-              </View>
-              <View style={styles.cryptoPrice}>
-                <Text style={styles.priceText}>{crypto.price}</Text>
-                <Text style={[styles.changeText, { color: crypto.change.startsWith('+') ? AppColors.green : AppColors.textSecondary }]}>
-                  {crypto.change}
-                </Text>
-              </View>
-            </View>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: AppColors.surface,
+              paddingVertical: 20,
+              borderRadius: 16,
+            },
+          ]}
+        >
+          <SectionHeader title="Market" actionText="Price" />
+          {getCryptoData().map((crypto, index) => (
+            <TransactionItem
+              key={index}
+              title={crypto.name}
+              subtitle={crypto.symbol}
+              amount={crypto.price}
+              change={crypto.change}
+              icon={{
+                customIcon: crypto.icon,
+                backgroundColor: crypto.color,
+              }}
+            />
           ))}
         </View>
       </ScrollView>
+
+      <WalletSelectBottomSheet
+        bottomSheetModalRef={walletSelectBottomSheetRef}
+        onSelectWallet={(walletType) => {
+          // Handle wallet selection
+          if (walletType === "crypto") {
+            // Navigate to crypto deposit screen
+            router.push("/exchange-crypto");
+          } else {
+            // Navigate to fiat deposit screen or handle fiat deposit
+            console.log("Fiat deposit selected");
+          }
+        }}
+      />
     </View>
   );
 }
@@ -142,48 +315,75 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
   },
+  gradientCard: {
+    paddingTop: 20,
+    paddingBottom: 30,
+  },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
+    backgroundColor: AppColors.background,
+  },
+  scrollContent: {
+    paddingTop: 120,
   },
   profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: 20,
     backgroundColor: AppColors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   greeting: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "500",
     color: AppColors.text,
+  },
+  quickActionIcon: {
+    width: 55,
+    height: 55,
+    borderRadius: 200,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: AppColors.redAccent,
   },
   balanceContainer: {
     paddingHorizontal: 20,
     marginBottom: 24,
+  },
+  balanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   balanceCard: {
     marginBottom: 16,
     padding: 20,
   },
   fiatCard: {
-    marginTop: -40,
-    paddingTop: 40,
+    marginTop: -44,
+    paddingTop: 35,
+    padding: 10,
   },
   fiatHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   balanceLabel: {
@@ -193,9 +393,15 @@ const styles = StyleSheet.create({
   },
   balanceAmount: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: AppColors.text,
     marginTop: 8,
+  },
+  balanceAmountCrypto: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: AppColors.text,
+    marginTop: 4,
   },
   currencyTag: {
     backgroundColor: AppColors.red,
@@ -205,121 +411,46 @@ const styles = StyleSheet.create({
   },
   currencyText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: AppColors.text,
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 16,
+    marginBottom: -10,
   },
   actionButton: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    alignItems: "center",
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    width: 900,
+  },
+  actionButtonWithGradient: {
+    flex: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  gradientButton: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+    width: "100%",
   },
   actionButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: AppColors.text,
   },
   section: {
     paddingHorizontal: 20,
     marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: AppColors.text,
-  },
-  sectionLink: {
-    fontSize: 14,
-    color: AppColors.primary,
-    fontWeight: '600',
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    color: AppColors.text,
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  quickActionCard: {
-    flex: 1,
-    backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    gap: 8,
-  },
-  quickActionText: {
-    fontSize: 12,
-    color: AppColors.text,
-    textAlign: 'center',
-  },
-  marketItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  cryptoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  cryptoIconText: {
-    fontSize: 24,
-  },
-  cryptoInfo: {
-    flex: 1,
-  },
-  cryptoName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: AppColors.text,
-  },
-  cryptoSymbol: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    marginTop: 4,
-  },
-  cryptoPrice: {
-    alignItems: 'flex-end',
-  },
-  priceText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: AppColors.text,
-  },
-  changeText: {
-    fontSize: 14,
-    marginTop: 4,
   },
 });

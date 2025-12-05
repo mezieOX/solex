@@ -87,7 +87,7 @@ export default function CreatePasswordScreen() {
 
           <Button
             title="Continue"
-            onPress={() => router.push("/(tabs)")}
+            onPress={() => router.push("/enable-quick-access")}
             style={styles.button}
           />
         </View>
