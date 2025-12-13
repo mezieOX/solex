@@ -62,7 +62,7 @@ export default function ExchangeGiftCardScreen() {
                     <Ionicons name="add" size={32} color={AppColors.textSecondary} />
                   ) : (
                     <View style={styles.brandIcon}>
-                      <Text style={styles.brandIconText}>{brand.name[0]}</Text>
+                      <Ionicons name="gift" size={24} color={AppColors.text} />
                     </View>
                   )}
                   <Text style={styles.brandName}>{brand.name}</Text>
@@ -214,11 +214,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  brandIconText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: AppColors.text,
   },
   brandName: {
     fontSize: 12,

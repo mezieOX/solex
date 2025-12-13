@@ -1,3 +1,8 @@
+import {
+  SkeletonAvatar,
+  SkeletonText,
+  SkeletonTitle,
+} from "@/components/skeleton";
 import { AppColors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -18,6 +23,7 @@ interface TransactionItemProps {
   subtitle?: string;
   change?: string;
   onPress?: () => void;
+  loading?: boolean;
 }
 
 export function TransactionItem({
@@ -29,7 +35,29 @@ export function TransactionItem({
   subtitle,
   change,
   onPress,
+  loading = false,
 }: TransactionItemProps) {
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.dashedLine} />
+        <View style={styles.content}>
+          <SkeletonAvatar size={50} type="circle" style={styles.skeletonIcon} />
+          <View style={styles.textContainer}>
+            <SkeletonTitle width="70%" style={styles.skeletonTitle} />
+            <SkeletonText width="50%" rows={1} />
+          </View>
+          <View style={styles.amountContainer}>
+            <SkeletonText width={80} rows={1} style={styles.skeletonAmount} />
+            {change && (
+              <SkeletonText width={60} rows={1} style={styles.skeletonChange} />
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   const defaultIcon = icon || {
     name: "wallet",
     color: AppColors.text,
@@ -152,5 +180,17 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 24,
+  },
+  skeletonIcon: {
+    marginRight: 0,
+  },
+  skeletonTitle: {
+    marginBottom: 8,
+  },
+  skeletonAmount: {
+    marginBottom: 4,
+  },
+  skeletonChange: {
+    marginTop: 4,
   },
 });

@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppColors } from "@/constants/theme";
+import { useSignup } from "@/hooks/api/use-auth";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import { formatValidationError, signupSchema } from "@/utils/validation";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -15,10 +19,81 @@ import {
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const signup = useSignup();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
+
+  const handleSignup = async () => {
+    try {
+      // Validate form using Yup
+      const formData = {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password,
+        confirmPassword,
+      };
+
+      await signupSchema.validate(formData, { abortEarly: false });
+
+      // Clear any previous errors
+      setErrors({});
+
+      // Submit form
+      const result = await signup.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+
+      if (result.status === "success") {
+        showSuccessToast({
+          message: result.message || "Account created successfully!",
+        });
+        // Navigate to email verification with email
+        router.push({
+          pathname: "/auth/email-verification",
+          params: { email: formData.email },
+        });
+      }
+    } catch (error: any) {
+      // Handle Yup validation errors
+      if (error.name === "ValidationError") {
+        const formattedErrors = formatValidationError(error);
+        setErrors(formattedErrors);
+        // Show first validation error as toast
+        const firstError = Object.values(formattedErrors)[0];
+        if (firstError) {
+          showErrorToast({
+            message: firstError,
+          });
+        }
+        return;
+      }
+
+      // Handle API errors
+      const errorMessage =
+        error?.message ||
+        error?.data?.message ||
+        "Signup failed. Please try again.";
+      showErrorToast({
+        message: errorMessage,
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -41,40 +116,98 @@ export default function SignUpScreen() {
 
         <View style={styles.form}>
           <Input
-            label="First Name"
-            value={firstName}
-            onChangeText={setFirstName}
-            placeholder="Legal first name"
-          />
-
-          <Input
-            label="Last Name"
-            value={lastName}
-            onChangeText={setLastName}
-            placeholder="Legal last name"
+            label="Full Name"
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
+              if (errors.name) setErrors({ ...errors, name: undefined });
+            }}
+            placeholder="Enter your full name"
+            error={errors.name}
+            autoCapitalize="words"
           />
 
           <Input
             label="Email Address"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
             placeholder="Enter your email address"
             keyboardType="email-address"
             autoCapitalize="none"
+            error={errors.email}
           />
 
           <Input
             label="Phone Number"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(text) => {
+              setPhone(text);
+              if (errors.phone) setErrors({ ...errors, phone: undefined });
+            }}
             placeholder="Enter your phone number"
             keyboardType="phone-pad"
+            error={errors.phone}
+          />
+
+          <Input
+            label="Password"
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password)
+                setErrors({ ...errors, password: undefined });
+            }}
+            placeholder="Enter your password"
+            secureTextEntry={!showPassword}
+            error={errors.password}
+            rightIcon={
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={AppColors.textSecondary}
+                />
+              </TouchableOpacity>
+            }
+          />
+
+          <Input
+            label="Confirm Password"
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              if (errors.confirmPassword)
+                setErrors({ ...errors, confirmPassword: undefined });
+            }}
+            placeholder="Confirm your password"
+            secureTextEntry={!showConfirmPassword}
+            error={errors.confirmPassword}
+            rightIcon={
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={AppColors.textSecondary}
+                />
+              </TouchableOpacity>
+            }
           />
 
           <Button
             title="Continue"
-            onPress={() => router.push("/auth/email-verification")}
+            onPress={handleSignup}
             style={styles.button}
+            loading={signup.isPending}
+            disabled={signup.isPending}
           />
 
           <View style={styles.loginContainer}>
@@ -193,7 +326,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 16,
-    marginBottom: 30,
+    marginBottom: 60,
   },
   socialButton: {
     width: 50,

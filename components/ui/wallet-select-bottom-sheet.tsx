@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { AppColors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -7,13 +8,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface WalletOption {
   id: string;
@@ -25,27 +20,29 @@ interface WalletOption {
 interface WalletSelectBottomSheetProps {
   bottomSheetModalRef: React.RefObject<BottomSheetModal | null>;
   onSelectWallet: (walletType: "crypto" | "fiat") => void;
+  mode?: "deposit" | "withdrawal";
 }
 
-const walletOptions: WalletOption[] = [
-  {
-    id: "crypto",
-    name: "Crypto Deposit",
-    description: "Deposit Funds to your Crypto wallet",
-    icon: "swap-horizontal",
-  },
+const getWalletOptions = (mode: "deposit" | "withdrawal" = "deposit"): WalletOption[] => [
   {
     id: "fiat",
-    name: "Fiat Deposit",
-    description: "Deposit Funds to your Fiat wallet",
+    name: mode === "deposit" ? "Fiat Deposit" : "Fiat Withdrawal",
+    description: mode === "deposit" ? "Fiat Deposit" : "Fiat Withdrawal",
     icon: "wallet",
+  },
+  {
+    id: "crypto",
+    name: mode === "deposit" ? "Crypto Deposit" : "Crypto Withdrawal",
+    description: mode === "deposit" ? "Crypto Deposit" : "Crypto Withdrawal",
+    icon: "swap-horizontal",
   },
 ];
 
 export const WalletSelectBottomSheet: React.FC<
   WalletSelectBottomSheetProps
-> = ({ bottomSheetModalRef, onSelectWallet }) => {
-  const snapPoints = useMemo(() => ["50%", "60%"], []);
+> = ({ bottomSheetModalRef, onSelectWallet, mode = "deposit" }) => {
+  const walletOptions = useMemo(() => getWalletOptions(mode), [mode]);
+  const snapPoints = useMemo(() => ["35%", "45%"], []);
 
   const BackDrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -80,33 +77,26 @@ export const WalletSelectBottomSheet: React.FC<
     >
       <BottomSheetView style={styles.bottomSheetView}>
         <View style={styles.headerContainer}>
-          <Pressable onPress={handleClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={handleClose}
+            style={styles.closeButton}
+            activeOpacity={0.8}
+          >
             <Ionicons name="close" size={32} color={AppColors.text} />
-          </Pressable>
-          <Text style={styles.title}>Select wallet to deposit money</Text>
+          </TouchableOpacity>
+          {/* <Text style={styles.title}>Select wallet to deposit money</Text> */}
         </View>
 
         <View style={styles.contentContainer}>
           {walletOptions.map((option) => (
             <View key={option.id} style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>{option.name}</Text>
-              <TouchableOpacity
-                style={styles.walletButton}
+              <Button
+                title={option.description}
                 onPress={() =>
                   handleSelectWallet(option.id as "crypto" | "fiat")
                 }
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={option.icon}
-                  size={24}
-                  color={AppColors.background}
-                  style={styles.walletIcon}
-                />
-                <Text style={styles.walletButtonText}>
-                  {option.description}
-                </Text>
-              </TouchableOpacity>
+                style={styles.walletButton}
+              />
             </View>
           ))}
         </View>
@@ -124,11 +114,13 @@ const styles = StyleSheet.create({
   bottomSheetView: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 80,
   },
   headerContainer: {
     marginBottom: 24,
-    position: "relative",
+    position: "absolute",
+    right: 20,
+    top: 0,
     alignItems: "center",
   },
   closeButton: {
@@ -147,10 +139,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   contentContainer: {
+    justifyContent: "center",
+    alignItems: "center",
     gap: 24,
   },
   sectionContainer: {
     gap: 12,
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 16,
@@ -159,21 +154,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   walletButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: AppColors.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    gap: 12,
-  },
-  walletIcon: {
-    marginRight: 4,
-  },
-  walletButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: AppColors.background,
-    flex: 1,
+    width: "100%",
   },
 });

@@ -3,15 +3,16 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { AppColors } from '@/constants/theme';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 
 const cryptocurrencies = [
-  { id: 1, name: 'Bitcoin', symbol: 'BTC', price: '$45,230.50', change: '+2.45%', icon: '🟠', color: AppColors.orange, selected: true },
-  { id: 2, name: 'Ethereum', symbol: 'ETH', price: '$2,456.80', change: '+1.23%', icon: '🔵', color: AppColors.blue, selected: false },
-  { id: 3, name: 'Tether', symbol: 'USDT', price: '$1.00', change: '0.00%', icon: '🟢', color: AppColors.green, selected: false },
+  { id: 1, name: 'Bitcoin', symbol: 'BTC', price: '$45,230.50', change: '+2.45%', icon: require('@/assets/images/bitcoin.png'), color: AppColors.orange, selected: true },
+  { id: 2, name: 'Ethereum', symbol: 'ETH', price: '$2,456.80', change: '+1.23%', icon: require('@/assets/images/eth.png'), color: AppColors.blue, selected: false },
+  { id: 3, name: 'Tether', symbol: 'USDT', price: '$1.00', change: '0.00%', icon: require('@/assets/images/usdt.png'), color: AppColors.green, selected: false },
 ];
 
 export default function ExchangeCryptoScreen() {
@@ -55,7 +56,11 @@ export default function ExchangeCryptoScreen() {
                   onPress={() => setSelectedCrypto(crypto)}
                 >
                   <View style={[styles.cryptoIcon, { backgroundColor: crypto.color }]}>
-                    <Text style={styles.cryptoIconText}>{crypto.icon}</Text>
+                    <Image
+                      source={crypto.icon}
+                      style={styles.cryptoIconImage}
+                      contentFit="contain"
+                    />
                   </View>
                   <View style={styles.cryptoInfo}>
                     <Text style={styles.cryptoName}>{crypto.name}</Text>
@@ -209,8 +214,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  cryptoIconText: {
-    fontSize: 24,
+  cryptoIconImage: {
+    width: 32,
+    height: 32,
   },
   cryptoInfo: {
     flex: 1,
@@ -283,7 +289,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   receiveCard: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.blueDark,
   },
   receiveLabel: {
     fontSize: 14,
@@ -331,7 +337,7 @@ const styles = StyleSheet.create({
     color: AppColors.text,
   },
   totalCard: {
-    backgroundColor: AppColors.surfaceLight,
+    backgroundColor: AppColors.blueDark,
     marginBottom: 24,
   },
   totalLabel: {

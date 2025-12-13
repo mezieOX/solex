@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppColors } from "@/constants/theme";
+import { useLogin } from "@/hooks/api/use-auth";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import { formatValidationError, loginSchema } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -16,9 +19,66 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+
+  const handleLogin = async () => {
+    try {
+      // Validate form using Yup
+      const formData = {
+        email: email.trim(),
+        password,
+      };
+
+      await loginSchema.validate(formData, { abortEarly: false });
+
+      // Clear any previous errors
+      setErrors({});
+
+      // Submit login
+      const result = await login.mutateAsync({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result.access_token) {
+        showSuccessToast({
+          message: "Login successful!",
+        });
+        // Navigate to home screen
+        router.replace("/(tabs)");
+      }
+    } catch (error: any) {
+      // Handle Yup validation errors
+      if (error.name === "ValidationError") {
+        const formattedErrors = formatValidationError(error);
+        setErrors(formattedErrors);
+        // Show first validation error as toast
+        const firstError = Object.values(formattedErrors)[0];
+        if (firstError) {
+          showErrorToast({
+            message: firstError,
+          });
+        }
+        return;
+      }
+
+      // Handle API errors
+      const errorMessage =
+        error?.message ||
+        error?.data?.message ||
+        "Login failed. Please check your credentials and try again.";
+      showErrorToast({
+        message: errorMessage,
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -43,10 +103,14 @@ export default function LoginScreen() {
           <Input
             label="Enter Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) setErrors({ ...errors, email: undefined });
+            }}
             placeholder="Enter your email address"
             keyboardType="email-address"
             autoCapitalize="none"
+            error={errors.email}
             leftIcon={
               <Ionicons
                 name="mail-outline"
@@ -59,9 +123,14 @@ export default function LoginScreen() {
           <Input
             label="Enter Password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password)
+                setErrors({ ...errors, password: undefined });
+            }}
             placeholder="Enter your password"
             secureTextEntry={!showPassword}
+            error={errors.password}
             leftIcon={
               <Ionicons
                 name="lock-closed"
@@ -70,9 +139,12 @@ export default function LoginScreen() {
               />
             }
             rightIcon={
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Ionicons
-                  name={showPassword ? "eye-off" : "eye"}
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
                   color={AppColors.textSecondary}
                 />
@@ -80,32 +152,35 @@ export default function LoginScreen() {
             }
           />
 
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => router.push("/auth/forgot-password")}
+          <View
+            style={[
+              styles.signupContainer,
+              {
+                marginBottom: 65,
+              },
+            ]}
           >
-            <Text style={styles.forgotPasswordText}>
-              Forget your password?{" "}
+            <Text style={styles.signupText}>Forget your password? </Text>
+            <TouchableOpacity
+              onPress={() => router.push("/auth/forgot-password")}
+            >
               <Text style={styles.linkText}>Click here</Text>
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
           <Button
             title="Login"
-            onPress={() => router.push("/(tabs)")}
+            onPress={handleLogin}
             style={styles.loginButton}
+            loading={login.isPending}
+            disabled={login.isPending}
           />
 
           <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>
-              Don't have an account?{" "}
-              <Text
-                style={styles.linkText}
-                onPress={() => router.push("/auth/signup")}
-              >
-                Signup
-              </Text>
-            </Text>
+            <Text style={styles.signupText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => router.push("/auth/signup")}>
+              <Text style={styles.linkText}>Signup</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.divider}>
@@ -198,6 +273,8 @@ const styles = StyleSheet.create({
   signupContainer: {
     alignItems: "center",
     marginBottom: 32,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   signupText: {
     fontSize: 14,

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { SafeAreaView } from "@/components/ui/safe-area-view";
 import { AppColors } from "@/constants/theme";
+import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -10,12 +11,10 @@ import {
   Dimensions,
   PanResponder,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const AUTO_SCROLL_INTERVAL = 4000; // 4 seconds
+const AUTO_SCROLL_INTERVAL = 6000; // 4 seconds
 
 const onboardingData = [
   {
@@ -37,12 +36,86 @@ const onboardingData = [
   },
 ];
 
+const { width } = Dimensions.get("window");
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Additional animation values
+  const backgroundScale = useRef(new Animated.Value(1)).current;
+  const titleScale = useRef(new Animated.Value(1)).current;
+  const subtitleScale = useRef(new Animated.Value(1)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const dotWidths = useRef(
+    onboardingData.map(() => new Animated.Value(32))
+  ).current;
+
+  // Check if onboarding was already completed
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      const onboardingCompleted = await getBoolean(
+        StorageKeys.ONBOARDING_COMPLETED
+      );
+      if (onboardingCompleted) {
+        // User has already seen onboarding, redirect to login
+        router.replace("/auth/login");
+      }
+    };
+    checkOnboardingStatus();
+  }, [router]);
+
+  // Initial mount animation
+  useEffect(() => {
+    // Animate background scale
+    Animated.timing(backgroundScale, {
+      toValue: 1.1,
+      duration: 10000,
+      useNativeDriver: true,
+    }).start();
+
+    // Animate content entrance
+    titleScale.setValue(0.8);
+    subtitleScale.setValue(0.8);
+    buttonScale.setValue(0.9);
+
+    Animated.parallel([
+      Animated.spring(titleScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.spring(subtitleScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Animate dots when currentIndex changes
+  useEffect(() => {
+    dotWidths.forEach((dotWidth, index) => {
+      Animated.spring(dotWidth, {
+        toValue: index === currentIndex ? 40 : 32,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: false,
+      }).start();
+    });
+  }, [currentIndex]);
 
   // Auto-scroll functionality
   useEffect(() => {
@@ -63,7 +136,7 @@ export default function OnboardingScreen() {
   }, [currentIndex]);
 
   const animateTransition = (toIndex: number, direction: "next" | "prev") => {
-    // Fade out and slide
+    // Fade out and slide with scale
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -75,10 +148,23 @@ export default function OnboardingScreen() {
         duration: 300,
         useNativeDriver: true,
       }),
+      Animated.timing(titleScale, {
+        toValue: 0.8,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(subtitleScale, {
+        toValue: 0.8,
+        duration: 300,
+        useNativeDriver: true,
+      }),
     ]).start(() => {
       setCurrentIndex(toIndex);
-      // Reset and fade in
+      // Reset and fade in with scale bounce
       slideAnim.setValue(direction === "next" ? 50 : -50);
+      titleScale.setValue(0.8);
+      subtitleScale.setValue(0.8);
+
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -88,6 +174,19 @@ export default function OnboardingScreen() {
         Animated.timing(slideAnim, {
           toValue: 0,
           duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(titleScale, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.spring(subtitleScale, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          delay: 50,
           useNativeDriver: true,
         }),
       ]).start();
@@ -181,10 +280,27 @@ export default function OnboardingScreen() {
     })
   ).current;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        tension: 300,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     if (currentIndex < onboardingData.length - 1) {
       goToNext();
     } else {
+      // Mark onboarding as completed
+      await setBoolean(StorageKeys.ONBOARDING_COMPLETED, true);
       router.replace("/auth/login");
     }
   };
@@ -193,11 +309,20 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.swipeContainer} {...panResponder.panHandlers}>
-        <Image
-          source={require("@/assets/images/onboarding-3d-background.png")}
-          style={styles.backgroundImage}
-          contentFit="cover"
-        />
+        <Animated.View
+          style={[
+            styles.backgroundImageContainer,
+            {
+              transform: [{ scale: backgroundScale }],
+            },
+          ]}
+        >
+          <Image
+            source={require("@/assets/images/onboarding-3d-background.png")}
+            style={styles.backgroundImage}
+            contentFit="fill"
+          />
+        </Animated.View>
         <View style={styles.content}>
           <Animated.View
             style={[
@@ -208,12 +333,26 @@ export default function OnboardingScreen() {
               },
             ]}
           >
-            <Text style={styles.title}>
+            <Animated.Text
+              style={[
+                styles.title,
+                {
+                  transform: [{ scale: titleScale }],
+                },
+              ]}
+            >
               {onboardingData[currentIndex].title}
-            </Text>
-            <Text style={styles.subtitle}>
+            </Animated.Text>
+            <Animated.Text
+              style={[
+                styles.subtitle,
+                {
+                  transform: [{ scale: subtitleScale }],
+                },
+              ]}
+            >
               {onboardingData[currentIndex].subtitle}
-            </Text>
+            </Animated.Text>
           </Animated.View>
 
           {/* Pagination Dots */}
@@ -225,22 +364,31 @@ export default function OnboardingScreen() {
                   styles.dot,
                   index === currentIndex && styles.activeDot,
                   {
-                    width: index === currentIndex ? 40 : 32,
+                    width: dotWidths[index],
                   },
                 ]}
               />
             ))}
           </View>
 
-          <Button
-            title={
-              currentIndex === onboardingData.length - 1
-                ? "Get Started"
-                : "Next"
-            }
-            onPress={handleNext}
-            style={styles.button}
-          />
+          <Animated.View
+            style={[
+              styles.buttonContainer,
+              {
+                transform: [{ scale: buttonScale }],
+              },
+            ]}
+          >
+            <Button
+              title={
+                currentIndex === onboardingData.length - 1
+                  ? "Get Started"
+                  : "Next"
+              }
+              onPress={handleNext}
+              style={styles.button}
+            />
+          </Animated.View>
         </View>
       </View>
     </SafeAreaView>
@@ -256,13 +404,18 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
   },
-  backgroundImage: {
+  backgroundImageContainer: {
     position: "absolute",
     top: 40,
     left: 0,
     right: 0,
     height: "60%",
     width: "100%",
+    overflow: "hidden",
+  },
+  backgroundImage: {
+    width: width * 1,
+    height: "100%",
   },
   content: {
     flex: 1,
@@ -297,14 +450,18 @@ const styles = StyleSheet.create({
   },
   dot: {
     height: 4,
-    backgroundColor: AppColors.surface,
+    backgroundColor: "gray",
     borderRadius: 2,
   },
   activeDot: {
     backgroundColor: AppColors.primary,
   },
-  button: {
+  buttonContainer: {
     width: "100%",
     marginTop: 20,
+    marginBottom: 40,
+  },
+  button: {
+    width: "100%",
   },
 });

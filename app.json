@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Solex",
+    "name": "Solex Trade",
     "slug": "solex-trade-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,18 +10,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/app-icon-optimized.png"
+      "icon": "./assets/images/app-icon-optimized.png",
+      "bundleIdentifier": "com.solex.tradeapp"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/app-logo.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background-black.png",
-        "monochromeImage": "./assets/images/app-logo.png"
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "icon": "./assets/images/app-icon-optimized.png",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.solex.tradeapp"
     },
     "web": {
       "output": "static",
@@ -45,6 +47,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "739e4e91-c5e2-4c12-aacb-8c7d78b05413"
+      }
+    },
+    "owner": "mezie_page"
   }
 }

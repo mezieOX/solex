@@ -54,7 +54,8 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "outline" ? AppColors.primary : "#000"}
+          size={22}
+          color={variant === "outline" ? AppColors.primary : "#fff"}
         />
       ) : (
         <Text style={textStyles}>{title}</Text>
