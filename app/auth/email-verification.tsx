@@ -105,6 +105,18 @@ export default function EmailVerificationScreen() {
         return;
       }
 
+      if (type === "phone") {
+        router.push({
+          pathname: "/auth/forgot-password",
+          params: {
+            phone: params.phone as string,
+            code: formData.code,
+            type: "phone",
+          },
+        });
+        return;
+      }
+
       // For email verification, call the verify API
       const result = await verifyEmail.mutateAsync({
         email: formData.email,
@@ -116,7 +128,8 @@ export default function EmailVerificationScreen() {
           message: result.message || "Email verified successfully!",
         });
         // Navigate to create password
-        router.replace("/auth/login");
+
+        return router.replace("/auth/login");
       }
     } catch (error: any) {
       // Handle Yup validation errors
@@ -193,6 +206,7 @@ export default function EmailVerificationScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ScreenTitle
+          containerStyle={styles.screenTitle}
           title={
             type === "reset-password"
               ? "Password Reset Code"
@@ -280,8 +294,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
   subtitle: {
@@ -290,6 +303,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 32,
     lineHeight: 20,
+  },
+  screenTitle: {
+    paddingHorizontal: 0,
   },
   emailText: {
     color: AppColors.primary,

@@ -1,16 +1,33 @@
-import { AppColors } from "@/constants/theme";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { AppColors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-const AMOUNT = "₦50,000.00";
 
 export default function DepositSuccessScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  // Format amount from params
+  const formattedAmount = useMemo(() => {
+    const amountParam = params.amount;
+    const amount = Array.isArray(amountParam)
+      ? amountParam[0]
+      : (amountParam as string) || "0";
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      return "₦0.00";
+    }
+
+    return `₦${amountValue.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }, [params.amount]);
 
   return (
     <View style={styles.container}>
@@ -34,7 +51,7 @@ export default function DepositSuccessScreen() {
 
         {/* Amount Card */}
         <Card style={styles.amountCard}>
-          <Text style={styles.amountText}>{AMOUNT}</Text>
+          <Text style={styles.amountText}>{formattedAmount}</Text>
           <Text style={styles.successMessage}>
             You have successfully Added this amount to your Cash Wallet
           </Text>
@@ -129,7 +146,6 @@ const styles = StyleSheet.create({
   button: {
     width: "100%",
     marginTop: "auto",
-    marginBottom: 40,
+    marginBottom: 80,
   },
 });
-

@@ -134,6 +134,25 @@ export const resetPasswordSchema = yup.object().shape({
 });
 
 /**
+ * Change password schema (in-app, no email/code required)
+ */
+export const changePasswordSchema = yup.object().shape({
+  password: yup
+    .string()
+    .required("Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .max(50, "Password must not exceed 50 characters")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+  confirmPassword: yup
+    .string()
+    .required("Please confirm your password")
+    .oneOf([yup.ref("password")], "Passwords do not match"),
+});
+
+/**
  * Create password schema
  */
 export const createPasswordSchema = yup.object().shape({

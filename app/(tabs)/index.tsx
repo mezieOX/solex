@@ -20,7 +20,6 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   ScrollView,
   StyleSheet,
   Text,
@@ -449,28 +448,23 @@ export default function HomeScreen() {
             actionText="Sell All"
             onActionPress={() => router.push("/transaction-history")}
           />
-          <FlatList
-            data={transactions.slice(0, 3)}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TransactionItem
-                loading={isLoadingDashboard}
-                title={item.title}
-                time={item.time}
-                amount={item.amount}
-                type={item.type}
-                icon={item.icon}
-              />
-            )}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => null}
-            ListEmptyComponent={() => (
-              <Empty
-                title="No transactions yet"
-                description="You haven't made any transactions yet"
-              />
-            )}
-          />
+          {transactions.slice(0, 3).map((item) => (
+            <TransactionItem
+              key={item.id.toString()}
+              loading={isLoadingDashboard}
+              title={item.title}
+              time={item.time}
+              amount={item.amount}
+              type={item.type}
+              icon={item.icon}
+            />
+          ))}
+          {transactions.length === 0 && !isLoadingDashboard ? (
+            <Empty
+              title="No transactions yet"
+              description="You haven't made any transactions yet"
+            />
+          ) : null}
         </View>
 
         {/* Quick Actions */}

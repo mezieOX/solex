@@ -56,6 +56,14 @@ export default function NotificationsScreen() {
     if (!notification.read_at) {
       markAsRead.mutate(notification.id);
     }
+
+    // Navigate to notification details
+    router.push({
+      pathname: "/notification-details",
+      params: {
+        notification: JSON.stringify(notification),
+      },
+    });
   };
 
   // Group notifications by date
@@ -95,9 +103,7 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       {/* Header */}
-      <View style={styles.header}>
-        <ScreenTitle title="Notification" />
-      </View>
+      <ScreenTitle title="Notification" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -233,11 +239,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
   },
   scrollContent: {
     paddingHorizontal: 20,

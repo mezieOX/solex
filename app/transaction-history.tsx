@@ -1,11 +1,16 @@
+import Empty from "@/components/empty";
+import Error from "@/components/error";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { TransactionItem } from "@/components/ui/transaction-item";
 import { AppColors } from "@/constants/theme";
+import { useTransactions } from "@/hooks/api/use-wallet";
+import { Transaction } from "@/services/api/wallet";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  Dimensions,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -14,156 +19,190 @@ import {
   View,
 } from "react-native";
 
-interface Transaction {
-  id: string;
-  title: string;
-  time: string;
-  amount: string;
-  type: "credit" | "debit";
-  icon?: {
-    name?: keyof typeof Ionicons.glyphMap;
-    backgroundColor?: string;
-  };
-}
+type FilterType = "All" | "Deposit" | "Withdrawal" | "Gift Card Exchange";
 
 interface TransactionGroup {
   date: string;
   transactions: Transaction[];
 }
 
-const transactionData: TransactionGroup[] = [
-  {
-    date: "04 Dec, 2025",
-    transactions: [
-      {
-        id: "1",
-        title: "Fiat Wallet Deposit",
-        time: "10:30 PM",
-        amount: "N250,000.00",
-        type: "credit",
-        icon: {
-          name: "wallet",
-          backgroundColor: AppColors.green,
-        },
-      },
-      {
-        id: "2",
-        title: "Crypto Withdrawal",
-        time: "10:00 PM",
-        amount: "$300.00",
-        type: "debit",
-        icon: {
-          name: "arrow-down",
-          backgroundColor: AppColors.red,
-        },
-      },
-      {
-        id: "3",
-        title: "Airtime",
-        time: "09:22 PM",
-        amount: "N2,000.00",
-        type: "debit",
-        icon: {
-          name: "phone-portrait",
-          backgroundColor: AppColors.textSecondary,
-        },
-      },
-      {
-        id: "4",
-        title: "Fiat Wallet Deposit",
-        time: "10:30 PM",
-        amount: "N25,000.00",
-        type: "credit",
-        icon: {
-          name: "wallet",
-          backgroundColor: AppColors.green,
-        },
-      },
-    ],
-  },
-  {
-    date: "03 Dec, 2025",
-    transactions: [
-      {
-        id: "5",
-        title: "Gift Card Exchange",
-        time: "10:30 PM",
-        amount: "N550,000.00",
-        type: "credit",
-        icon: {
-          name: "gift",
-          backgroundColor: AppColors.green,
-        },
-      },
-      {
-        id: "6",
-        title: "Betting",
-        time: "10:30 PM",
-        amount: "N2500.00",
-        type: "debit",
-        icon: {
-          name: "trophy",
-          backgroundColor: AppColors.textSecondary,
-        },
-      },
-    ],
-  },
-  {
-    date: "01 Dec, 2025",
-    transactions: [
-      {
-        id: "7",
-        title: "Fiat Wallet Deposit",
-        time: "10:30 PM",
-        amount: "N250,000.00",
-        type: "credit",
-        icon: {
-          name: "wallet",
-          backgroundColor: AppColors.green,
-        },
-      },
-      {
-        id: "8",
-        title: "Crypto Wallet Deposit",
-        time: "10:00 PM",
-        amount: "$300.00",
-        type: "debit",
-        icon: {
-          name: "arrow-up",
-          backgroundColor: AppColors.red,
-        },
-      },
-      {
-        id: "9",
-        title: "Airtime",
-        time: "09:22 PM",
-        amount: "N2,000.00",
-        type: "debit",
-        icon: {
-          name: "phone-portrait",
-          backgroundColor: AppColors.textSecondary,
-        },
-      },
-      {
-        id: "10",
-        title: "Fiat Wallet Deposit",
-        time: "10:30 PM",
-        amount: "N250,000.00",
-        type: "credit",
-        icon: {
-          name: "wallet",
-          backgroundColor: AppColors.green,
-        },
-      },
-    ],
-  },
-];
+// Helper function to determine transaction type from name
+const getTransactionType = (
+  name: string
+): "withdrawal" | "deposit" | "transfer" | "exchange" | "payment" | "other" => {
+  const lowerName = name.toLowerCase();
 
-type FilterType = "All" | "Deposit" | "Withdrawal" | "Gift Card Exchange";
+  if (lowerName.includes("withdrawal") || lowerName.includes("withdraw")) {
+    return "withdrawal";
+  }
+  if (lowerName.includes("deposit") || lowerName.includes("refund")) {
+    return "deposit";
+  }
+  if (lowerName.includes("transfer")) {
+    return "transfer";
+  }
+  if (
+    lowerName.includes("swap") ||
+    lowerName.includes("exchange") ||
+    lowerName.includes("gift card")
+  ) {
+    return "exchange";
+  }
+  if (lowerName.includes("bill") || lowerName.includes("payment")) {
+    return "payment";
+  }
+
+  return "other";
+};
+
+// Helper function to get icon for transaction name
+const getTransactionIcon = (
+  name: string
+): {
+  name: keyof typeof Ionicons.glyphMap;
+  backgroundColor: string;
+} => {
+  const lowerName = name.toLowerCase();
+
+  if (lowerName.includes("deposit") || lowerName.includes("refund")) {
+    return {
+      name: "arrow-down",
+      backgroundColor: AppColors.green,
+    };
+  }
+  if (lowerName.includes("withdrawal") || lowerName.includes("withdraw")) {
+    return {
+      name: "arrow-up",
+      backgroundColor: AppColors.red,
+    };
+  }
+  if (lowerName.includes("gift card")) {
+    return {
+      name: "gift",
+      backgroundColor: AppColors.primary,
+    };
+  }
+  if (lowerName.includes("swap")) {
+    return {
+      name: "swap-horizontal",
+      backgroundColor: AppColors.primary,
+    };
+  }
+  if (lowerName.includes("bill") || lowerName.includes("payment")) {
+    return {
+      name: "receipt",
+      backgroundColor: AppColors.textSecondary,
+    };
+  }
+  if (lowerName.includes("airtime")) {
+    return {
+      name: "phone-portrait",
+      backgroundColor: AppColors.textSecondary,
+    };
+  }
+
+  // Default icon
+  return {
+    name: "wallet",
+    backgroundColor: AppColors.primary,
+  };
+};
+
+// Helper function to parse date string and extract date and time
+const parseDateString = (
+  dateString: string
+): { date: string; time: string } => {
+  // Handle "Today, 10:37 AM" format
+  if (dateString.toLowerCase().includes("today")) {
+    const timeMatch = dateString.match(/(\d{1,2}:\d{2}\s?(AM|PM))/i);
+    return {
+      date: "Today",
+      time: timeMatch ? timeMatch[1] : "",
+    };
+  }
+
+  // Handle "Nov 28, 04:57 PM" format
+  const parts = dateString.split(",");
+  if (parts.length >= 2) {
+    const datePart = parts[0].trim(); // "Nov 28"
+    const timePart = parts[1]?.trim() || ""; // "04:57 PM"
+    return {
+      date: datePart,
+      time: timePart,
+    };
+  }
+
+  return {
+    date: dateString,
+    time: "",
+  };
+};
+
+// Helper function to group transactions by date
+const groupTransactionsByDate = (
+  transactions: Transaction[]
+): TransactionGroup[] => {
+  const groups: { [key: string]: Transaction[] } = {};
+
+  transactions.forEach((transaction) => {
+    const { date } = parseDateString(transaction.date);
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(transaction);
+  });
+
+  // Convert to array and sort by date (most recent first)
+  return Object.entries(groups)
+    .map(([date, transactions]) => ({
+      date,
+      transactions,
+    }))
+    .sort((a, b) => {
+      // Sort "Today" first, then by date string
+      if (a.date === "Today") return -1;
+      if (b.date === "Today") return 1;
+      return b.date.localeCompare(a.date);
+    });
+};
 
 export default function TransactionHistoryScreen() {
+  const { height } = Dimensions.get("window");
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("All");
+
+  // Build filter params - only include non-null values
+  const filterParams = useMemo(() => {
+    const params: {
+      wallet_type?: string;
+      currency?: string;
+      transaction_type?: string;
+      direction?: string;
+      status?: string;
+      from_date?: string;
+      to_date?: string;
+      per_page?: number;
+    } = {};
+
+    // Map filter to API params
+    if (selectedFilter === "Deposit") {
+      params.direction = "credit";
+    } else if (selectedFilter === "Withdrawal") {
+      params.direction = "debit";
+    }
+
+    // Only return params that have values (don't include null/undefined)
+    return Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value != null)
+    );
+  }, [selectedFilter]);
+
+  const {
+    data: transactionsData,
+    isLoading,
+    error,
+    refetch,
+  } = useTransactions(filterParams);
 
   const filters: FilterType[] = [
     "All",
@@ -172,28 +211,32 @@ export default function TransactionHistoryScreen() {
     "Gift Card Exchange",
   ];
 
-  const filteredTransactions = transactionData
-    .map((group) => ({
-      ...group,
-      transactions: group.transactions.filter((transaction) => {
-        if (selectedFilter === "All") return true;
-        if (selectedFilter === "Deposit") return transaction.type === "credit";
-        if (selectedFilter === "Withdrawal")
-          return transaction.type === "debit";
-        if (selectedFilter === "Gift Card Exchange")
-          return transaction.title.toLowerCase().includes("gift card");
-        return true;
-      }),
-    }))
-    .filter((group) => group.transactions.length > 0);
+  // Process and filter transactions
+  const filteredTransactions = useMemo(() => {
+    if (!transactionsData?.transactions) return [];
+
+    let transactions = transactionsData.transactions;
+
+    // Apply client-side filters for Gift Card Exchange
+    if (selectedFilter === "Gift Card Exchange") {
+      transactions = transactions.filter((t) =>
+        t.name.toLowerCase().includes("gift card")
+      );
+    }
+
+    // Group by date
+    const grouped = groupTransactionsByDate(transactions);
+
+    return grouped;
+  }, [transactionsData, selectedFilter]);
+
+  console.log(filteredTransactions[0]);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       {/* Header */}
-      <View style={styles.header}>
-        <ScreenTitle title="Transaction History" />
-      </View>
+      <ScreenTitle title="Transaction History" />
 
       {/* Filters */}
       <FlatList
@@ -228,35 +271,89 @@ export default function TransactionHistoryScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {filteredTransactions.map((group) => (
-          <View key={group.date} style={styles.groupContainer}>
-            <Text style={styles.dateText}>{group.date}</Text>
-            {group.transactions.map((transaction) => (
-              <TransactionItem
-                key={transaction.id}
-                title={transaction.title}
-                time={transaction.time}
-                amount={transaction.amount}
-                type={transaction.type}
-                icon={transaction.icon}
-                onPress={() => router.push("/view-details")}
-              />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TransactionItem key={index} loading={true} title="" amount="" />
             ))}
           </View>
-        ))}
+        ) : error ? (
+          <Error
+            message="Failed to load transactions"
+            onRetry={() => refetch()}
+          />
+        ) : filteredTransactions.length === 0 ? (
+          <Empty
+            title="No transactions found"
+            description="You haven't made any transactions yet"
+            style={{ minHeight: height - 200 }}
+          />
+        ) : (
+          filteredTransactions.map((group) => (
+            <View key={group.date} style={styles.groupContainer}>
+              <Text style={styles.dateText}>{group.date}</Text>
+              {group.transactions.map((transaction) => {
+                const { time, date } = parseDateString(transaction.date);
+                // Remove +/- prefix and clean the amount
+                const amount = transaction.amount.replace(/^[+-]/, "").trim();
+                const type = transaction.amount.startsWith("+")
+                  ? "credit"
+                  : transaction.amount.startsWith("-")
+                  ? "debit"
+                  : undefined;
+                const icon = getTransactionIcon(transaction.name);
+                const transactionType = getTransactionType(transaction.name);
+
+                // Prepare transaction data for view-details screen
+                const handlePress = () => {
+                  // Clean amount: remove currency symbols, commas, and whitespace for storage
+                  const cleanedAmount = amount
+                    .replace(/[₦$€£¥,\s]/g, "")
+                    .trim();
+
+                  const transactionData = {
+                    amount: cleanedAmount || "0",
+                    currency: "NGN",
+                    reference: transaction.id.toString(),
+                    date: date,
+                    time: time,
+                    name: transaction.name,
+                    id: transaction.id,
+                  };
+
+                  router.push({
+                    pathname: "/view-details",
+                    params: {
+                      type: transactionType,
+                      transactionData: JSON.stringify(transactionData),
+                    },
+                  });
+                };
+
+                return (
+                  <TransactionItem
+                    key={transaction.id.toString()}
+                    title={transaction.name}
+                    time={time}
+                    amount={amount}
+                    type={type}
+                    icon={icon}
+                    onPress={handlePress}
+                  />
+                );
+              })}
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
   },
   filters: {
     paddingHorizontal: 20,
@@ -297,5 +394,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: AppColors.text,
     marginBottom: 16,
+  },
+  loadingContainer: {
+    gap: 12,
   },
 });

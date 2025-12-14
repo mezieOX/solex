@@ -104,9 +104,18 @@ export const walletApi = {
     to_date?: string | null;
     per_page?: number | null;
   }): Promise<TransactionsResponse> => {
+    // Filter out null/undefined values to avoid API validation errors
+    const cleanParams = params
+      ? Object.fromEntries(
+          Object.entries(params).filter(
+            ([_, value]) => value !== null && value !== undefined
+          )
+        )
+      : undefined;
+
     const response = await apiClient.get<ApiResponse<TransactionsResponse>>(
       "/transactions",
-      params
+      cleanParams
     );
     return response.data;
   },
@@ -142,9 +151,10 @@ export const walletApi = {
     formData.append("account_number", data.account_number);
     formData.append("bank_code", data.bank_code);
 
-    const response = await apiClient.post<
-      ApiResponse<ResolveAccountResponse>
-    >("/wallets/fiat/resolve-account", formData);
+    const response = await apiClient.post<ApiResponse<ResolveAccountResponse>>(
+      "/wallets/fiat/resolve-account",
+      formData
+    );
     return response.data;
   },
 
@@ -200,7 +210,7 @@ export const walletApi = {
     const formData = new FormData();
     // Ensure amount is sent as a string (in kobo format)
     formData.append("amount", String(amount));
-    
+
     // Add redirect_url (required by API)
     // Using the exact field name the API expects
     formData.append("redirect_url", redirectUrl.trim());

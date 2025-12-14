@@ -173,6 +173,7 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     width: "100%",
+    marginBottom: 40,
   },
   referenceContainer: {
     marginTop: 16,

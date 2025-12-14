@@ -12,24 +12,14 @@ import {
 import { Bank } from "@/services/api/wallet";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   FlatList,
+  Keyboard,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -86,8 +76,8 @@ export default function FiatWithdrawalScreen() {
   const [accountNumber, setAccountNumber] = useState("");
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["60%"], []);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   // Resolve account query - automatically fetches when conditions are met
   const trimmedAccountNumber = accountNumber.trim();
@@ -120,26 +110,39 @@ export default function FiatWithdrawalScreen() {
     }
   }, [resolveAccountError]);
 
-  const BackDrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        opacity={0.5}
-      />
-    ),
-    []
-  );
+  // Listen to keyboard show/hide events
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const handleOpenSheet = () => {
-    bottomSheetRef.current?.present();
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
   };
 
   const handleSelectBank = useCallback((bank: Bank) => {
     setSelectedBank(bank);
     setSearchQuery(""); // Clear search when bank is selected
-    bottomSheetRef.current?.dismiss();
+    setIsModalVisible(false);
   }, []);
 
   // Filter banks based on search query and pre-compute icon data
@@ -219,9 +222,7 @@ export default function FiatWithdrawalScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       {/* Header */}
-      <View style={styles.header}>
-        <ScreenTitle title="Fiat Withdrawal" />
-      </View>
+      <ScreenTitle title="Fiat Withdrawal" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -328,125 +329,128 @@ export default function FiatWithdrawalScreen() {
         />
       </ScrollView>
 
-      {/* Bottom Sheet for Account Selection */}
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableOverDrag={false}
-        enablePanDownToClose={true}
-        handleComponent={null}
-        index={0}
-        backdropComponent={BackDrop}
-        snapPoints={snapPoints}
-        backgroundStyle={styles.bottomSheetBackground}
-        animateOnMount={true}
+      {/* Modal for Account Selection */}
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCloseModal}
       >
-        <BottomSheetView style={styles.bottomSheetView}>
-          <View style={styles.bottomSheetHeader}>
-            <Text style={styles.bottomSheetTitle}>
-              Choose or Connect Account
-            </Text>
-            <TouchableOpacity onPress={() => bottomSheetRef.current?.dismiss()}>
-              <Ionicons name="close" size={24} color={AppColors.text} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                height: isKeyboardVisible ? height * 0.6 : height * 0.9,
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose or Connect Account</Text>
+              <TouchableOpacity onPress={handleCloseModal}>
+                <Ionicons name="close" size={24} color={AppColors.text} />
+              </TouchableOpacity>
+            </View>
 
-          {/* Search Input */}
-          <View style={styles.searchContainer}>
-            <Input
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search banks or bank code..."
-              style={styles.searchInput}
-              placeholderTextColor={AppColors.textSecondary}
-            />
-          </View>
+            {/* Search Input */}
+            <View style={styles.searchContainer}>
+              <Input
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search banks or bank code..."
+                style={styles.searchInput}
+                placeholderTextColor={AppColors.textSecondary}
+              />
+            </View>
 
-          {isLoadingBanks ? (
-            <LoadingScreen />
-          ) : banksError ? (
-            <Error message="Failed to load banks" onRetry={() => {}} />
-          ) : (
-            <FlatList
-              data={filteredBanks || []}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item: bank }) => {
-                const iconData = bank.iconData;
-                const isSelected = selectedBank?.id === bank.id;
-                // Extract bank properties without iconData for handleSelectBank
-                const { iconData: _, ...bankData } = bank;
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.accountListItem,
-                      isSelected && styles.accountListItemSelected,
-                    ]}
-                    onPress={() => handleSelectBank(bankData as Bank)}
-                    activeOpacity={0.8}
-                  >
-                    <View
-                      style={[
-                        styles.accountIcon,
-                        { backgroundColor: iconData.iconBg },
-                      ]}
-                    >
+            {/* Bank List Container */}
+            <View style={styles.bankListContainer}>
+              {isLoadingBanks ? (
+                <LoadingScreen />
+              ) : banksError ? (
+                <Error message="Failed to load banks" onRetry={() => {}} />
+              ) : (
+                <FlatList
+                  data={filteredBanks || []}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item: bank }) => {
+                    const iconData = bank.iconData;
+                    const isSelected = selectedBank?.id === bank.id;
+                    // Extract bank properties without iconData for handleSelectBank
+                    const { iconData: _, ...bankData } = bank;
+                    return (
+                      <TouchableOpacity
+                        style={[
+                          styles.accountListItem,
+                          isSelected && styles.accountListItemSelected,
+                        ]}
+                        onPress={() => handleSelectBank(bankData as Bank)}
+                        activeOpacity={0.8}
+                      >
+                        <View
+                          style={[
+                            styles.accountIcon,
+                            { backgroundColor: iconData.iconBg },
+                          ]}
+                        >
+                          <Ionicons
+                            name={iconData.icon}
+                            size={24}
+                            color={iconData.iconColor}
+                          />
+                        </View>
+                        <View style={styles.accountInfo}>
+                          <Text style={styles.accountName}>{bank.name}</Text>
+                        </View>
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={24}
+                            color={AppColors.primary}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  }}
+                  ListEmptyComponent={() => (
+                    <View style={styles.emptyContainer}>
                       <Ionicons
-                        name={iconData.icon}
-                        size={24}
-                        color={iconData.iconColor}
+                        name="search-outline"
+                        size={48}
+                        color={AppColors.textSecondary}
                       />
+                      <Text style={styles.emptyText}>
+                        No banks found matching "{searchQuery}"
+                      </Text>
                     </View>
-                    <View style={styles.accountInfo}>
-                      <Text style={styles.accountName}>{bank.name}</Text>
-                      <Text style={styles.accountNumber}>{bank.code}</Text>
-                    </View>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={24}
-                        color={AppColors.primary}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
-              ListEmptyComponent={() => (
-                <View style={styles.emptyContainer}>
-                  <Ionicons
-                    name="search-outline"
-                    size={48}
-                    color={AppColors.textSecondary}
-                  />
-                  <Text style={styles.emptyText}>
-                    No banks found matching "{searchQuery}"
-                  </Text>
-                </View>
+                  )}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={
+                    filteredBanks && filteredBanks.length === 0
+                      ? styles.emptyListContainer
+                      : { paddingBottom: 10 }
+                  }
+                  removeClippedSubviews={true}
+                  maxToRenderPerBatch={10}
+                  updateCellsBatchingPeriod={50}
+                  initialNumToRender={10}
+                  windowSize={10}
+                />
               )}
-              // showsVerticalScrollIndicator={false}
-              style={styles.accountList}
-              contentContainerStyle={
-                filteredBanks && filteredBanks.length === 0
-                  ? styles.emptyListContainer
-                  : undefined
-              }
-              removeClippedSubviews={true}
-              maxToRenderPerBatch={10}
-              updateCellsBatchingPeriod={50}
-              initialNumToRender={10}
-              windowSize={10}
-            />
-          )}
+            </View>
 
-          <Button
-            title="Connect New Account"
-            onPress={() => {
-              // Handle connect new account
-              bottomSheetRef.current?.dismiss();
-            }}
-            variant="outline"
-            style={styles.connectButton}
-          />
-        </BottomSheetView>
-      </BottomSheetModal>
+            <Button
+              title="Connect New Account"
+              onPress={() => {
+                // Handle connect new account
+                setIsModalVisible(false);
+              }}
+              variant="outline"
+              style={styles.connectButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -457,11 +461,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -544,30 +543,34 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 20,
   },
-  bottomSheetBackground: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
     backgroundColor: AppColors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  },
-  bottomSheetView: {
-    flex: 1,
     paddingHorizontal: 20,
-    maxHeight: height,
     paddingTop: 20,
+    paddingBottom: 20,
   },
-  bottomSheetHeader: {
+  bankListContainer: {
+    flex: 1,
+    marginVertical: 16,
+    minHeight: 0,
+  },
+  modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
   },
-  bottomSheetTitle: {
+  modalTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: AppColors.text,
-  },
-  accountList: {
-    flex: 1,
   },
   emptyListContainer: {
     flexGrow: 1,

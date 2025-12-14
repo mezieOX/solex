@@ -361,6 +361,6 @@ const styles = StyleSheet.create({
   },
   bottomSheetButton: {
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: 80,
   },
 });

@@ -12,6 +12,7 @@ export const AppColors = {
   secondary: "#FF6B00",
   background: "#000000",
   backgroundDark: "#0A0A0A",
+  backgroundDarker: "#0C0C0C",
   surface: "#1A1A1A",
   surfaceLight: "#2A2A2A",
   text: "#FFFFFF",

@@ -3,21 +3,32 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
+  StatusBar,
   StyleSheet,
   Text,
   TextStyle,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 
 interface ScreenTitleProps {
   title: string;
   style?: TextStyle;
+  containerStyle?: ViewStyle;
 }
 
-export function ScreenTitle({ title, style }: ScreenTitleProps) {
+export function ScreenTitle({
+  title,
+  style,
+  containerStyle,
+}: ScreenTitleProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
+      <StatusBar
+        backgroundColor={AppColors.background}
+        barStyle="light-content"
+      />
       <TouchableOpacity onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color={AppColors.text} />
       </TouchableOpacity>
@@ -33,6 +44,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 60,
   },
   title: {
     fontSize: 22,
@@ -40,5 +53,7 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     textAlign: "center",
   },
-  spacer: {},
+  spacer: {
+    width: 40,
+  },
 });

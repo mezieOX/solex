@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { AppColors } from "@/constants/theme";
 import { useSignup } from "@/hooks/api/use-auth";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
@@ -140,16 +141,18 @@ export default function SignUpScreen() {
             error={errors.email}
           />
 
-          <Input
+          <PhoneInput
             label="Phone Number"
             value={phone}
             onChangeText={(text) => {
+              // PhoneInput component already removes spaces in handlePhoneChange
+              // text parameter here is already without spaces
               setPhone(text);
               if (errors.phone) setErrors({ ...errors, phone: undefined });
             }}
-            placeholder="Enter your phone number"
-            keyboardType="phone-pad"
+            placeholder="000 000 0000"
             error={errors.phone}
+            defaultCountry="ng"
           />
 
           <Input
