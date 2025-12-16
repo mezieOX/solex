@@ -51,6 +51,7 @@ export interface User {
   va_account_number?: string;
   va_account_name?: string;
   va_bank_name?: string;
+  has_account?: boolean;
 }
 
 // Wallet Types

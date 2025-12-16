@@ -5,7 +5,7 @@ import { useUser } from "@/hooks/api/use-auth";
 import { showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import * as ClipboardLib from "expo-clipboard";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
@@ -20,16 +20,23 @@ const EXPIRY_MINUTES = 60;
 
 export default function BankTransferScreen() {
   const router = useRouter();
-  const [timeRemaining, setTimeRemaining] = useState(EXPIRY_MINUTES * 60);
+  const [, setTimeRemaining] = useState(EXPIRY_MINUTES * 60);
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedName, setCopiedName] = useState(false);
   const { data: user } = useUser();
   console.log(user);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!user?.has_account) {
+        router.replace("/virtual-account");
+      }
+    }, [user, router])
+  );
+
   const ACCOUNT_NUMBER = user?.va_account_number || "N/A";
   const ACCOUNT_NAME = user?.va_account_name || "N/A";
   const BANK_NAME = user?.va_bank_name || "N/A";
-  const AMOUNT = "N50,000.00";
 
   React.useEffect(() => {
     const timer = setInterval(() => {

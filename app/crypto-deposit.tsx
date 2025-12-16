@@ -1,6 +1,5 @@
 import { AppColors } from "@/constants/theme";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -9,6 +8,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,78 +20,83 @@ import {
   BottomSheetBackdropProps,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { useCryptoCurrencies } from "@/hooks/api/use-crypto";
+import { CryptoCurrency } from "@/services/api/crypto";
+import { showErrorToast } from "@/utils/toast";
 
-interface CryptoWallet {
+interface Network {
   id: string;
   name: string;
-  symbol: string;
-  price: string;
-  change: string;
-  changeColor: string;
-  icon: any;
-  color: string;
 }
 
-const cryptoWallets: CryptoWallet[] = [
-  {
-    id: "1",
-    name: "Bitcoin",
-    symbol: "BTC",
-    price: "$45,230.50",
-    change: "+2.45%",
-    changeColor: AppColors.green,
-    icon: require("@/assets/images/bitcoin.png"),
-    color: AppColors.orange,
-  },
-  {
-    id: "2",
-    name: "Ethereum",
-    symbol: "ETH",
-    price: "$2,456.80",
-    change: "+1.23%",
-    changeColor: AppColors.green,
-    icon: require("@/assets/images/eth.png"),
-    color: AppColors.blue,
-  },
-  {
-    id: "3",
-    name: "Tether",
-    symbol: "USDT",
-    price: "$1.00",
-    change: "0.00%",
-    changeColor: AppColors.textSecondary,
-    icon: require("@/assets/images/usdt.png"),
-    color: AppColors.green,
-  },
-  {
-    id: "4",
-    name: "Binance Wallet",
-    symbol: "BNB",
-    price: "$1743.23",
-    change: "-1.28%",
-    changeColor: AppColors.red,
-    icon: require("@/assets/images/bitcoin.png"),
-    color: AppColors.orange,
-  },
-  {
-    id: "5",
-    name: "Notcoin",
-    symbol: "NOT",
-    price: "$16.25",
-    change: "+3.00%",
-    changeColor: AppColors.green,
-    icon: require("@/assets/images/bitcoin.png"),
-    color: AppColors.orange,
-  },
-];
+const filterOptions = ["BTC", "USDT", "ETC"];
+
+// Helper function to get crypto icon color
+const getCryptoColor = (symbol: string): string => {
+  const colors: { [key: string]: string } = {
+    BTC: AppColors.orange,
+    ETH: AppColors.blue,
+    USDT: AppColors.green,
+    BNB: AppColors.orange,
+    SOL: AppColors.purple || AppColors.blue,
+    TRX: AppColors.red,
+    NOT: AppColors.orange,
+  };
+  return colors[symbol.toUpperCase()] || AppColors.primary;
+};
+
+// Helper function to get crypto icon
+const getCryptoIcon = (symbol: string) => {
+  const icons: { [key: string]: any } = {
+    BTC: require("@/assets/images/bitcoin.png"),
+    ETH: require("@/assets/images/eth.png"),
+    USDT: require("@/assets/images/usdt.png"),
+  };
+  return icons[symbol.toUpperCase()] || require("@/assets/images/bitcoin.png");
+};
 
 export default function CryptoDepositScreen() {
   const router = useRouter();
-  const [selectedWallet, setSelectedWallet] = useState<CryptoWallet>(
-    cryptoWallets[0]
-  );
+  const { data: currenciesData, isLoading, error } = useCryptoCurrencies();
+  const [selectedCurrency, setSelectedCurrency] = useState<CryptoCurrency | null>(null);
+  const [selectedNetworkName, setSelectedNetworkName] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["70%", "90%"], []);
+
+  // Extract networks from API data
+  const networks = useMemo(() => {
+    if (!currenciesData?.networks) return [];
+    return Object.keys(currenciesData.networks).map((name) => ({
+      id: name.toLowerCase().replace(/\s+/g, "-"),
+      name,
+    }));
+  }, [currenciesData]);
+
+  // Get currencies for selected network
+  const networkCurrencies = useMemo(() => {
+    if (!currenciesData?.networks || !selectedNetworkName) return [];
+    return currenciesData.networks[selectedNetworkName] || [];
+  }, [currenciesData, selectedNetworkName]);
+
+  // Set default selections when data loads
+  React.useEffect(() => {
+    if (networks.length > 0 && !selectedNetworkName) {
+      setSelectedNetworkName(networks[0].name);
+    }
+    if (networkCurrencies.length > 0 && !selectedCurrency) {
+      setSelectedCurrency(networkCurrencies[0]);
+    }
+  }, [networks, networkCurrencies, selectedNetworkName, selectedCurrency]);
+
+  // Format price
+  const formatPrice = (rate: number) => {
+    return `$${new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(rate)}`;
+  };
 
   const BackDrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -109,10 +114,61 @@ export default function CryptoDepositScreen() {
     bottomSheetRef.current?.present();
   };
 
-  const handleSelectWallet = (wallet: CryptoWallet) => {
-    setSelectedWallet(wallet);
+  const handleSelectCurrency = (currency: CryptoCurrency) => {
+    setSelectedCurrency(currency);
+    // Find which network this currency belongs to
+    if (currenciesData?.networks) {
+      for (const [networkName, currencies] of Object.entries(currenciesData.networks)) {
+        if (currencies.some((c) => c.id === currency.id)) {
+          setSelectedNetworkName(networkName);
+          break;
+        }
+      }
+    }
     bottomSheetRef.current?.dismiss();
   };
+
+  const handleSelectNetwork = (networkName: string) => {
+    setSelectedNetworkName(networkName);
+    // Select first currency from the network if none selected
+    const currencies = currenciesData?.networks[networkName] || [];
+    if (currencies.length > 0 && (!selectedCurrency || selectedCurrency.id !== currencies[0].id)) {
+      setSelectedCurrency(currencies[0]);
+    }
+  };
+
+  // Filter currencies based on search and filter
+  const filteredCurrencies = useMemo(() => {
+    let filtered = networkCurrencies;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (currency) =>
+          currency.name.toLowerCase().includes(query) ||
+          currency.symbol.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply symbol filter
+    if (selectedFilter) {
+      filtered = filtered.filter(
+        (currency) => currency.symbol === selectedFilter
+      );
+    }
+
+    return filtered;
+  }, [networkCurrencies, searchQuery, selectedFilter]);
+
+  // Get all unique symbols for filter buttons
+  const availableFilters = useMemo(() => {
+    const symbols = new Set<string>();
+    networkCurrencies.forEach((currency) => {
+      symbols.add(currency.symbol);
+    });
+    return Array.from(symbols).slice(0, 3); // Limit to 3 filters
+  }, [networkCurrencies]);
 
   return (
     <View style={styles.container}>
@@ -143,39 +199,95 @@ export default function CryptoDepositScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.walletCard}
-            onPress={handleOpenSheet}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.walletIcon, { backgroundColor: selectedWallet.color }]}>
-              <Image
-                source={selectedWallet.icon}
-                style={styles.walletIconImage}
-                contentFit="contain"
-              />
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={AppColors.primary} />
             </View>
-            <View style={styles.walletInfo}>
-              <Text style={styles.walletName}>{selectedWallet.name}</Text>
-              <Text style={styles.walletSymbol}>{selectedWallet.symbol}</Text>
+          ) : selectedCurrency ? (
+            <TouchableOpacity
+              style={styles.walletCard}
+              onPress={handleOpenSheet}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.walletIcon, { backgroundColor: getCryptoColor(selectedCurrency.symbol) }]}>
+                <Image
+                  source={getCryptoIcon(selectedCurrency.symbol)}
+                  style={styles.walletIconImage}
+                  contentFit="contain"
+                />
+              </View>
+              <View style={styles.walletInfo}>
+                <Text style={styles.walletName}>{selectedCurrency.name}</Text>
+                <Text style={styles.walletSymbol}>{selectedCurrency.symbol}</Text>
+              </View>
+              <View style={styles.walletPrice}>
+                <Text style={styles.walletPriceValue}>
+                  {formatPrice(selectedCurrency.rate_usd)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>No currency selected</Text>
             </View>
-            <View style={styles.walletPrice}>
-              <Text style={styles.walletPriceValue}>{selectedWallet.price}</Text>
-              <Text
-                style={[
-                  styles.walletPriceChange,
-                  { color: selectedWallet.changeColor },
-                ]}
-              >
-                {selectedWallet.change}
-              </Text>
+          )}
+        </View>
+
+        {/* Choose Network Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Choose Network</Text>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={AppColors.primary} />
             </View>
-          </TouchableOpacity>
+          ) : (
+            <View style={styles.networkContainer}>
+              {networks.map((network) => (
+                <TouchableOpacity
+                  key={network.id}
+                  style={[
+                    styles.networkTag,
+                    selectedNetworkName === network.name && styles.networkTagSelected,
+                  ]}
+                  onPress={() => handleSelectNetwork(network.name)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.networkTagText,
+                      selectedNetworkName === network.name &&
+                        styles.networkTagTextSelected,
+                    ]}
+                  >
+                    {network.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <Button
           title="Continue"
-          onPress={() => router.push("/btc-deposit")}
+          onPress={() => {
+            if (!selectedCurrency) {
+              showErrorToast({ message: "Please select a currency" });
+              return;
+            }
+            router.push({
+              pathname: "/btc-deposit",
+              params: {
+                currencyId: selectedCurrency.id.toString(),
+                wallet: JSON.stringify({
+                  id: selectedCurrency.id,
+                  name: selectedCurrency.name,
+                  symbol: selectedCurrency.symbol,
+                }),
+                network: selectedNetworkName,
+              },
+            });
+          }}
+          disabled={!selectedCurrency || isLoading}
           style={styles.button}
         />
       </ScrollView>
@@ -198,52 +310,110 @@ export default function CryptoDepositScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={styles.walletList}
-          >
-            {cryptoWallets.map((wallet) => (
-              <TouchableOpacity
-                key={wallet.id}
-                style={[
-                  styles.walletListItem,
-                  selectedWallet.id === wallet.id && styles.walletListItemSelected,
-                ]}
-                onPress={() => handleSelectWallet(wallet)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.walletIcon, { backgroundColor: wallet.color }]}>
-                  <Image
-                    source={wallet.icon}
-                    style={styles.walletIconImage}
-                    contentFit="contain"
-                  />
-                </View>
-                <View style={styles.walletInfo}>
-                  <Text style={styles.walletName}>{wallet.name}</Text>
-                  <Text style={styles.walletSymbol}>{wallet.symbol}</Text>
-                </View>
-                <View style={styles.walletPrice}>
-                  <Text style={styles.walletPriceValue}>{wallet.price}</Text>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Input
+              placeholder="Search......"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              leftIcon={
+                <Ionicons
+                  name="search-outline"
+                  size={20}
+                  color={AppColors.textSecondary}
+                />
+              }
+            />
+          </View>
+
+          {/* Filter Buttons */}
+          {availableFilters.length > 0 && (
+            <View style={styles.filterContainer}>
+              {availableFilters.map((filter) => (
+                <TouchableOpacity
+                  key={filter}
+                  style={[
+                    styles.filterButton,
+                    selectedFilter === filter && styles.filterButtonActive,
+                  ]}
+                  onPress={() =>
+                    setSelectedFilter(selectedFilter === filter ? null : filter)
+                  }
+                  activeOpacity={0.8}
+                >
                   <Text
                     style={[
-                      styles.walletPriceChange,
-                      { color: wallet.changeColor },
+                      styles.filterButtonText,
+                      selectedFilter === filter && styles.filterButtonTextActive,
                     ]}
                   >
-                    {wallet.change}
+                    {filter}
                   </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={AppColors.primary} />
+            </View>
+          ) : error ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Failed to load currencies</Text>
+            </View>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={styles.walletList}
+            >
+              {filteredCurrencies.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No currencies found</Text>
                 </View>
-                {selectedWallet.id === wallet.id && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={24}
-                    color={AppColors.primary}
-                  />
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+              ) : (
+                filteredCurrencies.map((currency) => (
+                  <TouchableOpacity
+                    key={currency.id}
+                    style={[
+                      styles.walletListItem,
+                      selectedCurrency?.id === currency.id && styles.walletListItemSelected,
+                    ]}
+                    onPress={() => handleSelectCurrency(currency)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.walletIcon, { backgroundColor: getCryptoColor(currency.symbol) }]}>
+                      <Image
+                        source={getCryptoIcon(currency.symbol)}
+                        style={styles.walletIconImage}
+                        contentFit="contain"
+                      />
+                    </View>
+                    <View style={styles.walletInfo}>
+                      <Text style={styles.walletName}>{currency.name}</Text>
+                      <Text style={styles.walletSymbol}>{currency.symbol}</Text>
+                    </View>
+                    <View style={styles.walletPrice}>
+                      <Text style={styles.walletPriceValue}>
+                        {formatPrice(currency.rate_usd)}
+                      </Text>
+                    </View>
+                    {selectedCurrency?.id === currency.id && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color={AppColors.primary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
+              {filteredCurrencies.length > 0 && (
+                <Text style={styles.swipeHint}>Swap up for all Wallet</Text>
+              )}
+            </ScrollView>
+          )}
         </BottomSheetView>
       </BottomSheetModal>
     </View>
@@ -372,6 +542,98 @@ const styles = StyleSheet.create({
   walletListItemSelected: {
     borderColor: AppColors.primary,
     borderWidth: 2,
+  },
+  networkContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  networkTag: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  networkTagSelected: {
+    backgroundColor: AppColors.primary + "20",
+    borderColor: AppColors.primary,
+  },
+  networkTagText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    fontWeight: "500",
+  },
+  networkTagTextSelected: {
+    color: AppColors.primary,
+    fontWeight: "600",
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInput: {
+    marginBottom: 0,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  filterButtonActive: {
+    backgroundColor: AppColors.primary + "20",
+    borderColor: AppColors.primary,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    fontWeight: "500",
+  },
+  filterButtonTextActive: {
+    color: AppColors.primary,
+    fontWeight: "600",
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  swipeHint: {
+    fontSize: 12,
+    color: AppColors.textSecondary,
+    textAlign: "center",
+    marginTop: 16,
+    marginBottom: 8,
+    opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  errorText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    textAlign: "center",
   },
 });
 

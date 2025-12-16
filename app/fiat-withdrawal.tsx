@@ -1,4 +1,3 @@
-import LoadingScreen from "@/app/loading";
 import Error from "@/components/error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,11 +269,12 @@ export default function FiatWithdrawalScreen() {
                 </View>
                 <View style={styles.accountInfo}>
                   <Text style={styles.accountName}>{selectedBank.name}</Text>
-                  <Text style={styles.accountNumber}>{selectedBank.code}</Text>
                 </View>
               </>
             ) : (
-              <Text style={styles.placeholderText}>Select a bank</Text>
+              <Text style={styles.placeholderText}>
+                {isLoadingBanks ? "Loading..." : "Select a bank"}
+              </Text>
             )}
             <Ionicons
               name="chevron-forward"
@@ -331,7 +331,7 @@ export default function FiatWithdrawalScreen() {
 
       {/* Modal for Account Selection */}
       <Modal
-        visible={isModalVisible}
+        visible={isModalVisible && !isLoadingBanks}
         animationType="slide"
         transparent={true}
         onRequestClose={handleCloseModal}
@@ -357,7 +357,7 @@ export default function FiatWithdrawalScreen() {
               <Input
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search banks or bank code..."
+                placeholder="Search banks..."
                 style={styles.searchInput}
                 placeholderTextColor={AppColors.textSecondary}
               />
@@ -365,9 +365,7 @@ export default function FiatWithdrawalScreen() {
 
             {/* Bank List Container */}
             <View style={styles.bankListContainer}>
-              {isLoadingBanks ? (
-                <LoadingScreen />
-              ) : banksError ? (
+              {banksError ? (
                 <Error message="Failed to load banks" onRetry={() => {}} />
               ) : (
                 <FlatList

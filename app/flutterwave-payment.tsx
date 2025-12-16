@@ -26,7 +26,7 @@ export default function FlutterwavePaymentScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-  const [webViewLoading, setWebViewLoading] = useState(true);
+  const [, setWebViewLoading] = useState(true);
   const webViewRef = useRef<WebView>(null);
 
   const amount = (params.amount as string) || "0";
@@ -93,24 +93,70 @@ export default function FlutterwavePaymentScreen() {
     }
   };
 
+  // Helper function to check if URL indicates cancelled payment
+  const isPaymentCancelled = (url: string) => {
+    if (!url) return false;
+
+    const cancelledIndicators = [
+      "cancelled",
+      "cancel",
+      "status=cancelled",
+      "status=cancel",
+      "error=cancelled",
+      "user_cancelled",
+    ];
+
+    return cancelledIndicators.some((indicator) =>
+      url.toLowerCase().includes(indicator.toLowerCase())
+    );
+  };
+
+  // Helper function to check if URL indicates failed payment
+  const isPaymentFailed = (url: string) => {
+    if (!url) return false;
+
+    const failedIndicators = [
+      "failed",
+      "failure",
+      "status=failed",
+      "status=failure",
+      "error=failed",
+    ];
+
+    return failedIndicators.some((indicator) =>
+      url.toLowerCase().includes(indicator.toLowerCase())
+    );
+  };
+
   // Helper function to check if URL indicates successful payment
   const isPaymentSuccess = (url: string) => {
     if (!url) return false;
 
-    // Check for callback URL or success indicators
+    // First check if it's cancelled or failed
+    if (isPaymentCancelled(url) || isPaymentFailed(url)) {
+      return false;
+    }
+
+    // Check for explicit success indicators
     const successIndicators = [
-      redirectUrl,
-      "payment-callback",
-      "success",
-      "callback",
       "status=successful",
       "status=success",
-      "tx_ref",
+      "status=completed",
+      "transaction_id",
+      "flw_ref",
     ];
 
-    return successIndicators.some((indicator) =>
+    // Check if URL contains redirect URL AND has success indicators
+    const hasRedirectUrl = url
+      .toLowerCase()
+      .includes(redirectUrl.toLowerCase());
+    const hasSuccessIndicator = successIndicators.some((indicator) =>
       url.toLowerCase().includes(indicator.toLowerCase())
     );
+
+    // Only return true if we have both redirect URL and success indicator
+    // OR if it's the exact redirect URL (Flutterwave will append status params)
+    return hasRedirectUrl && (hasSuccessIndicator || url === redirectUrl);
   };
 
   // Handle successful payment redirect
@@ -129,12 +175,36 @@ export default function FlutterwavePaymentScreen() {
     });
   };
 
+  // Handle cancelled payment
+  const handlePaymentCancelled = () => {
+    setShowWebView(false);
+    setPaymentUrl(null);
+    showErrorToast({
+      message: "Payment was cancelled",
+    });
+    router.back();
+  };
+
+  // Handle failed payment
+  const handlePaymentFailed = () => {
+    setShowWebView(false);
+    setPaymentUrl(null);
+    showErrorToast({
+      message: "Payment failed. Please try again.",
+    });
+    router.back();
+  };
+
   // Handle WebView navigation state changes
   const handleNavigationStateChange = (navState: any) => {
     const { url } = navState;
 
-    // Check if payment was successful
-    if (isPaymentSuccess(url)) {
+    // Check payment status in order: cancelled -> failed -> success
+    if (isPaymentCancelled(url)) {
+      handlePaymentCancelled();
+    } else if (isPaymentFailed(url)) {
+      handlePaymentFailed();
+    } else if (isPaymentSuccess(url)) {
       handlePaymentSuccess();
     }
   };
@@ -146,15 +216,20 @@ export default function FlutterwavePaymentScreen() {
 
     console.warn("WebView error: ", nativeEvent);
 
-    // Check if the error is actually a successful payment redirect
-    // Sometimes the callback URL fails to load but payment was successful
-    if (isPaymentSuccess(errorUrl)) {
-      // This is likely a successful payment, redirect to success page
+    // Check payment status - sometimes errors occur during redirects
+    if (isPaymentCancelled(errorUrl)) {
+      handlePaymentCancelled();
+      return;
+    } else if (isPaymentFailed(errorUrl)) {
+      handlePaymentFailed();
+      return;
+    } else if (isPaymentSuccess(errorUrl)) {
+      // Sometimes the callback URL fails to load but payment was successful
       handlePaymentSuccess();
       return;
     }
 
-    // Only show error if it's not a callback/success URL
+    // Only show error if it's not a payment status URL
     showErrorToast({
       message: "Failed to load payment page. Please try again.",
     });
@@ -167,8 +242,8 @@ export default function FlutterwavePaymentScreen() {
     setPaymentUrl(null);
   };
 
-  // If WebView should be shown, display it
   if (showWebView && paymentUrl) {
+    // If WebView should be shown, display it
     return (
       <SafeAreaView style={styles.webViewContainer} edges={["top"]}>
         <StatusBar style="light" />
@@ -192,9 +267,13 @@ export default function FlutterwavePaymentScreen() {
           onLoadStart={() => setWebViewLoading(true)}
           onLoadEnd={(syntheticEvent) => {
             setWebViewLoading(false);
-            // Check if the loaded URL indicates successful payment
+            // Check payment status
             const url = syntheticEvent.nativeEvent?.url || "";
-            if (isPaymentSuccess(url)) {
+            if (isPaymentCancelled(url)) {
+              handlePaymentCancelled();
+            } else if (isPaymentFailed(url)) {
+              handlePaymentFailed();
+            } else if (isPaymentSuccess(url)) {
               handlePaymentSuccess();
             }
           }}

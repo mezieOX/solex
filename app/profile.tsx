@@ -6,12 +6,12 @@ import { showErrorToast, showInfoToast, showSuccessToast } from "@/utils/toast";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import * as ClipboardLib from "expo-clipboard";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -141,9 +141,14 @@ export default function ProfileScreen() {
       label: "Account Number",
       value: user?.va_account_number || "N/A",
       showCopy: !!user?.va_account_number,
-      onPress: () =>
-        user?.va_account_number &&
-        handleCopy(user.va_account_number, "Account Number"),
+      onPress: () => {
+        if (user?.va_account_number) {
+          handleCopy(user.va_account_number, "Account Number");
+        } else {
+          // Navigate to virtual account creation screen
+          router.push("/virtual-account");
+        }
+      },
     },
     {
       label: "Account Level",
@@ -217,7 +222,11 @@ export default function ProfileScreen() {
               />
             ) : (
               <View style={styles.profileImagePlaceholder}>
-                <Ionicons name="person" size={60} color={AppColors.text} />
+                <Image
+                  source={require("@/assets/images/no-user-img.png")}
+                  style={styles.profileImage}
+                  contentFit="cover"
+                />
               </View>
             )}
             <View style={styles.profileImageBorder} />

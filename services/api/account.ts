@@ -61,4 +61,29 @@ export const accountApi = {
     );
     return response;
   },
+
+  /**
+   * Generate virtual account
+   * @param nin - National Identification Number
+   */
+  generateVirtualAccount: async (
+    nin: string
+  ): Promise<ApiResponse<VirtualAccountData>> => {
+    const formData = new FormData();
+    formData.append("nin", nin);
+
+    const response = await apiClient.post<ApiResponse<VirtualAccountData>>(
+      "/account/virtual-account",
+      formData
+    );
+    return response;
+  },
 };
+
+export interface VirtualAccountData {
+  bank_name: string;
+  account_number: string;
+  flw_ref: string;
+  order_ref: string;
+  account_status: string;
+}

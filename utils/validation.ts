@@ -172,6 +172,17 @@ export const createPasswordSchema = yup.object().shape({
 });
 
 /**
+ * NIN (National Identification Number) validation schema
+ */
+export const ninSchema = yup.object().shape({
+  nin: yup
+    .string()
+    .required("NIN is required")
+    .matches(/^\d{11}$/, "NIN must be exactly 11 digits")
+    .trim(),
+});
+
+/**
  * Helper function to format Yup validation errors
  */
 export const formatValidationError = (

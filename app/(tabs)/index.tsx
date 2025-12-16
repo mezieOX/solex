@@ -10,6 +10,7 @@ import { AppColors } from "@/constants/theme";
 import { useUser } from "@/hooks/api/use-auth";
 import { useCryptoPrices, type CoinGeckoPrice } from "@/hooks/api/use-crypto";
 import { useDashboard } from "@/hooks/api/use-dashboard";
+import { useNotifications } from "@/hooks/api/use-notifications";
 import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -48,6 +49,23 @@ export default function HomeScreen() {
     "usd",
     30000
   ); // Refetch every 30 seconds
+  const { data: notificationsData } = useNotifications();
+
+  // Calculate unread notification count
+  const unreadCount = useMemo(() => {
+    if (!notificationsData?.notifications) return 0;
+    const unread = notificationsData.notifications.filter(
+      (notification) =>
+        notification.read_at === null || notification.read_at === undefined
+    );
+    console.log("Total notifications:", notificationsData.notifications.length);
+    console.log("Unread count:", unread.length);
+    console.log(
+      "Unread notifications:",
+      unread.map((n) => ({ id: n.id, read_at: n.read_at }))
+    );
+    return unread.length;
+  }, [notificationsData]);
   const [showBalance, setShowBalance] = useState(true);
   const [showFiatBalance, setShowFiatBalance] = useState(true);
 
@@ -301,17 +319,25 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.greeting}>Hi, {userName}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push("/notifications")}>
+        <TouchableOpacity
+          onPress={() => router.push("/notifications")}
+          style={styles.notificationButton}
+        >
           <Ionicons
             name="notifications-outline"
             size={24}
             color={AppColors.text}
           />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
-      {/* {allLoader ? (
-        <LoadingScreen style={{ minHeight: "100%" }} />
-      ) : ( */}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -335,7 +361,7 @@ export default function HomeScreen() {
               <Text style={styles.balanceAmountCrypto}>
                 {showBalance ? (
                   isLoadingDashboard ? (
-                    <ActivityIndicator size={30} color={AppColors.primary} />
+                    <ActivityIndicator size={32} color={AppColors.text} />
                   ) : (
                     "$250.00"
                   )
@@ -516,8 +542,7 @@ export default function HomeScreen() {
           } else {
             // Withdrawal mode
             if (walletType === "crypto") {
-              // Navigate to exchange crypto for crypto withdrawal
-              router.push("/exchange-crypto");
+              router.push("/crypto-withdrawal");
             } else {
               router.push("/fiat-withdrawal");
             }
@@ -571,6 +596,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "500",
     color: AppColors.text,
+  },
+  notificationButton: {
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    backgroundColor: AppColors.red,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: AppColors.background,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "600",
   },
   quickActionIcon: {
     width: 55,

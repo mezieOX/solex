@@ -10,6 +10,7 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useMemo, useRef } from "react";
@@ -246,7 +247,11 @@ export default function SettingsScreen() {
         {user && (
           <View style={styles.userSection}>
             <View style={styles.avatarContainer}>
-              <Ionicons name="person" size={32} color={AppColors.text} />
+              <Image
+                source={require("@/assets/images/no-user-img.png")}
+                style={styles.avatarContainer}
+                contentFit="cover"
+              />
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{user.name || "User"}</Text>
