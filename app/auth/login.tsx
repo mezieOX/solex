@@ -2,13 +2,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppColors } from "@/constants/theme";
 import { useLogin } from "@/hooks/api/use-auth";
+import {
+  authenticateWithBiometric,
+  getBiometricCredentials,
+  getBiometricType,
+  isBiometricAvailable,
+  isBiometricEnabled,
+} from "@/utils/biometric";
+import { setSecureItem } from "@/utils/secure-storage";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { formatValidationError, loginSchema } from "@/utils/validation";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -27,6 +36,86 @@ export default function LoginScreen() {
     email?: string;
     password?: string;
   }>({});
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricType, setBiometricType] = useState("Biometric");
+
+  // Check biometric availability and status
+  useEffect(() => {
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const enabled = await isBiometricEnabled();
+      const type = await getBiometricType();
+      setBiometricAvailable(available);
+      setBiometricEnabled(enabled);
+      setBiometricType(type);
+    };
+    checkBiometric();
+  }, []);
+
+  // Load saved email only once when screen first opens (before user types anything)
+  useEffect(() => {
+    const loadSavedEmail = async () => {
+      try {
+        const savedEmail = await AsyncStorage.getItem("saved_email");
+        // Only set email if email field is currently empty (initial load only)
+        if (savedEmail) {
+          setEmail((currentEmail) => {
+            // Only set if email is empty (user hasn't typed anything yet)
+            return currentEmail || savedEmail;
+          });
+        }
+      } catch (error) {
+        console.error("Error loading saved email:", error);
+      }
+    };
+
+    loadSavedEmail();
+  }, []); // Empty array ensures this runs only once on mount, not when email changes
+
+  const handleBiometricLogin = async () => {
+    try {
+      // Authenticate with biometric
+      const authenticated = await authenticateWithBiometric();
+      if (!authenticated) {
+        showErrorToast({
+          message: "Biometric authentication failed",
+        });
+        return;
+      }
+
+      // Get saved credentials
+      const credentials = await getBiometricCredentials();
+      if (!credentials.email || !credentials.password) {
+        showErrorToast({
+          message: "No saved credentials found. Please login manually first.",
+        });
+        return;
+      }
+
+      // Login with saved credentials
+      const result = await login.mutateAsync({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (result.access_token) {
+        showSuccessToast({
+          message: "Login successful!",
+        });
+        await AsyncStorage.setItem("saved_email", credentials.email);
+        router.replace("/(tabs)");
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.message ||
+        error?.data?.message ||
+        "Biometric login failed. Please try again.";
+      showErrorToast({
+        message: errorMessage,
+      });
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -43,7 +132,7 @@ export default function LoginScreen() {
 
       // Submit login
       const result = await login.mutateAsync({
-        email: formData.email,
+        email: formData.email || email,
         password: formData.password,
       });
 
@@ -51,6 +140,9 @@ export default function LoginScreen() {
         showSuccessToast({
           message: "Login successful!",
         });
+        await AsyncStorage.setItem("saved_email", formData.email);
+        // Temporarily store password for biometric setup using secure storage
+        await setSecureItem("temp_password", formData.password);
         // Navigate to home screen
         router.replace("/(tabs)");
       }
@@ -176,6 +268,34 @@ export default function LoginScreen() {
             disabled={login.isPending}
           />
 
+          {/* Biometric Login Button */}
+          {biometricAvailable && biometricEnabled && (
+            <TouchableOpacity
+              style={styles.biometricButton}
+              onPress={handleBiometricLogin}
+              disabled={login.isPending}
+            >
+              <Ionicons
+                name={
+                  biometricType === "Face ID" ||
+                  biometricType === "Face Recognition"
+                    ? "scan-outline"
+                    : "finger-print-outline"
+                }
+                size={32}
+                color={AppColors.primary}
+              />
+              <Text style={styles.biometricText}>
+                Login with {biometricType}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <View style={styles.dividerLine} />
+          </View>
+
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => router.push("/auth/signup")}>
@@ -183,13 +303,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.socialButtons}>
+          {/* <View style={styles.socialButtons}>
             <TouchableOpacity style={styles.socialButton}>
               <Image
                 source={require("@/assets/images/apple.png")}
@@ -204,7 +318,7 @@ export default function LoginScreen() {
                 contentFit="contain"
               />
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
       </ScrollView>
     </View>
@@ -314,5 +428,23 @@ const styles = StyleSheet.create({
   socialButtonImage: {
     width: 30,
     height: 30,
+  },
+  biometricButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    marginTop: 16,
+    gap: 12,
+  },
+  biometricText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.text,
   },
 });

@@ -27,6 +27,8 @@ export default function FlutterwavePaymentScreen() {
   const [showWebView, setShowWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [, setWebViewLoading] = useState(true);
+  const [paymentHandled, setPaymentHandled] = useState(false);
+  const [lastUrl, setLastUrl] = useState<string>("");
   const webViewRef = useRef<WebView>(null);
 
   const amount = (params.amount as string) || "0";
@@ -69,6 +71,8 @@ export default function FlutterwavePaymentScreen() {
       });
 
       if (response.payment_link) {
+        // Reset payment handled state for new payment
+        setPaymentHandled(false);
         // Show WebView with payment link
         setPaymentUrl(response.payment_link);
         setShowWebView(true);
@@ -137,30 +141,113 @@ export default function FlutterwavePaymentScreen() {
       return false;
     }
 
-    // Check for explicit success indicators
+    // Check for Flutterwave fallback URL pattern (API callback)
+    const fallbackUrlPattern = "/api/flutterwave/fallback";
+    const hasFallbackUrl = url
+      .toLowerCase()
+      .includes(fallbackUrlPattern.toLowerCase());
+
+    // Check for explicit success indicators in URL or query params
     const successIndicators = [
       "status=successful",
       "status=success",
       "status=completed",
       "transaction_id",
       "flw_ref",
+      "tx_ref",
+      "txid",
+      "success=true",
+      "successful=true",
     ];
 
-    // Check if URL contains redirect URL AND has success indicators
+    // Check if URL contains redirect URL
     const hasRedirectUrl = url
       .toLowerCase()
       .includes(redirectUrl.toLowerCase());
+
+    // Check for success indicators in the URL
     const hasSuccessIndicator = successIndicators.some((indicator) =>
       url.toLowerCase().includes(indicator.toLowerCase())
     );
 
-    // Only return true if we have both redirect URL and success indicator
-    // OR if it's the exact redirect URL (Flutterwave will append status params)
-    return hasRedirectUrl && (hasSuccessIndicator || url === redirectUrl);
+    // Parse URL to check query parameters manually
+    try {
+      // Extract query string from URL
+      const queryString = url.split("?")[1] || "";
+      const params: { [key: string]: string } = {};
+
+      // Parse query parameters manually
+      queryString.split("&").forEach((param) => {
+        const [key, value] = param.split("=");
+        if (key) {
+          params[key.toLowerCase()] = decodeURIComponent(value || "");
+        }
+      });
+
+      // Check query parameters for success indicators
+      const statusParam = params["status"]?.toLowerCase();
+      const hasSuccessParam =
+        statusParam === "successful" ||
+        statusParam === "success" ||
+        statusParam === "completed";
+
+      const hasTransactionId =
+        params.hasOwnProperty("transaction_id") ||
+        params.hasOwnProperty("flw_ref") ||
+        params.hasOwnProperty("tx_ref") ||
+        params.hasOwnProperty("txid");
+
+      // Return true if:
+      // 1. URL contains redirect URL AND has success indicator/param, OR
+      // 2. URL contains redirect URL AND has transaction ID, OR
+      // 3. URL is exactly the redirect URL (Flutterwave redirects here on success)
+      // 4. URL has success indicators even without redirect URL (e.g., fallback URLs)
+      if (hasRedirectUrl) {
+        return (
+          hasSuccessIndicator ||
+          hasSuccessParam ||
+          hasTransactionId ||
+          url === redirectUrl
+        );
+      }
+
+      // Also return true if we have clear success indicators, even without redirect URL
+      // This catches fallback URLs like: https://api.solextrade.co/api/flutterwave/fallback?status=completed
+      if (
+        hasFallbackUrl &&
+        (hasSuccessParam || hasTransactionId || hasSuccessIndicator)
+      ) {
+        return true;
+      }
+      if (hasSuccessParam || (hasTransactionId && hasSuccessIndicator)) {
+        return true;
+      }
+    } catch (e) {
+      // If URL parsing fails, fall back to string matching
+      if (hasRedirectUrl) {
+        return hasSuccessIndicator || url === redirectUrl;
+      }
+      // Also check for success indicators in the URL string
+      if (hasSuccessIndicator) {
+        return true;
+      }
+    }
+
+    // Final check: if URL has success indicators in the string, treat as success
+    // This catches URLs like: .../fallback?status=completed&...
+    if (hasSuccessIndicator) {
+      return true;
+    }
+
+    return false;
   };
 
   // Handle successful payment redirect
   const handlePaymentSuccess = () => {
+    // Prevent multiple calls
+    if (paymentHandled) return;
+
+    setPaymentHandled(true);
     setShowWebView(false);
     setPaymentUrl(null);
     showSuccessToast({
@@ -199,37 +286,90 @@ export default function FlutterwavePaymentScreen() {
   const handleNavigationStateChange = (navState: any) => {
     const { url } = navState;
 
-    // Check payment status in order: cancelled -> failed -> success
-    if (isPaymentCancelled(url)) {
+    if (!url) return;
+
+    // Store the last URL for error handling
+    setLastUrl(url);
+
+    console.log("Navigation state change - URL:", url);
+
+    // If URL contains redirect URL, treat as success immediately
+    // (Flutterwave redirects here after successful payment, even if page fails to load)
+    if (url.toLowerCase().includes(redirectUrl.toLowerCase())) {
+      console.log("Redirect URL detected in navigation - treating as success");
+      handlePaymentSuccess();
+      return;
+    }
+
+    // Check payment status in order: success > cancelled > failed
+    if (isPaymentSuccess(url)) {
+      console.log("Payment success detected");
+      handlePaymentSuccess();
+    } else if (isPaymentCancelled(url)) {
+      console.log("Payment cancelled detected");
       handlePaymentCancelled();
     } else if (isPaymentFailed(url)) {
+      console.log("Payment failed detected");
       handlePaymentFailed();
-    } else if (isPaymentSuccess(url)) {
-      handlePaymentSuccess();
     }
   };
 
   // Handle WebView errors
   const handleWebViewError = (syntheticEvent: any) => {
+    // If payment was already handled, don't process errors
+    if (paymentHandled) {
+      console.log("Payment already handled, ignoring error");
+      return;
+    }
+
     const { nativeEvent } = syntheticEvent;
     const errorUrl = nativeEvent?.url || "";
 
-    console.warn("WebView error: ", nativeEvent);
+    // Use last URL if error URL is empty
+    const urlToCheck = errorUrl || lastUrl;
 
-    // Check payment status - sometimes errors occur during redirects
-    if (isPaymentCancelled(errorUrl)) {
-      handlePaymentCancelled();
-      return;
-    } else if (isPaymentFailed(errorUrl)) {
-      handlePaymentFailed();
-      return;
-    } else if (isPaymentSuccess(errorUrl)) {
-      // Sometimes the callback URL fails to load but payment was successful
+    console.warn("WebView error - Error URL:", errorUrl, "Last URL:", lastUrl);
+
+    // FIRST: Check if error URL contains success indicators (status=completed, etc.)
+    // This catches the fallback URL: https://api.solextrade.co/api/flutterwave/fallback?status=completed
+    if (errorUrl && isPaymentSuccess(errorUrl)) {
+      console.log(
+        "Payment success detected in error URL - treating as success"
+      );
       handlePaymentSuccess();
       return;
     }
 
-    // Only show error if it's not a payment status URL
+    // SECOND: Check if error URL or last URL contains redirect URL - treat as success immediately
+    // (Flutterwave redirects to callback URL after successful payment, which may fail to load)
+    if (
+      urlToCheck &&
+      urlToCheck.toLowerCase().includes(redirectUrl.toLowerCase())
+    ) {
+      console.log(
+        "Redirect URL detected in error/last URL - treating as success"
+      );
+      handlePaymentSuccess();
+      return;
+    }
+
+    // Check payment status on last URL as well
+    // Priority: success > cancelled > failed > error
+    if (isPaymentSuccess(urlToCheck)) {
+      console.log(
+        "Payment success detected in URL to check - treating as success"
+      );
+      handlePaymentSuccess();
+      return;
+    } else if (isPaymentCancelled(errorUrl) || isPaymentCancelled(urlToCheck)) {
+      handlePaymentCancelled();
+      return;
+    } else if (isPaymentFailed(errorUrl) || isPaymentFailed(urlToCheck)) {
+      handlePaymentFailed();
+      return;
+    }
+
+    // Only show error if it's not a payment status URL and not the redirect URL
     showErrorToast({
       message: "Failed to load payment page. Please try again.",
     });
@@ -264,17 +404,35 @@ export default function FlutterwavePaymentScreen() {
           ref={webViewRef}
           source={{ uri: paymentUrl }}
           style={styles.webview}
-          onLoadStart={() => setWebViewLoading(true)}
+          onLoadStart={(syntheticEvent) => {
+            setWebViewLoading(true);
+            // Check URL early when navigation starts
+            const url = syntheticEvent.nativeEvent?.url || "";
+            if (url && url.toLowerCase().includes(redirectUrl.toLowerCase())) {
+              // Redirect URL detected - payment likely successful
+              handlePaymentSuccess();
+            }
+          }}
           onLoadEnd={(syntheticEvent) => {
             setWebViewLoading(false);
             // Check payment status
             const url = syntheticEvent.nativeEvent?.url || "";
-            if (isPaymentCancelled(url)) {
+
+            if (!url) return;
+
+            // If URL contains redirect URL, treat as success immediately
+            if (url.toLowerCase().includes(redirectUrl.toLowerCase())) {
+              handlePaymentSuccess();
+              return;
+            }
+
+            // Priority: success > cancelled > failed
+            if (isPaymentSuccess(url)) {
+              handlePaymentSuccess();
+            } else if (isPaymentCancelled(url)) {
               handlePaymentCancelled();
             } else if (isPaymentFailed(url)) {
               handlePaymentFailed();
-            } else if (isPaymentSuccess(url)) {
-              handlePaymentSuccess();
             }
           }}
           onNavigationStateChange={handleNavigationStateChange}

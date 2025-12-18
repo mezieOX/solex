@@ -1,10 +1,13 @@
-import { AppColors } from "@/constants/theme";
 import { Button } from "@/components/ui/button";
+import { AppColors } from "@/constants/theme";
+import { useCryptoDepositAddress } from "@/hooks/api/use-crypto";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
+import * as ClipboardLib from "expo-clipboard";
 import { Image } from "expo-image";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -13,9 +16,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as ClipboardLib from "expo-clipboard";
-import { useCryptoDepositAddress } from "@/hooks/api/use-crypto";
-import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import QRCode from "react-native-qrcode-svg";
 
 // Helper function to get crypto icon color
@@ -25,7 +25,7 @@ const getCryptoColor = (symbol: string): string => {
     ETH: AppColors.blue,
     USDT: AppColors.green,
     BNB: AppColors.orange,
-    SOL: AppColors.purple || AppColors.blue,
+    SOL: AppColors.blue,
     TRX: AppColors.red,
     NOT: AppColors.orange,
   };
@@ -69,8 +69,11 @@ export default function BTCDepositScreen() {
   }, [params.wallet]);
 
   // Fetch deposit address from API
-  const { data: addressData, isLoading: isLoadingAddress, error: addressError } =
-    useCryptoDepositAddress(currencyId);
+  const {
+    data: addressData,
+    isLoading: isLoadingAddress,
+    error: addressError,
+  } = useCryptoDepositAddress(currencyId);
 
   const depositAddress = addressData?.address || "";
   const minDeposit = addressData?.minimum_deposit || "0.00";
@@ -83,7 +86,9 @@ export default function BTCDepositScreen() {
     }
     await ClipboardLib.setStringAsync(depositAddress);
     setCopied(true);
-    showSuccessToast({ message: `${selectedWallet.symbol} address copied to clipboard` });
+    showSuccessToast({
+      message: `${selectedWallet.symbol} address copied to clipboard`,
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -95,7 +100,7 @@ export default function BTCDepositScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={AppColors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>BTC Deposit</Text>
+        <Text style={styles.headerTitle}>{selectedWallet.symbol} Deposit</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -105,7 +110,12 @@ export default function BTCDepositScreen() {
       >
         {/* Selected Crypto */}
         <View style={styles.cryptoInfo}>
-          <View style={[styles.cryptoIcon, { backgroundColor: getCryptoColor(selectedWallet.symbol) }]}>
+          <View
+            style={[
+              styles.cryptoIcon,
+              { backgroundColor: getCryptoColor(selectedWallet.symbol) },
+            ]}
+          >
             <Image
               source={getCryptoIcon(selectedWallet.symbol)}
               style={styles.cryptoIconImage}
@@ -131,9 +141,15 @@ export default function BTCDepositScreen() {
           </View>
         ) : addressError || !depositAddress ? (
           <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle-outline" size={48} color={AppColors.error} />
+            <Ionicons
+              name="alert-circle-outline"
+              size={48}
+              color={AppColors.error}
+            />
             <Text style={styles.errorText}>
-              {addressError ? "Failed to load deposit address" : "Address not available"}
+              {addressError
+                ? "Failed to load deposit address"
+                : "Address not available"}
             </Text>
             <Button
               title="Retry"
@@ -148,7 +164,13 @@ export default function BTCDepositScreen() {
                 Scan the QR code to get receiver address
               </Text>
               <View style={styles.qrCodeContainer}>
-                <QRCode value={depositAddress} size={210} color="#000" backgroundColor="#fff" />
+                <QRCode
+                  value={depositAddress}
+                  size={210}
+                  color="#000"
+                  logo={require("@/assets/images/app-logo.png")}
+                  logoBorderRadius={500}
+                />
               </View>
             </View>
 
@@ -191,7 +213,10 @@ export default function BTCDepositScreen() {
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Deposit Arrival</Text>
                   <Text style={styles.infoValue}>
-                    {confirmationsRequired} {confirmationsRequired === 1 ? "Confirmation" : "Confirmations"}
+                    {confirmationsRequired}{" "}
+                    {confirmationsRequired === 1
+                      ? "Confirmation"
+                      : "Confirmations"}
                   </Text>
                 </View>
               )}
@@ -390,4 +415,3 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-

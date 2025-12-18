@@ -78,6 +78,20 @@ export const accountApi = {
     );
     return response;
   },
+
+  /**
+   * Update FCM token
+   */
+  updateFcmToken: async (token: string): Promise<ApiResponse<any>> => {
+    const formData = new FormData();
+    formData.append("token", token);
+
+    const response = await apiClient.post<ApiResponse<any>>(
+      "/account/notification/fcm/update",
+      formData
+    );
+    return response;
+  },
 };
 
 export interface VirtualAccountData {

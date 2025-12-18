@@ -225,13 +225,13 @@ export default function SignUpScreen() {
             </Text>
           </View>
 
-          <View style={styles.divider}>
+          {/* <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or continue with</Text>
             <View style={styles.dividerLine} />
-          </View>
+          </View> */}
 
-          <View style={styles.socialButtons}>
+          {/* <View style={styles.socialButtons}>
             <TouchableOpacity style={styles.socialButton}>
               <Image
                 source={require("@/assets/images/apple.png")}
@@ -246,7 +246,7 @@ export default function SignUpScreen() {
                 contentFit="contain"
               />
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
       </ScrollView>
     </View>

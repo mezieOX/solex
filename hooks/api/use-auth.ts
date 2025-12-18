@@ -2,10 +2,12 @@
  * Authentication hooks using TanStack Query
  */
 
+import { accountApi } from "@/services/api/account";
 import { authApi } from "@/services/api/auth";
 import { LoginRequest, SignupRequest } from "@/services/api/types";
 import { clearTokens, saveToken } from "@/utils/token-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getGlobalFcmToken } from "../use-firebase-token";
 
 // Query keys
 export const authKeys = {
@@ -34,10 +36,22 @@ export function useLogin() {
   return useMutation({
     mutationFn: (credentials: LoginRequest) => authApi.login(credentials),
     onSuccess: async (data) => {
-      // Save access token to AsyncStorage
+      // Save access token to secure storage
       await saveToken(data.access_token);
       // Invalidate and refetch user data
       queryClient.setQueryData(authKeys.user(), data.user);
+
+      // Send FCM token to backend if available
+      const fcmToken = getGlobalFcmToken();
+      console.log("🔄 FCM Token:", fcmToken);
+      if (fcmToken) {
+        try {
+          await accountApi.updateFcmToken(fcmToken);
+        } catch (err) {
+          // silently ignore; token can be sent later
+          console.warn("Failed to update FCM token:", err);
+        }
+      }
     },
   });
 }

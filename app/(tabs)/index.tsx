@@ -1,7 +1,11 @@
 import Empty from "@/components/empty";
 import { Card } from "@/components/ui/card";
-import { CryptoIcon } from "@/components/ui/icons/crypto-icon";
-import { ReceiptIcon } from "@/components/ui/icons/receipt-icon";
+import {
+  ActivityIcon,
+  ElementsIcon,
+  MobilepayIcon,
+} from "@/components/ui/icons";
+import { SquareTopUpIcon } from "@/components/ui/icons/square-top-up-icon";
 import { QuickActions } from "@/components/ui/quick-actions";
 import { SectionHeader } from "@/components/ui/section-header";
 import { TransactionItem } from "@/components/ui/transaction-item";
@@ -285,21 +289,25 @@ export default function HomeScreen() {
 
   const quickActionsData = [
     {
-      title: "Crypto Exchange",
-      customIcon: <CryptoIcon size={28} color="#fff" />,
+      title: "Top Up",
+      customIcon: <SquareTopUpIcon size={28} color="#fff" />,
       iconBackgroundColor: AppColors.redAccent,
-      onPress: () => router.push("/exchange-crypto"),
+      onPress: () => {},
     },
     {
-      title: "Gift Card Exchange",
-      icon: "gift-outline" as const,
-      iconColor: "#fff",
+      title: "Transfer",
+      customIcon: <ElementsIcon size={28} color="#fff" />,
       iconBackgroundColor: AppColors.redAccent,
-      onPress: () => router.push("/exchange-giftcard"),
+      onPress: () => {},
     },
     {
       title: "Pay Bills",
-      customIcon: <ReceiptIcon size={32} color="#fff" />,
+      customIcon: <MobilepayIcon size={32} color="#fff" />,
+      iconBackgroundColor: AppColors.redAccent,
+    },
+    {
+      title: "Trade",
+      customIcon: <ActivityIcon size={32} color="#fff" />,
       iconBackgroundColor: AppColors.redAccent,
     },
   ];
@@ -309,7 +317,10 @@ export default function HomeScreen() {
       <StatusBar style="light" />
       {/* Sticky Header */}
       <View style={styles.header}>
-        <View style={styles.profileSection}>
+        <TouchableOpacity
+          onPress={() => router.push("/profile")}
+          style={styles.profileSection}
+        >
           <View style={styles.avatar}>
             <Image
               source={require("@/assets/images/no-user-img.png")}
@@ -317,8 +328,11 @@ export default function HomeScreen() {
               contentFit="cover"
             />
           </View>
-          <Text style={styles.greeting}>Hi, {userName}</Text>
-        </View>
+          <Text style={styles.greeting}>
+            Hi,{" "}
+            {userName?.length > 10 ? userName.slice(0, 10) + "..." : userName}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => router.push("/notifications")}
           style={styles.notificationButton}
@@ -494,8 +508,21 @@ export default function HomeScreen() {
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.section}>
-          <QuickActions title="Quick Action" actions={quickActionsData} />
+        <View
+          style={[
+            styles.section,
+            {
+              paddingHorizontal: 0,
+            },
+          ]}
+        >
+          <QuickActions
+            title="Services"
+            actions={quickActionsData}
+            headerSectionStyle={{
+              paddingHorizontal: 20,
+            }}
+          />
         </View>
 
         {/* Market */}
@@ -504,7 +531,8 @@ export default function HomeScreen() {
             styles.section,
             {
               backgroundColor: AppColors.surface,
-              paddingVertical: 20,
+              paddingVertical: 10,
+              marginTop: -20,
               borderRadius: 16,
             },
           ]}
@@ -602,13 +630,12 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: -6,
-    right: -6,
+    top: -20,
+    right: -10,
     backgroundColor: AppColors.red,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 6,
+    borderRadius: 100,
+    width: 30,
+    height: 30,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,

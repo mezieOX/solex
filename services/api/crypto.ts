@@ -37,6 +37,19 @@ export interface ExchangeRateResponse {
   inverse_rate_crypto: number;
 }
 
+export interface CryptoWithdrawRequest {
+  wallet_id: number;
+  address_to: string;
+  destination_tag?: string;
+  amount: string;
+}
+
+export interface CryptoWithdrawResponse {
+  status: string;
+  reference?: string;
+  [key: string]: any;
+}
+
 export interface SwapRequest {
   from: string;
   to: string;
@@ -90,6 +103,27 @@ export const cryptoApi = {
     const response = await apiClient.get<ApiResponse<ExchangeRateResponse>>(
       "/wallets/crypto/exchange-rate",
       { from, to }
+    );
+    return response.data;
+  },
+
+  /**
+   * Withdraw crypto
+   */
+  withdraw: async (
+    data: CryptoWithdrawRequest
+  ): Promise<CryptoWithdrawResponse> => {
+    const formData = new FormData();
+    formData.append("wallet_id", String(data.wallet_id));
+    formData.append("address_to", data.address_to);
+    formData.append("amount", data.amount);
+    if (data.destination_tag !== undefined) {
+      formData.append("destination_tag", data.destination_tag);
+    }
+
+    const response = await apiClient.post<ApiResponse<CryptoWithdrawResponse>>(
+      "/wallets/crypto/withdraw",
+      formData
     );
     return response.data;
   },

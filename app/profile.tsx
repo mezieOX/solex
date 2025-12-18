@@ -7,6 +7,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import * as ClipboardLib from "expo-clipboard";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -122,11 +123,44 @@ export default function ProfileScreen() {
     });
   };
 
-  const handleChangeProfilePicture = () => {
-    showInfoToast({
-      title: "Change Profile Picture",
-      message: "Profile picture upload functionality coming soon",
-    });
+  const handleChangeProfilePicture = async () => {
+    try {
+      // Ask for media library permission
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        showErrorToast({
+          message: "Permission to access photos is required to change avatar.",
+        });
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      setProfileImage(uri);
+
+      // TODO: upload to backend when API is available
+      showSuccessToast({
+        message: "Profile picture updated",
+      });
+    } catch (error: any) {
+      showErrorToast({
+        message:
+          error?.message ||
+          "Failed to change profile picture. Please try again.",
+      });
+    }
   };
 
   const handleAccountLevelPress = () => {
@@ -137,19 +171,62 @@ export default function ProfileScreen() {
   };
 
   const profileFields: ProfileField[] = [
-    {
-      label: "Account Number",
-      value: user?.va_account_number || "N/A",
-      showCopy: !!user?.va_account_number,
-      onPress: () => {
-        if (user?.va_account_number) {
-          handleCopy(user.va_account_number, "Account Number");
-        } else {
-          // Navigate to virtual account creation screen
-          router.push("/virtual-account");
-        }
-      },
-    },
+    ...(user?.has_account
+      ? [
+          {
+            label: "Bank Name",
+            showCopy: !!user?.va_bank_name,
+            value: user?.va_bank_name || "N/A",
+            onPress: () => {
+              if (user?.va_bank_name) {
+                handleCopy(user.va_bank_name, "Bank Name");
+              } else {
+                // Navigate to virtual account creation screen
+                router.push("/virtual-account");
+              }
+            },
+          },
+          {
+            label: "Account Name",
+            showCopy: !!user?.va_account_name,
+            value: user?.va_account_name || "N/A",
+            onPress: () => {
+              if (user?.va_account_name) {
+                handleCopy(user.va_account_name, "Account Name");
+              } else {
+                // Navigate to virtual account creation screen
+                router.push("/virtual-account");
+              }
+            },
+          },
+          {
+            label: "Account Number",
+            value: user?.va_account_number || "N/A",
+            showCopy: !!user?.va_account_number,
+            onPress: () => {
+              if (user?.va_account_number) {
+                handleCopy(user.va_account_number, "Account Number");
+              } else {
+                // Navigate to virtual account creation screen
+                router.push("/virtual-account");
+              }
+            },
+          },
+        ]
+      : []),
+    ...(!user?.has_account
+      ? [
+          {
+            label: "Create Virtual Account",
+            value: "Create",
+            showChevron: true,
+            valueColor: AppColors.orange,
+            onPress: () => {
+              router.push("/virtual-account");
+            },
+          },
+        ]
+      : []),
     {
       label: "Account Level",
       value: "Lvl 2",
@@ -180,26 +257,12 @@ export default function ProfileScreen() {
         updatePhoneMutation.mutate(user.phone);
       },
     },
-    {
-      label: "Gender",
-      value: "Male", // This would come from user data
-    },
-    {
-      label: "Date of Birth",
-      value: formatDateOfBirth("27/03/1990"), // This would come from user data
-    },
-    {
-      label: "Nickname",
-      value: "motionbyabel1", // This would come from user data
-      showEdit: true,
-      onPress: () => handleEdit("Nickname"),
-    },
-    {
-      label: "Referral Code",
-      value: "125386945", // This would come from user data
-      showCopy: true,
-      onPress: () => handleCopy("125386945", "Referral Code"),
-    },
+    // {
+    //   label: "Referral Code",
+    //   value: "125386945", // This would come from user data
+    //   showCopy: true,
+    //   onPress: () => handleCopy("125386945", "Referral Code"),
+    // },
   ];
 
   return (

@@ -1,6 +1,7 @@
 import { SectionHeader } from "@/components/ui/section-header";
+import { router } from "expo-router";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet, View, ViewStyle } from "react-native";
 import { QuickActionCard } from "./quick-action-card";
 
 interface QuickAction {
@@ -16,29 +17,45 @@ interface QuickActionsProps {
   title?: string;
   actions: QuickAction[];
   style?: any;
+  headerSectionStyle?: ViewStyle;
+  numColumns?: number;
 }
 
 export function QuickActions({
-  title = "Quick Action",
+  title,
   actions,
   style,
+  headerSectionStyle,
+  numColumns = 4,
 }: QuickActionsProps) {
   return (
     <View style={[styles.container, style]}>
-      <SectionHeader title={title} />
-      <View style={styles.actionsContainer}>
-        {actions.map((action, index) => (
+      {title ? (
+        <SectionHeader
+          title={title}
+          actionText="See All"
+          onActionPress={() => router.push("/services")}
+          style={headerSectionStyle}
+        />
+      ) : null}
+      <FlatList
+        data={actions}
+        numColumns={numColumns}
+        keyExtractor={(item, index) => `${item.title}-${index}`}
+        renderItem={({ item }) => (
           <QuickActionCard
-            key={index}
-            title={action.title}
-            icon={action.icon}
-            iconColor={action.iconColor}
-            iconBackgroundColor={action.iconBackgroundColor}
-            customIcon={action.customIcon}
-            onPress={action.onPress}
+            numColumns={numColumns}
+            title={item.title}
+            icon={item.icon}
+            iconColor={item.iconColor}
+            iconBackgroundColor={item.iconBackgroundColor}
+            customIcon={item.customIcon}
+            onPress={item.onPress}
           />
-        ))}
-      </View>
+        )}
+        scrollEnabled={false}
+        contentContainerStyle={styles.actionsContainer}
+      />
     </View>
   );
 }
@@ -48,7 +65,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   actionsContainer: {
-    flexDirection: "row",
-    gap: 12,
+    gap: 0,
   },
 });

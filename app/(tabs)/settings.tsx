@@ -67,6 +67,7 @@ export default function SettingsScreen() {
       showSuccessToast({
         message: "Logged out successfully",
       });
+      // await AsyncStorage.removeItem("saved_email");
       // Small delay to show toast before navigation
       setTimeout(() => {
         router.replace("/auth/login");

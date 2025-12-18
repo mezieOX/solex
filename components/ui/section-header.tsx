@@ -1,20 +1,28 @@
 import { AppColors } from "@/constants/theme";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface SectionHeaderProps {
   title: string;
   actionText?: string;
   onActionPress?: () => void;
+  style?: ViewStyle;
 }
 
 export function SectionHeader({
   title,
   actionText,
   onActionPress,
+  style,
 }: SectionHeaderProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <Text style={styles.title}>{title}</Text>
       {actionText && (
         <TouchableOpacity onPress={onActionPress}>
@@ -43,4 +51,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

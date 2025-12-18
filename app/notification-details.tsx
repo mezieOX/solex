@@ -84,37 +84,6 @@ export default function NotificationDetailsScreen() {
           <Text style={styles.messageLabel}>Message</Text>
           <Text style={styles.messageText}>{notification.message}</Text>
         </View>
-
-        {/* Notification Details */}
-        <View style={styles.detailsSection}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Type</Text>
-            <Text style={styles.detailValue}>{notification.type || "N/A"}</Text>
-          </View>
-
-          <View style={styles.separator} />
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Status</Text>
-            <Text style={styles.detailValue}>
-              {notification.read_at ? "Read" : "Unread"}
-            </Text>
-          </View>
-
-          {notification.data && (
-            <>
-              <View style={styles.separator} />
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Additional Data</Text>
-                <Text style={styles.detailValue}>
-                  {typeof notification.data === "string"
-                    ? notification.data
-                    : JSON.stringify(notification.data, null, 2)}
-                </Text>
-              </View>
-            </>
-          )}
-        </View>
       </ScrollView>
     </View>
   );

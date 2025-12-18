@@ -1,13 +1,137 @@
 import { Button } from "@/components/ui/button";
 import { AppColors } from "@/constants/theme";
+import {
+  authenticateWithBiometric,
+  disableBiometric,
+  enableBiometric,
+  getBiometricType,
+  isBiometricAvailable,
+  isBiometricEnabled,
+} from "@/utils/biometric";
+import { getSecureItem, removeSecureItem } from "@/utils/secure-storage";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 export default function EnableQuickAccessScreen() {
   const router = useRouter();
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState("Biometric");
+  const [isEnabling, setIsEnabling] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(false);
+
+  useEffect(() => {
+    const checkBiometric = async () => {
+      const available = await isBiometricAvailable();
+      const type = await getBiometricType();
+      const enabled = await isBiometricEnabled();
+      setBiometricAvailable(available);
+      setBiometricType(type);
+      setIsEnabled(enabled);
+    };
+    checkBiometric();
+  }, []);
+
+  const handleDisableBiometric = async () => {
+    try {
+      setIsEnabling(true);
+
+      // Authenticate with biometric before disabling
+      const authenticated = await authenticateWithBiometric();
+      if (!authenticated) {
+        showErrorToast({
+          message: "Biometric authentication failed",
+        });
+        setIsEnabling(false);
+        return;
+      }
+
+      // Disable biometric
+      const disabled = await disableBiometric();
+
+      if (disabled) {
+        showSuccessToast({
+          message: `${biometricType} disabled successfully!`,
+        });
+        setIsEnabled(false);
+      } else {
+        showErrorToast({
+          message: "Failed to disable biometric authentication",
+        });
+      }
+    } catch (error: any) {
+      showErrorToast({
+        message: error?.message || "Failed to disable biometric authentication",
+      });
+    } finally {
+      setIsEnabling(false);
+    }
+  };
+
+  const handleEnableBiometric = async () => {
+    try {
+      setIsEnabling(true);
+
+      // Get saved email and password from the last successful login
+      const savedEmail = await AsyncStorage.getItem("saved_email");
+
+      if (!savedEmail) {
+        showErrorToast({
+          message: "No saved credentials found. Please login first.",
+        });
+        setIsEnabling(false);
+        return;
+      }
+
+      // Authenticate with biometric first
+      const authenticated = await authenticateWithBiometric();
+      if (!authenticated) {
+        showErrorToast({
+          message: "Biometric authentication failed",
+        });
+        setIsEnabling(false);
+        return;
+      }
+
+      // Get password from secure storage
+      const tempPassword = await getSecureItem("temp_password");
+
+      if (!tempPassword) {
+        showErrorToast({
+          message: "Please login again to enable biometric authentication",
+        });
+        router.replace("/auth/login");
+        setIsEnabling(false);
+        return;
+      }
+
+      // Enable biometric with credentials
+      const enabled = await enableBiometric(savedEmail, tempPassword);
+
+      if (enabled) {
+        // Clear temporary password from secure storage
+        await removeSecureItem("temp_password");
+        showSuccessToast({
+          message: `${biometricType} enabled successfully!`,
+        });
+        setIsEnabled(true);
+      } else {
+        showErrorToast({
+          message: "Failed to enable biometric authentication",
+        });
+      }
+    } catch (error: any) {
+      showErrorToast({
+        message: error?.message || "Failed to enable biometric authentication",
+      });
+    } finally {
+      setIsEnabling(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -21,23 +145,30 @@ export default function EnableQuickAccessScreen() {
           />
         </View>
 
-        <Text style={styles.title}>Enable Quick Access</Text>
+        <Text style={styles.title}>
+          {isEnabled ? "Disable Quick Access" : "Enable Quick Access"}
+        </Text>
         <Text style={styles.subtitle}>
-          Enable Face ID or Touch for fast and more secure access to your
-          account
+          {isEnabled
+            ? `Disable ${biometricType} for quick access to your account`
+            : `Enable ${biometricType} for fast and more secure access to your account`}
         </Text>
 
         <View style={styles.buttons}>
           <Button
-            title="Enable Now"
-            onPress={() => router.push("/(tabs)")}
+            title={isEnabled ? "Disable Biometric" : "Enable Now"}
+            onPress={isEnabled ? handleDisableBiometric : handleEnableBiometric}
             style={styles.enableButton}
+            loading={isEnabling}
+            disabled={isEnabling || !biometricAvailable}
+            variant={isEnabled ? "outline" : undefined}
           />
           <Button
             title="Maybe Later"
-            onPress={() => router.push("/(tabs)")}
+            onPress={() => router.back()}
             variant="outline"
             style={styles.laterButton}
+            disabled={isEnabling}
           />
         </View>
       </View>

@@ -1,144 +1,239 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppColors } from "@/constants/theme";
-import { useCryptoCurrencies } from "@/hooks/api/use-crypto";
-import { showErrorToast } from "@/utils/toast";
+import { useWithdrawCrypto } from "@/hooks/api/use-crypto";
+import { useWallets } from "@/hooks/api/use-wallet";
+import { Wallet } from "@/services/api/wallet";
+import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ClipboardLib from "expo-clipboard";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
-interface CryptoWallet {
-  id: number;
-  name: string;
-  symbol: string;
-  rate_usd: number;
-  min_deposit: string | null;
-  fee_network: string | null;
-  networkName: string;
-}
+// Helper function to get crypto icon color
+const getCryptoColor = (symbol: string): string => {
+  const colors: { [key: string]: string } = {
+    BTC: AppColors.orange,
+    ETH: AppColors.blue,
+    USDT: AppColors.green,
+    BNB: AppColors.orange,
+    SOL: AppColors.blue,
+    TRX: AppColors.red,
+    NOT: AppColors.orange,
+  };
+  return colors[symbol.toUpperCase()] || AppColors.primary;
+};
 
-const filterOptions = ["BTC", "USDT", "ETC"];
+// Helper function to get crypto icon
+const getCryptoIcon = (symbol: string) => {
+  const icons: { [key: string]: any } = {
+    BTC: require("@/assets/images/bitcoin.png"),
+    ETH: require("@/assets/images/eth.png"),
+    USDT: require("@/assets/images/usdt.png"),
+  };
+  return icons[symbol.toUpperCase()] || require("@/assets/images/bitcoin.png");
+};
+
+// Format balance
+const formatBalance = (balance: number): string => {
+  if (balance === 0) return "0.00";
+  if (balance < 0.01) return balance.toFixed(8);
+  return balance.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 8,
+  });
+};
 
 export default function CryptoWithdrawalScreen() {
   const router = useRouter();
-  const { data: currenciesData, isLoading, error } = useCryptoCurrencies();
-  const [selectedWallet, setSelectedWallet] = useState<CryptoWallet | null>(
-    null
-  );
-  const [selectedNetwork, setSelectedNetwork] = useState<string>("");
+  const {
+    data: walletsData,
+    isLoading: walletsLoading,
+    error: walletsError,
+  } = useWallets();
+  const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [cryptoAddress, setCryptoAddress] = useState("");
-  const [amount, setAmount] = useState("200.00");
-  const [narration, setNarration] = useState("Salary");
+  const cryptoAddressRef = useRef(cryptoAddress);
+  const [amount, setAmount] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["70%", "90%"], []);
+  const [isWalletModalVisible, setIsWalletModalVisible] = useState(false);
+  const [isQRScannerVisible, setIsQRScannerVisible] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const withdrawCrypto = useWithdrawCrypto();
 
-  // Initialize defaults from API networks/currencies
+  // Filter only crypto wallets
+  const cryptoWallets = useMemo(() => {
+    if (!walletsData) return [];
+    return walletsData.filter((wallet) => wallet.type === "crypto");
+  }, [walletsData]);
+
+  // Set default wallet when data loads
   useEffect(() => {
-    if (!currenciesData?.networks) return;
-    const nets = Object.keys(currenciesData.networks);
-    if (!selectedNetwork && nets.length > 0) {
-      setSelectedNetwork(nets[0]);
-      const firstCoin = currenciesData.networks[nets[0]]?.[0];
-      if (firstCoin) {
-        setSelectedWallet({ ...firstCoin, networkName: nets[0] });
-      }
+    if (cryptoWallets.length > 0 && !selectedWallet) {
+      setSelectedWallet(cryptoWallets[0]);
     }
-  }, [currenciesData, selectedNetwork]);
+  }, [cryptoWallets, selectedWallet]);
 
+  // Get network fee from currencies API (if needed)
   const networkFee = useMemo(() => {
-    if (!selectedWallet?.fee_network) return 0;
-    const fee = parseFloat(selectedWallet.fee_network);
-    return isNaN(fee) ? 0 : fee;
-  }, [selectedWallet]);
+    // For now, return 0 or fetch from API if needed
+    return 0;
+  }, []);
+
   const totalAmount = useMemo(() => {
     const amt = parseFloat(amount) || 0;
     return (amt + networkFee).toFixed(10);
   }, [amount, networkFee]);
 
-  const BackDrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={1}
-        disappearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    []
-  );
-
   const handleOpenSheet = () => {
-    bottomSheetRef.current?.present();
+    setIsWalletModalVisible(true);
   };
 
-  const handleSelectWallet = (wallet: CryptoWallet) => {
+  const handleSelectWallet = (wallet: Wallet) => {
     setSelectedWallet(wallet);
-    bottomSheetRef.current?.dismiss();
+    setIsWalletModalVisible(false);
+    setSearchQuery(""); // Clear search when wallet is selected
   };
 
   const handleMaxAmount = () => {
-    // Placeholder balance; replace with real balance when available
-    const balance = 250;
-    setAmount(balance.toFixed(2));
+    if (selectedWallet) {
+      setAmount(selectedWallet.balance.toFixed(8));
+    }
+  };
+
+  // Update ref whenever cryptoAddress changes
+  useEffect(() => {
+    cryptoAddressRef.current = cryptoAddress;
+  }, [cryptoAddress]);
+
+  const handleCopyAddress = async () => {
+    // Use ref to get the most current value - this ensures we have the latest value
+    const currentValue = cryptoAddressRef.current || cryptoAddress;
+
+    if (!currentValue || !currentValue.trim()) {
+      return;
+    }
+
+    try {
+      // Copy to clipboard using system standard API
+      // DO NOT modify state - only copy to clipboard
+      await ClipboardLib.setStringAsync(currentValue.trim());
+      showSuccessToast({
+        message: "Address copied to clipboard",
+      });
+    } catch (error) {
+      console.error("Clipboard error:", error);
+      showErrorToast({
+        message: "Failed to copy to clipboard",
+      });
+    }
   };
 
   const handlePasteAddress = async () => {
+    if (cryptoAddress && cryptoAddress.trim()) {
+      // If there's a value, copy it instead
+      handleCopyAddress();
+      return;
+    }
+
     try {
-      const text = await ClipboardLib.getStringAsync();
-      setCryptoAddress(text);
+      const clipboardText = await ClipboardLib.getStringAsync();
+      if (clipboardText && clipboardText.trim()) {
+        setCryptoAddress(clipboardText.trim());
+        showSuccessToast({
+          message: "Address pasted from clipboard",
+        });
+      } else {
+        showErrorToast({
+          message: "No text found in clipboard",
+        });
+      }
     } catch (error) {
-      // Handle error
+      console.error("Clipboard error:", error);
+      showErrorToast({
+        message: "Failed to access clipboard",
+      });
+    }
+  };
+
+  const handleScanQRCode = async () => {
+    // Check camera permissions
+    if (!permission) {
+      // Permission is still being requested
+      return;
+    }
+
+    if (!permission.granted) {
+      // Request permission
+      const result = await requestPermission();
+      if (!result.granted) {
+        showErrorToast({
+          message: "Camera permission is required to scan QR codes",
+        });
+        return;
+      }
+    }
+
+    setIsQRScannerVisible(true);
+  };
+
+  const handleQRCodeScanned = (result: { data: string; type?: string }) => {
+    if (result?.data) {
+      setCryptoAddress(result.data);
+      setIsQRScannerVisible(false);
+      showSuccessToast({
+        message: "QR code scanned successfully",
+      });
     }
   };
 
   // Filter wallets based on search and filter
   const filteredWallets = useMemo(() => {
-    if (!currenciesData?.networks || !selectedNetwork) return [];
-    let filtered =
-      currenciesData.networks[selectedNetwork]?.map((coin) => ({
-        ...coin,
-        networkName: selectedNetwork,
-      })) || [];
+    let filtered = cryptoWallets;
 
+    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (wallet) =>
-          wallet.name.toLowerCase().includes(query) ||
-          wallet.symbol.toLowerCase().includes(query)
+          wallet.currency.toLowerCase().includes(query) ||
+          (wallet.meta?.network &&
+            wallet.meta.network.toLowerCase().includes(query))
       );
     }
 
+    // Apply currency filter
     if (selectedFilter) {
-      filtered = filtered.filter((wallet) => wallet.symbol === selectedFilter);
+      filtered = filtered.filter(
+        (wallet) => wallet.currency === selectedFilter
+      );
     }
 
     return filtered;
-  }, [currenciesData, selectedNetwork, searchQuery, selectedFilter]);
+  }, [cryptoWallets, searchQuery, selectedFilter]);
+
+  // Get all unique currencies for filter buttons
+  const availableFilters = useMemo(() => {
+    const currencies = new Set<string>();
+    cryptoWallets.forEach((wallet) => {
+      currencies.add(wallet.currency);
+    });
+    return Array.from(currencies).slice(0, 3); // Limit to 3 filters
+  }, [cryptoWallets]);
 
   const handleContinue = () => {
     if (!cryptoAddress.trim() || !amount.trim()) {
@@ -146,22 +241,57 @@ export default function CryptoWithdrawalScreen() {
       return;
     }
     if (!selectedWallet) {
-      showErrorToast({ message: "Select a crypto asset" });
+      showErrorToast({ message: "Please select a wallet" });
       return;
     }
 
-    router.push({
-      pathname: "/crypto-withdrawal-success",
-      params: {
-        wallet: JSON.stringify(selectedWallet),
-        network: selectedNetwork,
-        address: cryptoAddress,
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      showErrorToast({ message: "Please enter a valid amount" });
+      return;
+    }
+
+    if (amountNum > selectedWallet.balance) {
+      showErrorToast({ message: "Insufficient balance" });
+      return;
+    }
+
+    withdrawCrypto.mutate(
+      {
+        wallet_id: selectedWallet.id,
+        address_to: cryptoAddress,
         amount: amount,
-        narration: narration,
-        networkFee: networkFee.toString(),
-        totalAmount: totalAmount,
+        destination_tag: selectedWallet.meta?.destinationTag || "",
       },
-    });
+      {
+        onSuccess: (response) => {
+          showSuccessToast({
+            message: response.message || "Withdrawal initiated",
+          });
+
+          router.push({
+            pathname: "/crypto-withdrawal-success",
+            params: {
+              wallet: JSON.stringify(selectedWallet),
+              network: selectedWallet.meta?.network || "",
+              address: cryptoAddress,
+              amount: amount,
+              networkFee: networkFee.toString(),
+              totalAmount: totalAmount,
+              data: JSON.stringify(response.data ?? {}),
+              message: response.message ?? "",
+            },
+          });
+        },
+        onError: (err: any) => {
+          const msg =
+            err?.message ||
+            err?.data?.message ||
+            "Failed to initiate withdrawal";
+          showErrorToast({ message: msg });
+        },
+      }
+    );
   };
 
   return (
@@ -180,9 +310,9 @@ export default function CryptoWithdrawalScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {error && (
+        {walletsError && (
           <Text style={[styles.emptyText, { marginBottom: 16 }]}>
-            Failed to load assets. Pull to retry.
+            Failed to load wallets. Pull to retry.
           </Text>
         )}
         {/* Choose Wallet Section */}
@@ -194,73 +324,46 @@ export default function CryptoWithdrawalScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.walletCard}
-            onPress={handleOpenSheet}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.walletIcon,
-                { backgroundColor: AppColors.surface },
-              ]}
+          {walletsLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={AppColors.primary} />
+            </View>
+          ) : selectedWallet ? (
+            <TouchableOpacity
+              style={styles.walletCard}
+              onPress={handleOpenSheet}
+              activeOpacity={0.8}
             >
-              <Text style={styles.walletIconText}>
-                {selectedWallet?.symbol?.[0] || "?"}
-              </Text>
-            </View>
-            <View style={styles.walletInfo}>
-              <Text style={styles.walletName}>
-                {selectedWallet?.name || "Select asset"}
-              </Text>
-              <Text style={styles.walletSymbol}>
-                {selectedWallet?.symbol || ""}
-              </Text>
-            </View>
-            <View style={styles.walletPrice}>
-              <Text style={styles.walletPriceValue}>
-                {selectedWallet
-                  ? `$${selectedWallet.rate_usd.toLocaleString()}`
-                  : ""}
-              </Text>
-              {selectedWallet?.min_deposit && (
-                <Text style={styles.walletPriceChange}>
-                  Min: {selectedWallet.min_deposit}
-                </Text>
-              )}
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Choose Network Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Choose Network</Text>
-          <View style={styles.networkContainer}>
-            {(currenciesData?.networks
-              ? Object.keys(currenciesData.networks)
-              : []
-            ).map((network) => (
-              <TouchableOpacity
-                key={network}
+              <View
                 style={[
-                  styles.networkTag,
-                  selectedNetwork === network && styles.networkTagSelected,
+                  styles.walletIcon,
+                  { backgroundColor: getCryptoColor(selectedWallet.currency) },
                 ]}
-                onPress={() => setSelectedNetwork(network)}
-                activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.networkTagText,
-                    selectedNetwork === network &&
-                      styles.networkTagTextSelected,
-                  ]}
-                >
-                  {network}
+                <Image
+                  source={getCryptoIcon(selectedWallet.currency)}
+                  style={styles.walletIconImage}
+                  contentFit="contain"
+                />
+              </View>
+              <View style={styles.walletInfo}>
+                <Text style={styles.walletName}>{selectedWallet.currency}</Text>
+                <Text style={styles.walletSymbol}>
+                  {selectedWallet.meta?.network || "Network"}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+              </View>
+              <View style={styles.walletPrice}>
+                <Text style={styles.walletPriceValue}>
+                  {formatBalance(selectedWallet.balance)}
+                </Text>
+                <Text style={styles.walletPriceChange}>Balance</Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>No wallet selected</Text>
+            </View>
+          )}
         </View>
 
         {/* Crypto Address Input */}
@@ -274,9 +377,7 @@ export default function CryptoWithdrawalScreen() {
               <View style={styles.addressIcons}>
                 <TouchableOpacity
                   style={styles.iconButton}
-                  onPress={() => {
-                    // Handle QR scanner
-                  }}
+                  onPress={handleScanQRCode}
                 >
                   <Ionicons
                     name="qr-code-outline"
@@ -287,9 +388,15 @@ export default function CryptoWithdrawalScreen() {
                 <TouchableOpacity
                   style={styles.iconButton}
                   onPress={handlePasteAddress}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons
-                    name="clipboard-outline"
+                    name={
+                      cryptoAddress && cryptoAddress.trim()
+                        ? "copy-outline"
+                        : "clipboard-outline"
+                    }
                     size={20}
                     color={AppColors.textSecondary}
                   />
@@ -304,32 +411,23 @@ export default function CryptoWithdrawalScreen() {
           <View style={styles.amountHeader}>
             <Text style={styles.inputLabel}>Amount</Text>
             <TouchableOpacity onPress={handleMaxAmount}>
-              <Text style={styles.maxButton}>Max</Text>
+              <Text style={styles.maxButton}>
+                Max ~ {selectedWallet?.currency}{" "}
+                {formatBalance(selectedWallet?.balance || 0)}
+              </Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.amountContainer}>
-            <TextInput
-              style={styles.amountInput}
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-              placeholderTextColor={AppColors.textMuted}
-            />
-          </View>
+          <Input
+            style={styles.amountInput}
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            placeholderTextColor={AppColors.textMuted}
+          />
           <Text style={styles.balanceText}>
             Network fee: {networkFee || "0"}
           </Text>
-        </View>
-
-        {/* Narration Input */}
-        <View style={styles.section}>
-          <Input
-            label="Narration"
-            placeholder="Enter narration (optional)"
-            value={narration}
-            onChangeText={setNarration}
-          />
         </View>
 
         {/* Fees and Total */}
@@ -361,131 +459,228 @@ export default function CryptoWithdrawalScreen() {
         <Button
           title="Continue"
           onPress={handleContinue}
+          loading={withdrawCrypto.isPending}
+          disabled={withdrawCrypto.isPending || !selectedWallet}
           style={styles.button}
         />
       </ScrollView>
 
-      {/* Bottom Sheet for Wallet Selection */}
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        enableOverDrag={false}
-        handleComponent={null}
-        index={1}
-        backdropComponent={BackDrop}
-        snapPoints={snapPoints}
-        backgroundStyle={styles.bottomSheetBackground}
+      {/* Modal for Wallet Selection */}
+      <Modal
+        visible={isWalletModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setIsWalletModalVisible(false);
+          setSearchQuery("");
+        }}
       >
-        <BottomSheetView style={styles.bottomSheetView}>
-          <View style={styles.bottomSheetHeader}>
-            <Text style={styles.bottomSheetTitle}>Choose Wallet</Text>
-            <TouchableOpacity onPress={() => bottomSheetRef.current?.dismiss()}>
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => {
+              setIsWalletModalVisible(false);
+              setSearchQuery("");
+            }}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose Wallet</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsWalletModalVisible(false);
+                  setSearchQuery("");
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={AppColors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Input
+                placeholder="Search wallet..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={styles.searchInput}
+                leftIcon={
+                  <Ionicons
+                    name="search-outline"
+                    size={20}
+                    color={AppColors.textSecondary}
+                  />
+                }
+              />
+            </View>
+
+            {/* Filter Buttons */}
+            {availableFilters.length > 0 && (
+              <View style={styles.filterContainer}>
+                {availableFilters.map((filter) => (
+                  <TouchableOpacity
+                    key={filter}
+                    style={[
+                      styles.filterButton,
+                      selectedFilter === filter && styles.filterButtonActive,
+                    ]}
+                    onPress={() =>
+                      setSelectedFilter(
+                        selectedFilter === filter ? null : filter
+                      )
+                    }
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.filterButtonText,
+                        selectedFilter === filter &&
+                          styles.filterButtonTextActive,
+                      ]}
+                    >
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {walletsLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={AppColors.primary} />
+              </View>
+            ) : walletsError ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Failed to load wallets</Text>
+              </View>
+            ) : (
+              <ScrollView
+                style={styles.countryList}
+                contentContainerStyle={styles.countryListContent}
+                showsVerticalScrollIndicator={true}
+              >
+                {filteredWallets.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>No wallets found</Text>
+                  </View>
+                ) : (
+                  filteredWallets.map((wallet) => (
+                    <TouchableOpacity
+                      key={wallet.id}
+                      style={[
+                        styles.countryItem,
+                        selectedWallet?.id === wallet.id &&
+                          styles.countryItemSelected,
+                      ]}
+                      onPress={() => handleSelectWallet(wallet)}
+                      activeOpacity={0.7}
+                    >
+                      <View
+                        style={[
+                          styles.walletIcon,
+                          { backgroundColor: getCryptoColor(wallet.currency) },
+                        ]}
+                      >
+                        <Image
+                          source={getCryptoIcon(wallet.currency)}
+                          style={styles.walletIconImage}
+                          contentFit="contain"
+                        />
+                      </View>
+                      <View style={styles.countryInfo}>
+                        <View>
+                          <Text style={styles.countryName}>
+                            {wallet.currency}
+                          </Text>
+                          <Text style={styles.countryDialCode}>
+                            {wallet.meta?.network || "Network"}
+                          </Text>
+                        </View>
+                        <View style={styles.walletPrice}>
+                          <Text style={styles.walletPriceValue}>
+                            {formatBalance(wallet.balance)}
+                          </Text>
+                        </View>
+                      </View>
+                      {selectedWallet?.id === wallet.id && (
+                        <View
+                          style={[
+                            styles.checkIconContainer,
+                            {
+                              marginLeft: 12,
+                              marginTop: -5,
+                            },
+                          ]}
+                        >
+                          <Ionicons
+                            name="checkmark"
+                            size={16}
+                            color={AppColors.primary}
+                          />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* QR Scanner Modal */}
+      <Modal
+        visible={isQRScannerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsQRScannerVisible(false)}
+      >
+        <View style={styles.qrScannerContainer}>
+          <View style={styles.qrScannerHeader}>
+            <Text style={styles.qrScannerTitle}>Scan QR Code</Text>
+            <TouchableOpacity
+              onPress={() => setIsQRScannerVisible(false)}
+              style={styles.closeButton}
+            >
               <Ionicons name="close" size={24} color={AppColors.text} />
             </TouchableOpacity>
           </View>
-
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Input
-              placeholder="Search......"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.searchInput}
-              leftIcon={
-                <Ionicons
-                  name="search-outline"
-                  size={20}
-                  color={AppColors.textSecondary}
-                />
-              }
-            />
-          </View>
-
-          {/* Filter Buttons */}
-          <View style={styles.filterContainer}>
-            {filterOptions.map((filter) => (
-              <TouchableOpacity
-                key={filter}
-                style={[
-                  styles.filterButton,
-                  selectedFilter === filter && styles.filterButtonActive,
-                ]}
-                onPress={() =>
-                  setSelectedFilter(selectedFilter === filter ? null : filter)
-                }
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    selectedFilter === filter && styles.filterButtonTextActive,
-                  ]}
-                >
-                  {filter}
+          {permission?.granted ? (
+            <View style={styles.cameraContainer}>
+              <CameraView
+                style={styles.camera}
+                facing="back"
+                onBarcodeScanned={handleQRCodeScanned}
+                barcodeScannerSettings={{
+                  barcodeTypes: ["qr"],
+                }}
+              />
+              <View style={styles.scannerOverlay}>
+                <View style={styles.scannerFrame} />
+                <Text style={styles.scannerHint}>
+                  Position the QR code within the frame
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={styles.walletList}
-          >
-            {filteredWallets.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No wallets found</Text>
               </View>
-            ) : (
-              filteredWallets.map((wallet) => (
-                <TouchableOpacity
-                  key={wallet.id}
-                  style={[
-                    styles.walletListItem,
-                    selectedWallet?.id === wallet.id &&
-                      styles.walletListItemSelected,
-                  ]}
-                  onPress={() => handleSelectWallet(wallet)}
-                  activeOpacity={0.8}
-                >
-                  <View
-                    style={[
-                      styles.walletIcon,
-                      { backgroundColor: AppColors.surface },
-                    ]}
-                  >
-                    <Text style={styles.walletIconText}>
-                      {wallet.symbol[0]}
-                    </Text>
-                  </View>
-                  <View style={styles.walletInfo}>
-                    <Text style={styles.walletName}>{wallet.name}</Text>
-                    <Text style={styles.walletSymbol}>{wallet.symbol}</Text>
-                  </View>
-                  <View style={styles.walletPrice}>
-                    <Text style={styles.walletPriceValue}>
-                      ${wallet.rate_usd.toLocaleString()}
-                    </Text>
-                    {wallet.min_deposit && (
-                      <Text style={styles.walletPriceChange}>
-                        Min: {wallet.min_deposit}
-                      </Text>
-                    )}
-                  </View>
-                  {selectedWallet?.id === wallet.id && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={24}
-                      color={AppColors.primary}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))
-            )}
-            {filteredWallets.length > 0 && (
-              <Text style={styles.swipeHint}>Swap up for all Wallet</Text>
-            )}
-          </ScrollView>
-        </BottomSheetView>
-      </BottomSheetModal>
+            </View>
+          ) : (
+            <View style={styles.permissionContainer}>
+              <Ionicons
+                name="camera-outline"
+                size={64}
+                color={AppColors.textSecondary}
+              />
+              <Text style={styles.permissionText}>
+                Camera permission is required to scan QR codes
+              </Text>
+              <Button
+                title="Grant Permission"
+                onPress={requestPermission}
+                style={styles.permissionButton}
+              />
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -552,6 +747,99 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
   },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  errorText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: AppColors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "80%",
+    flexDirection: "column",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  countryList: {
+    flex: 1,
+  },
+  countryListContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  countryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border + "30",
+  },
+  countryItemSelected: {
+    backgroundColor: AppColors.primary + "10",
+  },
+  countryInfo: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  countryName: {
+    fontSize: 16,
+    color: AppColors.text,
+    fontWeight: "500",
+  },
+  countryDialCode: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    marginRight: 12,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: AppColors.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
   walletInfo: {
     flex: 1,
   },
@@ -576,33 +864,6 @@ const styles = StyleSheet.create({
   },
   walletPriceChange: {
     fontSize: 12,
-  },
-  networkContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
-  },
-  networkTag: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: AppColors.surface,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-  },
-  networkTagSelected: {
-    backgroundColor: AppColors.primary + "20",
-    borderColor: AppColors.primary,
-  },
-  networkTagText: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    fontWeight: "500",
-  },
-  networkTagTextSelected: {
-    color: AppColors.primary,
-    fontWeight: "600",
   },
   addressIcons: {
     flexDirection: "row",
@@ -637,9 +898,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   amountInput: {
-    fontSize: 16,
     color: AppColors.text,
-    fontWeight: "600",
   },
   balanceText: {
     fontSize: 14,
@@ -689,29 +948,9 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 20,
   },
-  bottomSheetBackground: {
-    backgroundColor: AppColors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  bottomSheetView: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  bottomSheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  bottomSheetTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: AppColors.text,
-  },
   searchContainer: {
     marginBottom: 16,
+    paddingHorizontal: 20,
   },
   searchInput: {
     marginBottom: 0,
@@ -720,6 +959,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginBottom: 16,
+    paddingHorizontal: 20,
   },
   filterButton: {
     paddingHorizontal: 16,
@@ -742,23 +982,6 @@ const styles = StyleSheet.create({
     color: AppColors.primary,
     fontWeight: "600",
   },
-  walletList: {
-    flex: 1,
-  },
-  walletListItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-  },
-  walletListItemSelected: {
-    borderColor: AppColors.primary,
-    borderWidth: 2,
-  },
   emptyContainer: {
     paddingVertical: 40,
     alignItems: "center",
@@ -767,12 +990,68 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppColors.textSecondary,
   },
-  swipeHint: {
-    fontSize: 12,
+  qrScannerContainer: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+  },
+  qrScannerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+  },
+  qrScannerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  cameraContainer: {
+    flex: 1,
+    position: "relative",
+  },
+  camera: {
+    flex: 1,
+  },
+  scannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scannerFrame: {
+    width: 250,
+    height: 250,
+    borderWidth: 2,
+    borderColor: AppColors.primary,
+    borderRadius: 12,
+    backgroundColor: "transparent",
+  },
+  scannerHint: {
+    marginTop: 20,
+    fontSize: 14,
+    color: AppColors.text,
+    textAlign: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  permissionText: {
+    fontSize: 16,
     color: AppColors.textSecondary,
     textAlign: "center",
     marginTop: 16,
-    marginBottom: 8,
-    opacity: 0.6,
+    marginBottom: 24,
+  },
+  permissionButton: {
+    minWidth: 200,
   },
 });

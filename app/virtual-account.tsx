@@ -177,38 +177,6 @@ export default function VirtualAccountScreen() {
                 </View>
               </View>
             </View>
-
-            {virtualAccountData.flw_ref && (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Flutterwave Reference</Text>
-                <View style={styles.detailValueContainer}>
-                  <Text style={[styles.detailValue, styles.referenceValue]}>
-                    {virtualAccountData.flw_ref}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.copyButton}
-                    onPress={() =>
-                      handleCopy(virtualAccountData.flw_ref, "Reference")
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={
-                        copiedField === "Reference"
-                          ? "checkmark-circle"
-                          : "copy-outline"
-                      }
-                      size={20}
-                      color={
-                        copiedField === "Reference"
-                          ? AppColors.green
-                          : AppColors.primary
-                      }
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
           </Card>
 
           {/* Done Button */}
@@ -350,6 +318,7 @@ const styles = StyleSheet.create({
   detailsCard: {
     marginBottom: 24,
     padding: 20,
+    backgroundColor: AppColors.surfaceLight,
   },
   detailRow: {
     marginBottom: 20,

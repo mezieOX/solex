@@ -75,6 +75,20 @@ export function useSwapCrypto() {
 }
 
 /**
+ * Hook to withdraw crypto
+ */
+export function useWithdrawCrypto() {
+  return useMutation({
+    mutationFn: (data: {
+      wallet_id: number;
+      address_to: string;
+      amount: string;
+      destination_tag?: string;
+    }) => cryptoApi.withdraw(data),
+  });
+}
+
+/**
  * Hook to get crypto prices from CoinGecko
  */
 export function useCryptoPrices(

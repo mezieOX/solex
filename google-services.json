@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "490020971682",
+    "project_id": "solex-trade",
+    "storage_bucket": "solex-trade.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:490020971682:android:246844b36368dcaef463fb",
+        "android_client_info": {
+          "package_name": "com.solex.tradeapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgZ2NWcEBpCXrr9Vzs_YwhcXRYSXVqCxk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

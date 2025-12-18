@@ -227,18 +227,6 @@ export default function FiatWithdrawalScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Amount Input */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Amount</Text>
-          <Input
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="Enter amount"
-            keyboardType="numeric"
-            style={styles.amountInput}
-          />
-        </View>
-
         {/* Bank Selection */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -312,6 +300,17 @@ export default function FiatWithdrawalScreen() {
               </Text>
             </View>
           ) : null}
+        </View>
+        {/* Amount Input */}
+        <View style={[styles.section, { marginTop: -18 }]}>
+          <Text style={styles.label}>Amount</Text>
+          <Input
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="Enter amount"
+            keyboardType="numeric"
+            style={styles.amountInput}
+          />
         </View>
 
         <Button

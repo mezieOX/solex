@@ -123,18 +123,6 @@ export default function FiatDepositScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Amount Input */}
-        {selectedMethod.id === "flutterwave" ? (
-          <View style={styles.section}>
-            <Text style={styles.label}>Input amount you want to Deposit</Text>
-            <Input
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="Amount"
-              keyboardType="numeric"
-              style={styles.amountInput}
-            />
-          </View>
-        ) : null}
 
         {/* Payment Method Selection */}
         <View style={styles.section}>
@@ -169,6 +157,25 @@ export default function FiatDepositScreen() {
               color={AppColors.primary}
             />
           </TouchableOpacity>
+          {selectedMethod.id === "flutterwave" ? (
+            <View
+              style={[
+                styles.section,
+                {
+                  marginTop: 30,
+                },
+              ]}
+            >
+              <Text style={styles.label}>Amount</Text>
+              <Input
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="Enter amount"
+                keyboardType="numeric"
+                style={styles.amountInput}
+              />
+            </View>
+          ) : null}
         </View>
 
         <Button

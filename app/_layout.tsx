@@ -10,12 +10,12 @@ import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Alert } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 import { toastConfig } from "@/components/ui/toast-config";
+import { showInfoToast } from "@/utils/toast";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirebaseToken } from "@/hooks/use-firebase-token";
 import { QueryProvider } from "@/hooks/use-query-client";
@@ -89,20 +89,13 @@ export default function RootLayout() {
         console.log("📬 Foreground notification received:", remoteMessage);
 
         if (remoteMessage?.notification) {
-          // Show alert for foreground notifications
-          Alert.alert(
-            remoteMessage.notification.title || "New Notification",
-            remoteMessage.notification.body || "",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  // Optionally navigate to notifications screen
-                  // router.push("/notifications");
-                },
-              },
-            ]
-          );
+          // Show toast for foreground notifications
+          showInfoToast({
+            title: remoteMessage.notification.title || "New Notification",
+            message:
+              remoteMessage.notification.body ||
+              "You have a new notification",
+          });
         }
 
         // TODO: Refresh notifications list when API is ready
