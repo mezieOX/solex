@@ -8,10 +8,12 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
+  ImageSourcePropType,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +27,7 @@ interface PaymentMethod {
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   iconBg: string;
+  image?: ImageSourcePropType;
 }
 
 const paymentMethods: PaymentMethod[] = [
@@ -55,6 +58,7 @@ const paymentMethods: PaymentMethod[] = [
     icon: "ellipse",
     iconColor: "#FFFFFF",
     iconBg: AppColors.orange,
+    image: require("@/assets/images/flutterwave.jpeg"),
   },
 ];
 
@@ -144,11 +148,19 @@ export default function FiatDepositScreen() {
                 { backgroundColor: selectedMethod.iconBg },
               ]}
             >
-              <Ionicons
-                name={selectedMethod.icon}
-                size={24}
-                color={selectedMethod.iconColor}
-              />
+              {selectedMethod.image ? (
+                <Image
+                  source={selectedMethod.image}
+                  style={{ width: "100%", height: "100%", borderRadius: 100 }}
+                  contentFit="contain"
+                />
+              ) : (
+                <Ionicons
+                  name={selectedMethod.icon}
+                  size={24}
+                  color={selectedMethod.iconColor}
+                />
+              )}
             </View>
             <Text style={styles.methodName}>{selectedMethod.name}</Text>
             <Ionicons
@@ -225,11 +237,23 @@ export default function FiatDepositScreen() {
                     { backgroundColor: method.iconBg },
                   ]}
                 >
-                  <Ionicons
-                    name={method.icon}
-                    size={24}
-                    color={method.iconColor}
-                  />
+                  {method.image ? (
+                    <Image
+                      source={method.image}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: 100,
+                      }}
+                      contentFit="contain"
+                    />
+                  ) : (
+                    <Ionicons
+                      name={method.icon}
+                      size={24}
+                      color={method.iconColor}
+                    />
+                  )}
                 </View>
                 <Text style={styles.methodName}>{method.name}</Text>
                 {selectedMethod.id === method.id && (

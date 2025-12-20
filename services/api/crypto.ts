@@ -6,12 +6,14 @@ import { apiClient } from "./client";
 import { ApiResponse } from "./types";
 
 export interface CryptoCurrency {
-  id: number;
+  currency_id: number;
   name: string;
-  symbol: string;
+  coin: string; // This is the symbol
   rate_usd: number;
-  min_deposit: string | null;
-  fee_network: string | null;
+  min_deposit: string | number | null;
+  fee_network: string | number | null;
+  image_url?: string;
+  network?: string;
 }
 
 export interface CryptoCurrenciesResponse {
@@ -68,6 +70,20 @@ export interface SwapResponse {
     total_fee?: string;
   };
   status: string;
+}
+
+export interface WithdrawFeesRequest {
+  wallet_id: number;
+  address_to: string;
+  amount: string;
+}
+
+export interface WithdrawFeesResponse {
+  amount_requested: number;
+  amount_receive: number;
+  amount_debited: number;
+  fee_network: number;
+  fee_service: number;
 }
 
 export const cryptoApi = {
@@ -136,6 +152,23 @@ export const cryptoApi = {
       "/trades/swap",
       data
     );
+    return response.data;
+  },
+
+  /**
+   * Get withdrawal fees
+   */
+  getWithdrawFees: async (
+    data: WithdrawFeesRequest
+  ): Promise<WithdrawFeesResponse> => {
+    const formData = new FormData();
+    formData.append("wallet_id", String(data.wallet_id));
+    formData.append("address_to", data.address_to);
+    formData.append("amount", data.amount);
+
+    const response = await apiClient.post<
+      ApiResponse<WithdrawFeesResponse>
+    >("/wallets/crypto/withdraw/fees", formData);
     return response.data;
   },
 };

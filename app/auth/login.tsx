@@ -302,23 +302,6 @@ export default function LoginScreen() {
               <Text style={styles.linkText}>Signup</Text>
             </TouchableOpacity>
           </View>
-
-          {/* <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Image
-                source={require("@/assets/images/apple.png")}
-                style={styles.socialButtonImage}
-                contentFit="contain"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <Image
-                source={require("@/assets/images/google.png")}
-                style={styles.socialButtonImage}
-                contentFit="contain"
-              />
-            </TouchableOpacity>
-          </View> */}
         </View>
       </ScrollView>
     </View>
@@ -399,12 +382,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: AppColors.border,
-    borderStyle: "dashed",
-  },
+  dividerLine: {},
   dividerText: {
     marginHorizontal: 16,
     fontSize: 14,

@@ -626,7 +626,7 @@ export default function ViewDetailsScreen() {
               size={80}
               logo={require("@/assets/images/app-logo.png")}
               logoBorderRadius={300}
-            />
+            />  
           </View>
           <TouchableOpacity style={styles.reportButton}>
             <Text style={styles.reportButtonText}>Report</Text>

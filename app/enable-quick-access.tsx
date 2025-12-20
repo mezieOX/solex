@@ -164,7 +164,7 @@ export default function EnableQuickAccessScreen() {
             variant={isEnabled ? "outline" : undefined}
           />
           <Button
-            title="Maybe Later"
+            title="Back"
             onPress={() => router.back()}
             variant="outline"
             style={styles.laterButton}

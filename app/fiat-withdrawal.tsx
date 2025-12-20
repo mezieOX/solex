@@ -26,37 +26,16 @@ import {
   View,
 } from "react-native";
 
-// Helper function to get bank icon and colors
-const getBankIcon = (
-  bankName: string
+// Helper function to get bank icon data
+const getBankIconData = (
+  bankCode?: string,
+  bankName?: string
 ): {
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   iconBg: string;
 } => {
-  const name = bankName.toLowerCase();
-  if (name.includes("opay") || name.includes("pay")) {
-    return {
-      icon: "ellipse",
-      iconColor: "#FFFFFF",
-      iconBg: "#00D9FF",
-    };
-  }
-  if (name.includes("first")) {
-    return {
-      icon: "business",
-      iconColor: "#FFFFFF",
-      iconBg: "#007B2D",
-    };
-  }
-  if (name.includes("fidelity")) {
-    return {
-      icon: "business",
-      iconColor: "#FFFFFF",
-      iconBg: "#0066CC",
-    };
-  }
-  // Default icon
+  // Return default icon
   return {
     icon: "business",
     iconColor: "#FFFFFF",
@@ -157,10 +136,10 @@ export default function FiatWithdrawalScreen() {
         )
       : banks;
 
-    // Pre-compute icon data to avoid calling getBankIcon multiple times
+    // Pre-compute icon data to avoid calling getBankIconData multiple times
     return filtered.map((bank) => ({
       ...bank,
-      iconData: getBankIcon(bank.name),
+      iconData: getBankIconData(bank.code, bank.name),
     }));
   }, [banks, searchQuery]);
 
@@ -242,23 +221,33 @@ export default function FiatWithdrawalScreen() {
             activeOpacity={0.8}
           >
             {selectedBank ? (
-              <>
-                <View
-                  style={[
-                    styles.accountIcon,
-                    { backgroundColor: getBankIcon(selectedBank.name).iconBg },
-                  ]}
-                >
-                  <Ionicons
-                    name={getBankIcon(selectedBank.name).icon}
-                    size={24}
-                    color={getBankIcon(selectedBank.name).iconColor}
-                  />
-                </View>
-                <View style={styles.accountInfo}>
-                  <Text style={styles.accountName}>{selectedBank.name}</Text>
-                </View>
-              </>
+              (() => {
+                const bankIconData = getBankIconData(
+                  selectedBank.code,
+                  selectedBank.name
+                );
+                return (
+                  <>
+                    <View
+                      style={[
+                        styles.accountIcon,
+                        { backgroundColor: bankIconData.iconBg },
+                      ]}
+                    >
+                      <Ionicons
+                        name={bankIconData.icon}
+                        size={24}
+                        color={bankIconData.iconColor}
+                      />
+                    </View>
+                    <View style={styles.accountInfo}>
+                      <Text style={styles.accountName}>
+                        {selectedBank.name}
+                      </Text>
+                    </View>
+                  </>
+                );
+              })()
             ) : (
               <Text style={styles.placeholderText}>
                 {isLoadingBanks ? "Loading..." : "Select a bank"}
@@ -505,6 +494,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    overflow: "hidden",
   },
   accountInfo: {
     flex: 1,

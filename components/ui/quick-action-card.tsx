@@ -10,7 +10,6 @@ interface QuickActionCardProps {
   iconBackgroundColor?: string;
   customIcon?: React.ReactNode;
   onPress?: () => void;
-  numColumns?: number;
 }
 
 export function QuickActionCard({
@@ -20,7 +19,6 @@ export function QuickActionCard({
   iconBackgroundColor = AppColors.orange,
   customIcon,
   onPress,
-  numColumns = 4,
 }: QuickActionCardProps) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
@@ -45,7 +43,6 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: "center",
     gap: 8,
-    backgroundColor: AppColors.surface,
   },
   iconContainer: {
     width: 48,

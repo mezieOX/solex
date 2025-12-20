@@ -126,7 +126,7 @@ export default function NotificationsScreen() {
                 height={18}
                 style={styles.skeletonDate}
               />
-              {[1, 2, 3].map((index) => (
+              {[1, 2, 3, 4].map((index) => (
                 <View key={index}>
                   {index > 1 && <View style={styles.separator} />}
                   <View style={styles.notificationItem}>
@@ -182,6 +182,8 @@ export default function NotificationsScreen() {
           <Error
             message="Failed to load notifications"
             onRetry={() => refetch()}
+            isLoading={isRefetching}
+            style={styles.errorStyle}
           />
         ) : groupedNotifications.length === 0 ? (
           <Empty
@@ -322,5 +324,8 @@ const styles = StyleSheet.create({
   },
   skeletonMessage: {
     marginBottom: 0,
+  },
+  errorStyle: {
+    height: height - 200,
   },
 });

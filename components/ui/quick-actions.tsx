@@ -44,7 +44,6 @@ export function QuickActions({
         keyExtractor={(item, index) => `${item.title}-${index}`}
         renderItem={({ item }) => (
           <QuickActionCard
-            numColumns={numColumns}
             title={item.title}
             icon={item.icon}
             iconColor={item.iconColor}

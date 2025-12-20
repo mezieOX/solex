@@ -1,28 +1,43 @@
 import { AppColors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface ErrorProps {
   message?: string;
   onRetry?: () => void;
+  isLoading?: boolean;
   style?: ViewStyle;
 }
 
-export default function Error({ message, onRetry, style }: ErrorProps) {
+export default function Error({
+  message,
+  onRetry,
+  isLoading = false,
+  style,
+}: ErrorProps) {
   return (
     <View style={[styles.container, style]}>
-      <Ionicons
-        name="alert-circle-outline"
-        size={48}
-        color={AppColors.error}
-      />
-      <Text style={styles.errorText}>
-        {message || "Something went wrong"}
-      </Text>
+      <Ionicons name="alert-circle-outline" size={48} color={AppColors.error} />
+      <Text style={styles.errorText}>{message || "Something went wrong"}</Text>
       {onRetry && (
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, isLoading && styles.retryButtonDisabled]}
+          onPress={onRetry}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color={AppColors.background} />
+          ) : (
+            <Text style={styles.retryButtonText}>Retry</Text>
+          )}
         </TouchableOpacity>
       )}
     </View>
@@ -54,5 +69,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: AppColors.background,
   },
+  retryButtonDisabled: {
+    opacity: 0.7,
+  },
 });
-

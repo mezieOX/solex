@@ -224,29 +224,6 @@ export default function SignUpScreen() {
               </Text>
             </Text>
           </View>
-
-          {/* <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View> */}
-
-          {/* <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Image
-                source={require("@/assets/images/apple.png")}
-                style={styles.socialButtonImage}
-                contentFit="contain"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <Image
-                source={require("@/assets/images/google.png")}
-                style={styles.socialButtonImage}
-                contentFit="contain"
-              />
-            </TouchableOpacity>
-          </View> */}
         </View>
       </ScrollView>
     </View>

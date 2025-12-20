@@ -1,11 +1,5 @@
 import Empty from "@/components/empty";
 import { Card } from "@/components/ui/card";
-import {
-  ActivityIcon,
-  ElementsIcon,
-  MobilepayIcon,
-} from "@/components/ui/icons";
-import { SquareTopUpIcon } from "@/components/ui/icons/square-top-up-icon";
 import { QuickActions } from "@/components/ui/quick-actions";
 import { SectionHeader } from "@/components/ui/section-header";
 import { TransactionItem } from "@/components/ui/transaction-item";
@@ -15,6 +9,7 @@ import { useUser } from "@/hooks/api/use-auth";
 import { useCryptoPrices, type CoinGeckoPrice } from "@/hooks/api/use-crypto";
 import { useDashboard } from "@/hooks/api/use-dashboard";
 import { useNotifications } from "@/hooks/api/use-notifications";
+import { useServices } from "@/hooks/api/use-services";
 import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -44,6 +39,65 @@ interface CryptoDisplayData {
   color: string;
 }
 
+// Helper function to determine transaction type from name
+const getTransactionType = (
+  name: string
+): "withdrawal" | "deposit" | "transfer" | "exchange" | "payment" | "other" => {
+  const lowerName = name.toLowerCase();
+
+  if (lowerName.includes("withdrawal") || lowerName.includes("withdraw")) {
+    return "withdrawal";
+  }
+  if (lowerName.includes("deposit") || lowerName.includes("refund")) {
+    return "deposit";
+  }
+  if (lowerName.includes("transfer")) {
+    return "transfer";
+  }
+  if (
+    lowerName.includes("swap") ||
+    lowerName.includes("exchange") ||
+    lowerName.includes("gift card")
+  ) {
+    return "exchange";
+  }
+  if (lowerName.includes("bill") || lowerName.includes("payment")) {
+    return "payment";
+  }
+
+  return "other";
+};
+
+// Helper function to parse date string and extract date and time
+const parseDateString = (
+  dateString: string
+): { date: string; time: string } => {
+  // Handle "Today, 10:37 AM" format
+  if (dateString.toLowerCase().includes("today")) {
+    const timeMatch = dateString.match(/(\d{1,2}:\d{2}\s?(AM|PM))/i);
+    return {
+      date: "Today",
+      time: timeMatch ? timeMatch[1] : "",
+    };
+  }
+
+  // Handle "Nov 28, 04:57 PM" format
+  const parts = dateString.split(",");
+  if (parts.length >= 2) {
+    const datePart = parts[0].trim(); // "Nov 28"
+    const timePart = parts[1]?.trim() || ""; // "04:57 PM"
+    return {
+      date: datePart,
+      time: timePart,
+    };
+  }
+
+  return {
+    date: dateString,
+    time: "",
+  };
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const { data: user } = useUser();
@@ -54,6 +108,7 @@ export default function HomeScreen() {
     30000
   ); // Refetch every 30 seconds
   const { data: notificationsData } = useNotifications();
+  const { services: allServices } = useServices();
 
   // Calculate unread notification count
   const unreadCount = useMemo(() => {
@@ -139,6 +194,7 @@ export default function HomeScreen() {
       const isCredit = transaction.amount.startsWith("+");
       const isDebit = transaction.amount.startsWith("-");
       const amount = transaction.amount.replace(/[+-]/g, "");
+      const { time, date } = parseDateString(transaction.date);
 
       // Determine icon based on transaction name
       let icon: {
@@ -159,10 +215,12 @@ export default function HomeScreen() {
       return {
         id: transaction.id,
         title: transaction.name,
-        time: transaction.date,
+        time: time,
+        date: date,
         amount: amount,
         type: (isCredit ? "credit" : "debit") as "credit" | "debit",
         icon,
+        transactionType: getTransactionType(transaction.name),
       };
     });
   }, [dashboardData]);
@@ -286,31 +344,6 @@ export default function HomeScreen() {
       };
     });
   }, [cryptoPrices]);
-
-  const quickActionsData = [
-    {
-      title: "Top Up",
-      customIcon: <SquareTopUpIcon size={28} color="#fff" />,
-      iconBackgroundColor: AppColors.redAccent,
-      onPress: () => {},
-    },
-    {
-      title: "Transfer",
-      customIcon: <ElementsIcon size={28} color="#fff" />,
-      iconBackgroundColor: AppColors.redAccent,
-      onPress: () => {},
-    },
-    {
-      title: "Pay Bills",
-      customIcon: <MobilepayIcon size={32} color="#fff" />,
-      iconBackgroundColor: AppColors.redAccent,
-    },
-    {
-      title: "Trade",
-      customIcon: <ActivityIcon size={32} color="#fff" />,
-      iconBackgroundColor: AppColors.redAccent,
-    },
-  ];
 
   return (
     <View style={styles.container}>
@@ -481,32 +514,6 @@ export default function HomeScreen() {
           </Card>
         </View>
 
-        {/* Recent Transactions */}
-        <View style={styles.section}>
-          <SectionHeader
-            title="Recent Transaction"
-            actionText="Sell All"
-            onActionPress={() => router.push("/transaction-history")}
-          />
-          {transactions.slice(0, 3).map((item) => (
-            <TransactionItem
-              key={item.id.toString()}
-              loading={isLoadingDashboard}
-              title={item.title}
-              time={item.time}
-              amount={item.amount}
-              type={item.type}
-              icon={item.icon}
-            />
-          ))}
-          {transactions.length === 0 && !isLoadingDashboard ? (
-            <Empty
-              title="No transactions yet"
-              description="You haven't made any transactions yet"
-            />
-          ) : null}
-        </View>
-
         {/* Quick Actions */}
         <View
           style={[
@@ -518,11 +525,72 @@ export default function HomeScreen() {
         >
           <QuickActions
             title="Services"
-            actions={quickActionsData}
+            actions={allServices?.slice(0, 4) || []}
             headerSectionStyle={{
               paddingHorizontal: 20,
             }}
           />
+        </View>
+
+        {/* Recent Transactions */}
+        <View
+          style={[
+            styles.section,
+            {
+              marginTop: -20,
+            },
+          ]}
+        >
+          <SectionHeader
+            title="Recent Transaction"
+            actionText="Sell All"
+            onActionPress={() => router.push("/transaction-history")}
+          />
+          {transactions.slice(0, 3).map((item) => {
+            const handlePress = () => {
+              // Clean amount: remove currency symbols, commas, and whitespace for storage
+              const cleanedAmount = item.amount
+                .replace(/[₦$€£¥,\s]/g, "")
+                .trim();
+
+              const transactionData = {
+                amount: cleanedAmount || "0",
+                currency: "NGN",
+                reference: item.id.toString(),
+                date: item.date || item.time,
+                time: item.time,
+                name: item.title,
+                id: item.id,
+              };
+
+              router.push({
+                pathname: "/view-details",
+                params: {
+                  type: item.transactionType,
+                  transactionData: JSON.stringify(transactionData),
+                },
+              });
+            };
+
+            return (
+              <TransactionItem
+                key={item.id.toString()}
+                loading={isLoadingDashboard}
+                title={item.title}
+                time={item.time}
+                amount={item.amount}
+                type={item.type}
+                icon={item.icon}
+                onPress={handlePress}
+              />
+            );
+          })}
+          {transactions.length === 0 && !isLoadingDashboard ? (
+            <Empty
+              title="No transactions yet"
+              description="You haven't made any transactions yet"
+            />
+          ) : null}
         </View>
 
         {/* Market */}
@@ -532,7 +600,6 @@ export default function HomeScreen() {
             {
               backgroundColor: AppColors.surface,
               paddingVertical: 10,
-              marginTop: -20,
               borderRadius: 16,
             },
           ]}

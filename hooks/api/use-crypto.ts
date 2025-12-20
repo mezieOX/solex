@@ -12,6 +12,8 @@ export const cryptoKeys = {
   exchangeRate: (from: string, to: string) =>
     [...cryptoKeys.all, "exchange-rate", from, to] as const,
   prices: (ids: string[]) => [...cryptoKeys.all, "prices", ids] as const,
+  withdrawFees: (walletId: number, address: string, amount: string) =>
+    [...cryptoKeys.all, "withdraw-fees", walletId, address, amount] as const,
 };
 
 // CoinGecko API types
@@ -85,6 +87,39 @@ export function useWithdrawCrypto() {
       amount: string;
       destination_tag?: string;
     }) => cryptoApi.withdraw(data),
+  });
+}
+
+/**
+ * Hook to get withdrawal fees
+ */
+export function useWithdrawFees(
+  walletId: number | null,
+  address: string,
+  amount: string,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: cryptoKeys.withdrawFees(
+      walletId || 0,
+      address,
+      amount
+    ),
+    queryFn: () =>
+      cryptoApi.getWithdrawFees({
+        wallet_id: walletId!,
+        address_to: address,
+        amount: amount,
+      }),
+    enabled:
+      enabled &&
+      walletId !== null &&
+      address.trim().length > 0 &&
+      amount.trim().length > 0 &&
+      !isNaN(parseFloat(amount)) &&
+      parseFloat(amount) > 0,
+    retry: false,
+    staleTime: 10 * 1000, // 10 seconds
   });
 }
 

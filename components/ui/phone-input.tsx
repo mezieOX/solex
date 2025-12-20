@@ -421,6 +421,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: AppColors.border,
+    marginTop: 20,
   },
   searchIcon: {
     marginRight: 8,

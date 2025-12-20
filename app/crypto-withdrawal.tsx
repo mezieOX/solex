@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppColors } from "@/constants/theme";
-import { useWithdrawCrypto } from "@/hooks/api/use-crypto";
+import { useWithdrawCrypto, useWithdrawFees } from "@/hooks/api/use-crypto";
 import { useWallets } from "@/hooks/api/use-wallet";
 import { Wallet } from "@/services/api/wallet";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
@@ -75,6 +75,9 @@ export default function CryptoWithdrawalScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const withdrawCrypto = useWithdrawCrypto();
 
+  // Debounced amount for API calls
+  const [debouncedAmount, setDebouncedAmount] = useState("");
+
   // Filter only crypto wallets
   const cryptoWallets = useMemo(() => {
     if (!walletsData) return [];
@@ -88,16 +91,47 @@ export default function CryptoWithdrawalScreen() {
     }
   }, [cryptoWallets, selectedWallet]);
 
-  // Get network fee from currencies API (if needed)
+  // Debounce amount input to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedAmount(amount);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [amount]);
+
+  // Fetch withdrawal fees when amount, wallet, or address changes
+  const { data: feesData, isLoading: feesLoading } = useWithdrawFees(
+    selectedWallet?.id || null,
+    cryptoAddress,
+    debouncedAmount,
+    debouncedAmount.trim().length > 0 &&
+      selectedWallet !== null &&
+      cryptoAddress.trim().length > 0
+  );
+
+  // Get network fee from API response
   const networkFee = useMemo(() => {
-    // For now, return 0 or fetch from API if needed
+    if (feesData?.fee_network !== undefined) {
+      return feesData.fee_network;
+    }
     return 0;
-  }, []);
+  }, [feesData]);
+
+  // Format network fee for display
+  const formattedNetworkFee = useMemo(() => {
+    if (networkFee === 0) return "0";
+    if (networkFee < 0.01) return networkFee.toFixed(8);
+    return networkFee.toFixed(8);
+  }, [networkFee]);
 
   const totalAmount = useMemo(() => {
     const amt = parseFloat(amount) || 0;
+    if (feesData?.amount_debited !== undefined) {
+      return feesData.amount_debited.toFixed(10);
+    }
     return (amt + networkFee).toFixed(10);
-  }, [amount, networkFee]);
+  }, [amount, networkFee, feesData]);
 
   const handleOpenSheet = () => {
     setIsWalletModalVisible(true);
@@ -426,7 +460,7 @@ export default function CryptoWithdrawalScreen() {
             placeholderTextColor={AppColors.textMuted}
           />
           <Text style={styles.balanceText}>
-            Network fee: {networkFee || "0"}
+            Network fee: {feesLoading ? "..." : formattedNetworkFee}
           </Text>
         </View>
 
@@ -434,11 +468,15 @@ export default function CryptoWithdrawalScreen() {
         <View style={styles.feesSection}>
           <View style={styles.feesRow}>
             <Text style={styles.feesLabel}>Network Fees:</Text>
-            <Text style={styles.feesValue}>{networkFee}</Text>
+            <Text style={styles.feesValue}>
+              {feesLoading ? "..." : formattedNetworkFee}
+            </Text>
           </View>
           <View style={styles.feesRow}>
             <Text style={styles.feesLabel}>Total Amount:</Text>
-            <Text style={styles.feesValue}>{totalAmount}</Text>
+            <Text style={styles.feesValue}>
+              {feesLoading ? "..." : totalAmount}
+            </Text>
           </View>
         </View>
 

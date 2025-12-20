@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
 import { useCryptoCurrencies } from "@/hooks/api/use-crypto";
 import { CryptoCurrency } from "@/services/api/crypto";
@@ -7,7 +8,6 @@ import { showErrorToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,7 +21,8 @@ import {
 } from "react-native";
 
 // Helper function to get crypto icon color
-const getCryptoColor = (symbol: string): string => {
+const getCryptoColor = (symbol: string | undefined | null): string => {
+  if (!symbol) return AppColors.primary;
   const colors: { [key: string]: string } = {
     BTC: AppColors.orange,
     ETH: AppColors.blue,
@@ -35,7 +36,8 @@ const getCryptoColor = (symbol: string): string => {
 };
 
 // Helper function to get crypto icon
-const getCryptoIcon = (symbol: string) => {
+const getCryptoIcon = (symbol: string | undefined | null) => {
+  if (!symbol) return require("@/assets/images/bitcoin.png");
   const icons: { [key: string]: any } = {
     BTC: require("@/assets/images/bitcoin.png"),
     ETH: require("@/assets/images/eth.png"),
@@ -73,6 +75,21 @@ export default function CryptoDepositScreen() {
       network.name.toLowerCase().includes(query)
     );
   }, [networks, networkSearchQuery]);
+
+  // Get all currencies from all networks (for modal)
+  const allCurrencies = useMemo(() => {
+    if (!currenciesData?.networks) return [];
+    const currencies: CryptoCurrency[] = [];
+    Object.values(currenciesData.networks).forEach((networkCurrencies) => {
+      currencies.push(...networkCurrencies);
+    });
+    // Remove duplicates based on currency_id
+    const uniqueCurrencies = currencies.filter(
+      (currency, index, self) =>
+        index === self.findIndex((c) => c.currency_id === currency.currency_id)
+    );
+    return uniqueCurrencies;
+  }, [currenciesData]);
 
   // Get currencies for selected network
   const networkCurrencies = useMemo(() => {
@@ -113,7 +130,7 @@ export default function CryptoDepositScreen() {
       for (const [networkName, currencies] of Object.entries(
         currenciesData.networks
       )) {
-        if (currencies.some((c) => c.id === currency.id)) {
+        if (currencies.some((c) => c.currency_id === currency.currency_id)) {
           setSelectedNetworkName(networkName);
           break;
         }
@@ -129,7 +146,8 @@ export default function CryptoDepositScreen() {
     const currencies = currenciesData?.networks[networkName] || [];
     if (
       currencies.length > 0 &&
-      (!selectedCurrency || selectedCurrency.id !== currencies[0].id)
+      (!selectedCurrency ||
+        selectedCurrency.currency_id !== currencies[0].currency_id)
     ) {
       setSelectedCurrency(currencies[0]);
     }
@@ -137,105 +155,49 @@ export default function CryptoDepositScreen() {
     setNetworkSearchQuery(""); // Clear search when network is selected
   };
 
-  // Filter currencies based on search and filter
+  // Filter currencies based on search and filter (for modal - shows all currencies)
   const filteredCurrencies = useMemo(() => {
-    let filtered = networkCurrencies;
+    let filtered = allCurrencies;
 
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (currency) =>
-          currency.name.toLowerCase().includes(query) ||
-          currency.symbol.toLowerCase().includes(query)
+          currency.name?.toLowerCase().includes(query) ||
+          currency.coin?.toLowerCase().includes(query)
       );
     }
 
     // Apply symbol filter
     if (selectedFilter) {
       filtered = filtered.filter(
-        (currency) => currency.symbol === selectedFilter
+        (currency) => currency.coin === selectedFilter
       );
     }
 
     return filtered;
-  }, [networkCurrencies, searchQuery, selectedFilter]);
+  }, [allCurrencies, searchQuery, selectedFilter]);
 
-  // Get all unique symbols for filter buttons
+  // Get all unique symbols for filter buttons (from all currencies)
   const availableFilters = useMemo(() => {
     const symbols = new Set<string>();
-    networkCurrencies.forEach((currency) => {
-      symbols.add(currency.symbol);
+    allCurrencies.forEach((currency) => {
+      if (currency.coin) {
+        symbols.add(currency.coin);
+      }
     });
     return Array.from(symbols).slice(0, 3); // Limit to 3 filters
-  }, [networkCurrencies]);
+  }, [allCurrencies]);
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crypto Deposit</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <ScreenTitle title="Crypto Deposit" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Choose Wallet Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Choose Coin</Text>
-            <TouchableOpacity onPress={handleOpenSheet}>
-              <Ionicons name="chevron-down" size={24} color={AppColors.text} />
-            </TouchableOpacity>
-          </View>
-
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={AppColors.primary} />
-            </View>
-          ) : selectedCurrency ? (
-            <TouchableOpacity
-              style={styles.walletCard}
-              onPress={handleOpenSheet}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.walletIcon,
-                  { backgroundColor: getCryptoColor(selectedCurrency.symbol) },
-                ]}
-              >
-                <Image
-                  source={getCryptoIcon(selectedCurrency.symbol)}
-                  style={styles.walletIconImage}
-                  contentFit="contain"
-                />
-              </View>
-              <View style={styles.walletInfo}>
-                <Text style={styles.walletName}>{selectedCurrency.name}</Text>
-                <Text style={styles.walletSymbol}>
-                  {selectedCurrency.symbol}
-                </Text>
-              </View>
-              <View style={styles.walletPrice}>
-                <Text style={styles.walletPriceValue}>
-                  {formatPrice(selectedCurrency.rate_usd)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>No currency selected</Text>
-            </View>
-          )}
-        </View>
-
         {/* Choose Network Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -276,6 +238,53 @@ export default function CryptoDepositScreen() {
           )}
         </View>
 
+        {/* Choose Wallet Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Choose Coin</Text>
+            <TouchableOpacity onPress={handleOpenSheet}>
+              <Ionicons name="chevron-down" size={24} color={AppColors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={AppColors.primary} />
+            </View>
+          ) : selectedCurrency ? (
+            <TouchableOpacity
+              style={styles.walletCard}
+              onPress={handleOpenSheet}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.walletIcon]}>
+                <Image
+                  source={{ uri: selectedCurrency.image_url }}
+                  style={styles.walletIconImage}
+                  contentFit="contain"
+                />
+              </View>
+              <View style={styles.walletInfo}>
+                <Text style={styles.walletName}>{selectedCurrency.name}</Text>
+                {selectedCurrency.coin ? (
+                  <Text style={styles.walletSymbol}>
+                    {selectedCurrency.coin}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={styles.walletPrice}>
+                <Text style={styles.walletPriceValue}>
+                  {formatPrice(selectedCurrency.rate_usd)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>No currency selected</Text>
+            </View>
+          )}
+        </View>
+
         <Button
           title="Continue"
           onPress={() => {
@@ -286,11 +295,11 @@ export default function CryptoDepositScreen() {
             router.push({
               pathname: "/btc-deposit",
               params: {
-                currencyId: selectedCurrency.id.toString(),
+                currencyId: selectedCurrency.currency_id.toString(),
                 wallet: JSON.stringify({
-                  id: selectedCurrency.id,
+                  id: selectedCurrency.currency_id,
                   name: selectedCurrency.name,
-                  symbol: selectedCurrency.symbol,
+                  symbol: selectedCurrency.coin,
                 }),
                 network: selectedNetworkName,
               },
@@ -336,7 +345,7 @@ export default function CryptoDepositScreen() {
             {/* Search Bar */}
             <View style={styles.searchContainer}>
               <Input
-                placeholder="Search......"
+                placeholder="Search coin..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 style={styles.searchInput}
@@ -400,63 +409,63 @@ export default function CryptoDepositScreen() {
                     <Text style={styles.emptyText}>No currencies found</Text>
                   </View>
                 ) : (
-                  filteredCurrencies.map((currency) => (
-                    <TouchableOpacity
-                      key={currency.id}
-                      style={[
-                        styles.countryItem,
-                        selectedCurrency?.id === currency.id &&
-                          styles.countryItemSelected,
-                      ]}
-                      onPress={() => handleSelectCurrency(currency)}
-                      activeOpacity={0.7}
-                    >
-                      <View
+                  filteredCurrencies.map((currency) => {
+                    const isSelected =
+                      selectedCurrency?.currency_id === currency.currency_id;
+                    return (
+                      <TouchableOpacity
+                        key={currency.currency_id}
                         style={[
-                          styles.walletIcon,
-                          { backgroundColor: getCryptoColor(currency.symbol) },
+                          styles.countryItem,
+                          isSelected && styles.countryItemSelected,
                         ]}
+                        onPress={() => handleSelectCurrency(currency)}
+                        activeOpacity={0.7}
                       >
-                        <Image
-                          source={getCryptoIcon(currency.symbol)}
-                          style={styles.walletIconImage}
-                          contentFit="contain"
-                        />
-                      </View>
-                      <View style={styles.countryInfo}>
-                        <View>
-                          <Text style={styles.countryName}>
-                            {currency.name}
-                          </Text>
-                          <Text style={styles.countryDialCode}>
-                            {currency.symbol}
-                          </Text>
-                        </View>
-                        <View style={styles.walletPrice}>
-                          <Text style={styles.walletPriceValue}>
-                            {formatPrice(currency.rate_usd)}
-                          </Text>
-                        </View>
-                      </View>
-                      {selectedCurrency?.id === currency.id && (
-                        <View
-                          style={[
-                            styles.checkIconContainer,
-                            {
-                              marginLeft: 12,
-                              marginTop: 0,
-                            },
-                          ]}
-                        >
-                          <Ionicons
-                            name="checkmark"
-                            size={16}
-                            color={AppColors.primary}
+                        <View style={[styles.walletIcon]}>
+                          <Image
+                            source={{ uri: currency.image_url }}
+                            style={styles.walletIconImage}
+                            contentFit="contain"
                           />
                         </View>
-                      )}
-                    </TouchableOpacity>
-                  ))
+                        <View style={styles.countryInfo}>
+                          <View>
+                            <Text style={styles.countryName}>
+                              {currency.name}
+                            </Text>
+                            {currency.coin ? (
+                              <Text style={styles.countryDialCode}>
+                                {currency.coin}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <View style={styles.walletPrice}>
+                            <Text style={styles.walletPriceValue}>
+                              {formatPrice(currency.rate_usd)}
+                            </Text>
+                          </View>
+                        </View>
+                        {isSelected && (
+                          <View
+                            style={[
+                              styles.checkIconContainer,
+                              {
+                                marginLeft: 12,
+                                marginTop: 0,
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name="checkmark"
+                              size={16}
+                              color={AppColors.primary}
+                            />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })
                 )}
               </ScrollView>
             )}
@@ -583,19 +592,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: AppColors.text,
-  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
@@ -624,16 +620,13 @@ const styles = StyleSheet.create({
     borderColor: AppColors.border,
   },
   walletIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
   walletIconImage: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
   },
   walletInfo: {
     flex: 1,
@@ -758,14 +751,16 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     height: "80%",
     flexDirection: "column",
+    paddingHorizontal: 20,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 18,
