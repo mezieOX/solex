@@ -322,4 +322,7 @@ export const StorageKeys = {
   CRYPTO_CACHE: "crypto_cache",
   GIFTCARD_CACHE: "giftcard_cache",
   NOTIFICATIONS_CACHE: "notifications_cache",
+
+  // Notification permission
+  NOTIFICATION_PERMISSION_DISMISSED: "notification_permission_dismissed",
 } as const;

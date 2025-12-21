@@ -108,7 +108,7 @@ export default function HomeScreen() {
     30000
   ); // Refetch every 30 seconds
   const { data: notificationsData } = useNotifications();
-  const { services: allServices } = useServices();
+  const { services: allServices, isLoading: isLoadingServices } = useServices();
 
   // Calculate unread notification count
   const unreadCount = useMemo(() => {
@@ -526,6 +526,7 @@ export default function HomeScreen() {
           <QuickActions
             title="Services"
             actions={allServices?.slice(0, 4) || []}
+            isLoading={isLoadingServices}
             headerSectionStyle={{
               paddingHorizontal: 20,
             }}

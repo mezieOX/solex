@@ -1,4 +1,5 @@
 import Error from "@/components/error";
+import ShowImage from "@/components/show-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScreenTitle } from "@/components/ui/screen-title";
@@ -13,7 +14,7 @@ import {
 import { BillCategory, Biller, BillItem } from "@/services/api/bills";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import * as Contacts from "expo-contacts";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -143,6 +144,9 @@ export default function BillPaymentScreen() {
   const [isBillerModalVisible, setIsBillerModalVisible] = useState(false);
   const [isItemModalVisible, setIsItemModalVisible] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isContactModalVisible, setIsContactModalVisible] = useState(false);
+  const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
 
   // Get billers for selected category
   const {
@@ -283,6 +287,13 @@ export default function BillPaymentScreen() {
   }, []);
 
   const handleSelectItem = useCallback((item: BillItem) => {
+    console.log("📦 Selected Package Data:", {
+      id: item.id,
+      name: item.name,
+      code: item.code,
+      amount: item.amount,
+      fullItem: item,
+    });
     setSelectedItem(item);
     if (item.amount > 0) {
       setAmount(item.amount.toString());
@@ -290,6 +301,88 @@ export default function BillPaymentScreen() {
     setSearchQuery("");
     setIsItemModalVisible(false);
   }, []);
+
+  const handleOpenContacts = useCallback(async () => {
+    try {
+      // Request permission to access contacts
+      const { status } = await Contacts.requestPermissionsAsync();
+
+      if (status !== "granted") {
+        showErrorToast({
+          message: "Permission to access contacts is required",
+        });
+        return;
+      }
+
+      setIsLoadingContacts(true);
+      setIsContactModalVisible(true);
+
+      // Get contacts with phone numbers
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
+      });
+
+      // Filter contacts that have phone numbers
+      const contactsWithPhones = data.filter(
+        (contact) => contact.phoneNumbers && contact.phoneNumbers.length > 0
+      );
+
+      setContacts(contactsWithPhones);
+    } catch (error: any) {
+      console.error("Contact picker error:", error);
+      showErrorToast({
+        message: error?.message || "Failed to load contacts. Please try again.",
+      });
+    } finally {
+      setIsLoadingContacts(false);
+    }
+  }, []);
+
+  const handleSelectContact = useCallback((contact: Contacts.Contact) => {
+    if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+      // Get the first phone number
+      const phoneNumber = contact.phoneNumbers[0]?.number;
+
+      if (!phoneNumber) {
+        showErrorToast({
+          message: "Selected contact has no valid phone number",
+        });
+        return;
+      }
+
+      // Clean the phone number (remove spaces, dashes, etc.)
+      const cleanedNumber = phoneNumber.replace(/[\s\-\(\)]/g, "");
+
+      // Set the customer number
+      setCustomer(cleanedNumber);
+
+      setIsContactModalVisible(false);
+      setSearchQuery("");
+
+      showSuccessToast({
+        message: `Selected ${contact.name || "contact"}`,
+      });
+    } else {
+      showErrorToast({
+        message: "Selected contact has no phone number",
+      });
+    }
+  }, []);
+
+  // Filter contacts based on search
+  const filteredContacts = useMemo(() => {
+    if (!contacts) return [];
+    const query = searchQuery.toLowerCase().trim();
+    return query
+      ? contacts.filter(
+          (contact) =>
+            contact.name?.toLowerCase().includes(query) ||
+            contact.phoneNumbers?.some((phone) =>
+              phone.number?.replace(/[\s\-\(\)]/g, "").includes(query)
+            )
+        )
+      : contacts;
+  }, [contacts, searchQuery]);
 
   const handlePay = async () => {
     if (
@@ -306,11 +399,84 @@ export default function BillPaymentScreen() {
 
     // If items are available, we need item selection and validation
     if (hasItems) {
-      if (!selectedItem || !validatedCustomer) {
+      if (!selectedItem) {
         showErrorToast({
-          message: "Please select a package and validate customer number",
+          message: "Please select a package",
         });
         return;
+      }
+
+      // Check if validation is still in progress
+      if (isValidatingCustomer) {
+        showErrorToast({
+          message: "Please wait for customer validation to complete",
+        });
+        return;
+      }
+
+      // Check if validation has been attempted and succeeded
+      // Validation should run when: selectedBiller, selectedItem, and customer are all present
+      const validationShouldHaveRun =
+        selectedBiller && selectedItem && customer.trim().length > 0;
+
+      if (!validationShouldHaveRun) {
+        showErrorToast({
+          message:
+            "Please ensure package is selected and customer number is entered",
+        });
+        return;
+      }
+
+      // If validation has an error, show it and block
+      if (validateCustomerError) {
+        const errorMessage =
+          (validateCustomerError as any)?.message ||
+          (validateCustomerError as any)?.data?.message ||
+          "Invalid customer number. Please check and try again.";
+        showErrorToast({
+          message: errorMessage,
+        });
+        return;
+      }
+
+      // Check if validation succeeded - if UI shows checkmark, this should be true
+      const validationSucceeded =
+        validatedCustomer && validatedCustomer.customer_name;
+
+      if (!validationSucceeded) {
+        // If there's a validation error, block and show it
+        if (validateCustomerError) {
+          const errorMessage =
+            (validateCustomerError as any)?.message ||
+            (validateCustomerError as any)?.data?.message ||
+            "Invalid customer number. Please check and try again.";
+          showErrorToast({
+            message: errorMessage,
+          });
+          return;
+        }
+
+        // If validation should have run but returned no data and no error,
+        // it might be that the query didn't trigger or the API returned empty
+        // In this case, we'll allow proceeding - the backend will validate anyway
+        // This handles cases where the validation query doesn't return data but there's no error
+        console.log(
+          "Validation query didn't return data but no error - allowing proceed:",
+          {
+            hasValidatedCustomer: !!validatedCustomer,
+            customerName: validatedCustomer?.customer_name,
+            validateCustomerError: !!validateCustomerError,
+            isValidatingCustomer,
+            selectedItem: !!selectedItem,
+            selectedBiller: !!selectedBiller,
+            billerCode: selectedBiller?.biller_code,
+            itemCode: selectedItem?.code,
+            customer: customer.trim(),
+          }
+        );
+
+        // Allow proceeding - backend will validate
+        // The user has entered all required info, and there's no validation error
       }
     }
 
@@ -323,11 +489,59 @@ export default function BillPaymentScreen() {
       return;
     }
 
+    // Ensure item_code is provided - API requires it
+    // If items are available, selectedItem should be set
+    // If items are not available, we still need item_code (might need to be handled differently)
+    // Try multiple possible property names in case API structure differs
+    const itemCode =
+      selectedItem?.code ||
+      (selectedItem as any)?.item_code ||
+      (selectedItem as any)?.itemCode;
+
+    // Debug: Log selectedItem structure to see what we actually have
+    if (selectedItem && !itemCode) {
+      console.log("Selected item structure:", {
+        selectedItem,
+        hasCode: "code" in selectedItem,
+        hasItemCode: "item_code" in selectedItem,
+        hasItemCodeCamel: "itemCode" in selectedItem,
+        keys: Object.keys(selectedItem),
+        itemId: selectedItem.id,
+        itemName: selectedItem.name,
+        fullItem: JSON.stringify(selectedItem),
+      });
+    }
+
+    if (!itemCode) {
+      if (hasItems) {
+        if (selectedItem) {
+          // Item is selected but doesn't have code - this is unexpected
+          console.error("Selected item missing code property:", selectedItem);
+          showErrorToast({
+            message:
+              "Selected package is missing required code. Please try selecting a different package or contact support.",
+          });
+        } else {
+          showErrorToast({
+            message: "Please select a package",
+          });
+        }
+      } else {
+        // Items are not available but API still requires item_code
+        // This might be a configuration issue - show helpful error
+        showErrorToast({
+          message:
+            "Item code is required. Please contact support if packages are not available for this provider.",
+        });
+      }
+      return;
+    }
+
     try {
       const result = await payBill.mutateAsync({
         category: selectedCategory.code,
         biller_code: selectedBiller.biller_code,
-        item_code: selectedItem?.code || "", // Use empty string if no item (might fail at API)
+        item_code: itemCode,
         customer: customer.trim(),
         amount: amount.trim(),
       });
@@ -535,21 +749,8 @@ export default function BillPaymentScreen() {
             >
               {selectedBiller ? (
                 <>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      { backgroundColor: AppColors.primary },
-                    ]}
-                  >
-                    {selectedBiller.logo ? (
-                      <Image
-                        source={{ uri: selectedBiller.logo }}
-                        style={styles.logo}
-                        contentFit="contain"
-                      />
-                    ) : (
-                      <Ionicons name="business" size={24} color="#fff" />
-                    )}
+                  <View style={[styles.iconContainer]}>
+                    <ShowImage source={selectedBiller.short_name || ""} />
                   </View>
                   <View style={styles.infoContainer}>
                     <Text style={styles.cardTitle}>{selectedBiller.name}</Text>
@@ -593,16 +794,12 @@ export default function BillPaymentScreen() {
             >
               {selectedItem ? (
                 <>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      { backgroundColor: AppColors.green },
-                    ]}
-                  >
-                    <Ionicons name="cube" size={24} color="#fff" />
-                  </View>
                   <View style={styles.infoContainer}>
-                    <Text style={styles.cardTitle}>{selectedItem.name}</Text>
+                    <Text style={styles.cardTitle}>
+                      {selectedCategory?.name
+                        ? selectedItem?.biller_name
+                        : selectedItem.name}
+                    </Text>
                     {selectedItem.amount > 0 && (
                       <Text style={styles.cardSubtitle}>
                         ₦{selectedItem.amount.toLocaleString()}
@@ -634,6 +831,22 @@ export default function BillPaymentScreen() {
               placeholder="Enter customer number"
               keyboardType="default"
               style={styles.input}
+              rightIcon={
+                <TouchableOpacity
+                  onPress={handleOpenContacts}
+                  activeOpacity={0.7}
+                  style={styles.contactIconButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <View style={styles.contactIconContainer}>
+                    <Ionicons
+                      name="person"
+                      size={20}
+                      color={AppColors.primary}
+                    />
+                  </View>
+                </TouchableOpacity>
+              }
             />
             {isValidatingCustomer ? (
               <View style={styles.validationContainer}>
@@ -672,7 +885,7 @@ export default function BillPaymentScreen() {
 
         {/* Amount Input */}
         {selectedBiller && (
-          <View style={styles.section}>
+          <View style={[styles.section, { marginTop: -18 }]}>
             <Text style={styles.label}>Amount</Text>
             <Input
               value={amount}
@@ -685,11 +898,12 @@ export default function BillPaymentScreen() {
         )}
 
         <Button
-          title="Pay Bill"
+          title={`Pay ${
+            amount ? `₦${parseFloat(amount).toLocaleString()}` : ""
+          }`}
           onPress={handlePay}
           style={styles.button}
           loading={payBill.isPending}
-          disabled={!canProceed || payBill.isPending}
         />
       </ScrollView>
 
@@ -862,15 +1076,7 @@ export default function BillPaymentScreen() {
                             { backgroundColor: AppColors.primary },
                           ]}
                         >
-                          {item.logo ? (
-                            <Image
-                              source={{ uri: item.logo }}
-                              style={styles.logo}
-                              contentFit="contain"
-                            />
-                          ) : (
-                            <Ionicons name="business" size={24} color="#fff" />
-                          )}
+                          <ShowImage source={item.short_name || ""} />
                         </View>
                         <View style={styles.infoContainer}>
                           <Text style={styles.listItemTitle}>{item.name}</Text>
@@ -968,16 +1174,12 @@ export default function BillPaymentScreen() {
                         onPress={() => handleSelectItem(item)}
                         activeOpacity={0.8}
                       >
-                        <View
-                          style={[
-                            styles.iconContainer,
-                            { backgroundColor: AppColors.green },
-                          ]}
-                        >
-                          <Ionicons name="cube" size={24} color="#fff" />
-                        </View>
                         <View style={styles.infoContainer}>
-                          <Text style={styles.listItemTitle}>{item.name}</Text>
+                          <Text style={styles.listItemTitle}>
+                            {selectedCategory?.name
+                              ? item?.biller_name
+                              : item.name}
+                          </Text>
                           {item.amount > 0 && (
                             <Text style={styles.listItemSubtitle}>
                               ₦{item.amount.toLocaleString()}
@@ -1009,6 +1211,112 @@ export default function BillPaymentScreen() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={
                     filteredItems.length === 0
+                      ? styles.emptyListContainer
+                      : { paddingBottom: 10 }
+                  }
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Contact Selection Modal */}
+      <Modal
+        visible={isContactModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsContactModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                height: isKeyboardVisible ? height * 0.6 : height * 0.9,
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Contact</Text>
+              <TouchableOpacity onPress={() => setIsContactModalVisible(false)}>
+                <Ionicons name="close" size={24} color={AppColors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchContainer}>
+              <Input
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search contacts..."
+                style={styles.searchInput}
+                placeholderTextColor={AppColors.textSecondary}
+              />
+            </View>
+
+            <View style={styles.listContainer}>
+              {isLoadingContacts ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={AppColors.primary} />
+                </View>
+              ) : (
+                <FlatList
+                  data={filteredContacts}
+                  keyExtractor={(item, index) =>
+                    `${item.name || "contact"}-${index}`
+                  }
+                  renderItem={({ item }) => {
+                    const primaryPhone =
+                      item.phoneNumbers && item.phoneNumbers.length > 0
+                        ? item.phoneNumbers[0].number
+                        : "No phone number";
+                    return (
+                      <TouchableOpacity
+                        style={styles.listItem}
+                        onPress={() => handleSelectContact(item)}
+                        activeOpacity={0.8}
+                      >
+                        <View
+                          style={[
+                            styles.iconContainer,
+                            { backgroundColor: AppColors.primary },
+                          ]}
+                        >
+                          <Ionicons name="person" size={24} color="#fff" />
+                        </View>
+                        <View style={styles.infoContainer}>
+                          <Text style={styles.listItemTitle}>
+                            {item.name || "Unknown"}
+                          </Text>
+                          <Text style={styles.listItemSubtitle}>
+                            {primaryPhone}
+                          </Text>
+                        </View>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={20}
+                          color={AppColors.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    );
+                  }}
+                  ListEmptyComponent={() => (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons
+                        name="person-outline"
+                        size={48}
+                        color={AppColors.textSecondary}
+                      />
+                      <Text style={styles.emptyText}>
+                        {searchQuery
+                          ? `No contacts found matching "${searchQuery}"`
+                          : "No contacts with phone numbers found"}
+                      </Text>
+                    </View>
+                  )}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={
+                    filteredContacts.length === 0
                       ? styles.emptyListContainer
                       : { paddingBottom: 10 }
                   }
@@ -1226,5 +1534,17 @@ const styles = StyleSheet.create({
   categoryCardSubtitle: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
+  },
+  contactIconButton: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contactIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: `${AppColors.primary}15`,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

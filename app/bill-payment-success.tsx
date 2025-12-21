@@ -1,15 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
+import { showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
+import * as ClipboardLib from "expo-clipboard";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function BillPaymentSuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Parse payment data from params
   const paymentData = useMemo(() => {
@@ -52,85 +63,256 @@ export default function BillPaymentSuccessScreen() {
     })}`;
   }, [paymentData?.wallet_balance]);
 
+  // Handle copy to clipboard
+  const handleCopy = async (text: string, label: string) => {
+    try {
+      await ClipboardLib.setStringAsync(text);
+      setCopiedField(label);
+      showSuccessToast({
+        message: `${label} copied to clipboard`,
+      });
+      // Reset the copied indicator after 2 seconds
+      setTimeout(() => {
+        setCopiedField(null);
+      }, 2000);
+    } catch (error) {
+      console.error("Clipboard error:", error);
+    }
+  };
+
+  if (!paymentData) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <ScreenTitle title="Payment" />
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={48} color={AppColors.error} />
+          <Text style={styles.errorText}>Unable to load payment details</Text>
+          <Button
+            title="Go Back"
+            onPress={() => router.back()}
+            style={styles.button}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace("/(tabs)")}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Payment Successful</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <ScreenTitle title="Payment Successful" />
 
-      <View style={styles.content}>
-        {/* Success Icon */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Success Icon with Gradient */}
         <View style={styles.successIconContainer}>
-          <View style={styles.successIcon}>
-            <Ionicons name="checkmark" size={60} color="#FFFFFF" />
-          </View>
+          <LinearGradient
+            colors={[AppColors.green, AppColors.greenAccent || AppColors.green]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.successIcon}
+          >
+            <Ionicons name="checkmark" size={64} color="#FFFFFF" />
+          </LinearGradient>
+          <Text style={styles.successTitle}>Payment Successful!</Text>
+          <Text style={styles.successSubtitle}>
+            Your bill payment has been processed
+          </Text>
         </View>
 
         {/* Amount Card */}
         <Card style={styles.amountCard}>
+          <Text style={styles.amountLabel}>Amount Paid</Text>
           <Text style={styles.amountText}>{formattedAmount}</Text>
-          <Text style={styles.successMessage}>
-            Bill payment completed successfully
-          </Text>
+          <View style={styles.divider} />
           {paymentData?.category && (
-            <Text style={styles.categoryText}>
-              {paymentData.category} - {paymentData.biller}
-            </Text>
+            <View style={styles.infoRow}>
+              <Ionicons
+                name="receipt"
+                size={18}
+                color={AppColors.textSecondary}
+              />
+              <Text style={styles.infoText}>
+                {paymentData.category} - {paymentData.biller}
+              </Text>
+            </View>
           )}
           {paymentData?.item && (
-            <Text style={styles.itemText}>Package: {paymentData.item}</Text>
+            <View style={styles.infoRow}>
+              <Ionicons name="cube" size={18} color={AppColors.textSecondary} />
+              <Text style={styles.infoText}>Package: {paymentData.item}</Text>
+            </View>
           )}
           {paymentData?.customer && (
-            <Text style={styles.customerText}>
-              Customer: {paymentData.customer}
-            </Text>
+            <View style={styles.infoRow}>
+              <Ionicons
+                name="person"
+                size={18}
+                color={AppColors.textSecondary}
+              />
+              <Text style={styles.infoText}>
+                Customer: {paymentData.customer}
+              </Text>
+            </View>
           )}
         </Card>
 
         {/* Payment Details */}
         {paymentData?.reference && (
           <Card style={styles.detailsCard}>
+            <Text style={styles.detailsTitle}>Transaction Details</Text>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Reference</Text>
-              <Text style={styles.detailValue}>{paymentData.reference}</Text>
+              <View style={styles.detailLeft}>
+                <Text style={styles.detailLabel}>Reference Number</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.detailRight}
+                onPress={() =>
+                  handleCopy(paymentData.reference, "Reference number")
+                }
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.detailValue,
+                    copiedField === "Reference number" && styles.copiedValue,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {paymentData.reference}
+                </Text>
+                <Ionicons
+                  name={
+                    copiedField === "Reference number"
+                      ? "checkmark"
+                      : "copy-outline"
+                  }
+                  size={18}
+                  color={
+                    copiedField === "Reference number"
+                      ? AppColors.green
+                      : AppColors.textSecondary
+                  }
+                  style={styles.copyIcon}
+                />
+              </TouchableOpacity>
             </View>
+
             {paymentData?.flutterwave?.flw_ref && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Transaction ID</Text>
-                <Text style={styles.detailValue}>
-                  {paymentData.flutterwave.flw_ref}
-                </Text>
+                <View style={styles.detailLeft}>
+                  <Text style={styles.detailLabel}>Transaction ID</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.detailRight}
+                  onPress={() =>
+                    handleCopy(
+                      paymentData.flutterwave.flw_ref,
+                      "Transaction ID"
+                    )
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      copiedField === "Transaction ID" && styles.copiedValue,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {paymentData.flutterwave.flw_ref}
+                  </Text>
+                  <Ionicons
+                    name={
+                      copiedField === "Transaction ID"
+                        ? "checkmark"
+                        : "copy-outline"
+                    }
+                    size={18}
+                    color={
+                      copiedField === "Transaction ID"
+                        ? AppColors.green
+                        : AppColors.textSecondary
+                    }
+                    style={styles.copyIcon}
+                  />
+                </TouchableOpacity>
               </View>
             )}
+
             {paymentData?.flutterwave?.reference && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Payment Reference</Text>
-                <Text style={styles.detailValue}>
-                  {paymentData.flutterwave.reference}
-                </Text>
+                <View style={styles.detailLeft}>
+                  <Text style={styles.detailLabel}>Payment Reference</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.detailRight}
+                  onPress={() =>
+                    handleCopy(
+                      paymentData.flutterwave.reference,
+                      "Payment reference"
+                    )
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      copiedField === "Payment reference" && styles.copiedValue,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {paymentData.flutterwave.reference}
+                  </Text>
+                  <Ionicons
+                    name={
+                      copiedField === "Payment reference"
+                        ? "checkmark"
+                        : "copy-outline"
+                    }
+                    size={18}
+                    color={
+                      copiedField === "Payment reference"
+                        ? AppColors.green
+                        : AppColors.textSecondary
+                    }
+                    style={styles.copyIcon}
+                  />
+                </TouchableOpacity>
               </View>
             )}
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Wallet Balance</Text>
-              <Text style={[styles.detailValue, styles.balanceValue]}>
-                {formattedBalance}
-              </Text>
+
+            <View style={[styles.detailRow, styles.lastDetailRow]}>
+              <View style={styles.detailLeft}>
+                <Text style={styles.detailLabel}>Wallet Balance</Text>
+              </View>
+              <View style={styles.detailRight}>
+                <Text style={[styles.detailValue, styles.balanceValue]}>
+                  {formattedBalance}
+                </Text>
+              </View>
             </View>
           </Card>
         )}
 
         {/* Info Text */}
-        <Text style={styles.infoText}>
-          This transaction will appear in your transaction history
-        </Text>
+        <View style={styles.infoContainer}>
+          <Ionicons
+            name="information-circle"
+            size={20}
+            color={AppColors.textSecondary}
+          />
+          <Text style={styles.infoText}>
+            This transaction will appear in your transaction history
+          </Text>
+        </View>
+      </ScrollView>
 
-        {/* Done Button */}
+      {/* Action Buttons */}
+      <View style={styles.buttonContainer}>
         <Button
           title="Done"
           onPress={() => router.replace("/(tabs)")}
@@ -146,113 +328,159 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: AppColors.text,
-  },
-  content: {
+  errorContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: AppColors.textSecondary,
+    marginTop: 16,
+    textAlign: "center",
   },
   successIconContainer: {
+    alignItems: "center",
+    marginTop: 20,
     marginBottom: 32,
   },
   successIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: AppColors.green,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 24,
+    shadowColor: AppColors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: AppColors.text,
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    textAlign: "center",
   },
   amountCard: {
     width: "100%",
     backgroundColor: AppColors.surface,
     padding: 24,
     marginBottom: 16,
-    alignItems: "center",
+    borderRadius: 16,
   },
-  amountText: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: AppColors.text,
-    marginBottom: 16,
-  },
-  successMessage: {
-    fontSize: 16,
-    color: AppColors.text,
-    textAlign: "center",
+  amountLabel: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
     marginBottom: 8,
     fontWeight: "500",
   },
-  categoryText: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    textAlign: "center",
-    marginTop: 8,
+  amountText: {
+    fontSize: 36,
+    fontWeight: "700",
+    color: AppColors.text,
+    marginBottom: 16,
   },
-  itemText: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    textAlign: "center",
-    marginTop: 4,
+  divider: {
+    height: 1,
+    backgroundColor: AppColors.border,
+    marginVertical: 16,
   },
-  customerText: {
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  infoText: {
     fontSize: 14,
     color: AppColors.textSecondary,
-    textAlign: "center",
-    marginTop: 4,
+    marginLeft: 8,
+    flex: 1,
   },
   detailsCard: {
     width: "100%",
     backgroundColor: AppColors.surface,
     padding: 20,
     marginBottom: 16,
+    borderRadius: 16,
+  },
+  detailsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.text,
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
+  },
+  lastDetailRow: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
+  detailLeft: {
+    flex: 1,
+  },
+  detailRight: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
   detailLabel: {
     fontSize: 14,
     color: AppColors.textSecondary,
-    flex: 1,
   },
   detailValue: {
     fontSize: 14,
     color: AppColors.text,
     fontWeight: "500",
+    marginRight: 8,
     flex: 1,
     textAlign: "right",
+  },
+  copiedValue: {
+    color: AppColors.green,
+  },
+  copyIcon: {
+    marginLeft: 4,
   },
   balanceValue: {
     color: AppColors.green,
     fontWeight: "600",
+    fontSize: 15,
   },
-  infoText: {
-    fontSize: 12,
-    color: AppColors.textSecondary,
-    marginBottom: 32,
-    textAlign: "center",
+  infoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 16,
+    backgroundColor: AppColors.background,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
   },
   button: {
     width: "100%",
-    marginTop: "auto",
-    marginBottom: 80,
   },
 });

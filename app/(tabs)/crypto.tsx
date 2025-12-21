@@ -1,19 +1,20 @@
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
-import { useCryptoCurrencies } from "@/hooks/api/use-crypto";
+import { useCryptoCurrencies, useCryptoPrices } from "@/hooks/api/use-crypto";
 import {
   useBuyCrypto,
   useSellCrypto,
   useSwapCryptoTrade,
 } from "@/hooks/api/use-crypto-trades";
+import { useDashboard } from "@/hooks/api/use-dashboard";
 import { useWallets } from "@/hooks/api/use-wallet";
+import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -21,28 +22,87 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+
+const QUICK_AMOUNTS = [5000, 10000, 25000, 50000]; // NGN amounts
 
 export default function CryptoScreen() {
   const [activeTab, setActiveTab] = useState<"buy" | "sell" | "swap">("buy");
   const [selectedCurrency, setSelectedCurrency] = useState<any>(null);
   const [amount, setAmount] = useState("");
   const [isCurrencyModalVisible, setIsCurrencyModalVisible] = useState(false);
-  const [currencyModalMode, setCurrencyModalMode] = useState<"from" | "to" | "single">("single");
+  const [currencyModalMode, setCurrencyModalMode] = useState<
+    "from" | "to" | "single"
+  >("single");
+  const [showBalance, setShowBalance] = useState(true);
 
   // Swap specific state
   const [fromCurrency, setFromCurrency] = useState<any>(null);
   const [toCurrency, setToCurrency] = useState<any>(null);
   const [swapAmount, setSwapAmount] = useState("");
 
+  const { data: dashboardData } = useDashboard();
   const { data: currenciesData, isLoading: isLoadingCurrencies } =
     useCryptoCurrencies();
   const { data: walletsData } = useWallets();
   const buyCrypto = useBuyCrypto();
   const sellCrypto = useSellCrypto();
   const swapCrypto = useSwapCryptoTrade();
+
+  // Get crypto prices for selected currencies
+  const cryptoIds = useMemo(() => {
+    const ids: string[] = [];
+    if (selectedCurrency) {
+      const coinMap: Record<string, string> = {
+        BTC: "bitcoin",
+        ETH: "ethereum",
+        USDT: "tether",
+        USDC: "usd-coin",
+        BNB: "binancecoin",
+      };
+      const id = coinMap[selectedCurrency.coin.toUpperCase()];
+      if (id) ids.push(id);
+    }
+    if (fromCurrency) {
+      const coinMap: Record<string, string> = {
+        BTC: "bitcoin",
+        ETH: "ethereum",
+        USDT: "tether",
+        USDC: "usd-coin",
+        BNB: "binancecoin",
+      };
+      const id = coinMap[fromCurrency.coin.toUpperCase()];
+      if (id && !ids.includes(id)) ids.push(id);
+    }
+    if (toCurrency) {
+      const coinMap: Record<string, string> = {
+        BTC: "bitcoin",
+        ETH: "ethereum",
+        USDT: "tether",
+        USDC: "usd-coin",
+        BNB: "binancecoin",
+      };
+      const id = coinMap[toCurrency.coin.toUpperCase()];
+      if (id && !ids.includes(id)) ids.push(id);
+    }
+    return ids;
+  }, [selectedCurrency, fromCurrency, toCurrency]);
+
+  const { data: cryptoPrices } = useCryptoPrices(cryptoIds, "usd", 30000);
+
+  // Load showBalance preference
+  useEffect(() => {
+    const loadShowBalance = async () => {
+      const savedValue = await getBoolean(StorageKeys.SHOW_BALANCE);
+      if (savedValue !== null) {
+        setShowBalance(savedValue);
+      }
+    };
+    loadShowBalance();
+  }, []);
 
   // Flatten currencies from networks
   const allCurrencies = useMemo(() => {
@@ -64,6 +124,36 @@ export default function CryptoScreen() {
     if (!walletsData) return [];
     return walletsData.filter((wallet) => wallet.type === "crypto");
   }, [walletsData]);
+
+  // Calculate total balance and change
+  const totalBalance = useMemo(() => {
+    if (!dashboardData?.total_balance_ngn) return 0;
+    return dashboardData.total_balance_ngn;
+  }, [dashboardData]);
+
+  const balanceChange = useMemo(() => {
+    // Mock change for now - can be calculated from crypto prices
+    return { amount: 324.5, percentage: 2.68 };
+  }, []);
+
+  // Get price and change for currency
+  const getCurrencyPriceData = (currency: any) => {
+    if (!cryptoPrices || !currency) return { price: 0, change: 0 };
+    const coinMap: Record<string, string> = {
+      BTC: "bitcoin",
+      ETH: "ethereum",
+      USDT: "tether",
+      USDC: "usd-coin",
+      BNB: "binancecoin",
+    };
+    const id = coinMap[currency.coin.toUpperCase()];
+    if (!id) return { price: currency.rate_usd || 0, change: 0 };
+    const priceData = cryptoPrices.find((p) => p.id === id);
+    return {
+      price: priceData?.current_price || currency.rate_usd || 0,
+      change: priceData?.price_change_percentage_24h || 0,
+    };
+  };
 
   const handleBuy = async () => {
     if (!selectedCurrency || !amount.trim()) {
@@ -97,11 +187,10 @@ export default function CryptoScreen() {
       return;
     }
 
-    // Check if user has enough balance
     const wallet = cryptoWallets.find(
       (w) =>
         w.currency === selectedCurrency.coin &&
-        w.network === selectedCurrency.network
+        w.meta?.network === selectedCurrency.network
     );
 
     if (!wallet || wallet.balance < parseFloat(amount)) {
@@ -165,7 +254,7 @@ export default function CryptoScreen() {
       case "BTC":
         return "logo-bitcoin";
       case "ETH":
-        return "logo-ethereum";
+        return "diamond";
       case "USDT":
       case "USDC":
         return "cash";
@@ -193,11 +282,43 @@ export default function CryptoScreen() {
     }
   };
 
+  const getCurrencyGradient = (coin: string): [string, string] => {
+    const upperCoin = coin.toUpperCase();
+    switch (upperCoin) {
+      case "BTC":
+        return [AppColors.orange, "#FF8C00"];
+      case "ETH":
+        return [AppColors.blue, "#0051D5"];
+      case "USDT":
+      case "USDC":
+        return [AppColors.green, "#00A86B"];
+      case "BNB":
+        return [AppColors.primary, AppColors.primaryDark];
+      default:
+        return [AppColors.primary, AppColors.primaryDark];
+    }
+  };
+
   const getWalletBalance = (currency: any): number => {
     const wallet = cryptoWallets.find(
-      (w) => w.currency === currency.coin && w.network === currency.network
+      (w) =>
+        w.currency === currency.coin && w.meta?.network === currency.network
     );
     return wallet?.balance || 0;
+  };
+
+  const formatBalance = (amount: number) => {
+    return `$${new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)}`;
+  };
+
+  const formatNGN = (amount: number) => {
+    return `₦${new Intl.NumberFormat("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)}`;
   };
 
   return (
@@ -205,331 +326,576 @@ export default function CryptoScreen() {
       <StatusBar style="light" />
       <ScreenTitle title="Crypto" />
 
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "buy" && styles.activeTab]}
-          onPress={() => setActiveTab("buy")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "buy" && styles.activeTabText,
-            ]}
-          >
-            Buy
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "sell" && styles.activeTab]}
-          onPress={() => setActiveTab("sell")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "sell" && styles.activeTabText,
-            ]}
-          >
-            Sell
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "swap" && styles.activeTab]}
-          onPress={() => setActiveTab("swap")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "swap" && styles.activeTabText,
-            ]}
-          >
-            Swap
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {activeTab === "buy" && (
-          <Card style={styles.formCard}>
-            <Text style={styles.formTitle}>Buy Crypto</Text>
-            <Text style={styles.formDescription}>
-              Purchase crypto with NGN
-            </Text>
-
+        {/* Total Balance Section */}
+        <Card style={styles.balanceCard}>
+          <View style={styles.balanceHeader}>
+            <View style={styles.balanceHeaderLeft}>
+              <Ionicons
+                name="wallet"
+                size={24}
+                color={AppColors.primary}
+                style={styles.walletIcon}
+              />
+              <Text style={styles.balanceLabel}>Total Balance</Text>
+            </View>
             <TouchableOpacity
-              style={styles.currencySelector}
+              onPress={() => {
+                setShowBalance(!showBalance);
+                setBoolean(StorageKeys.SHOW_BALANCE, !showBalance);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={showBalance ? "eye" : "eye-off"}
+                size={24}
+                color={AppColors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.balanceAmount}>
+            {showBalance ? formatNGN(totalBalance) : "********"}
+          </Text>
+          <View style={styles.balanceChange}>
+            <Text style={styles.balanceChangeText}>
+              +{formatNGN(balanceChange.amount)}
+            </Text>
+            <Text style={styles.balanceChangePercentage}>
+              +{balanceChange.percentage}%
+            </Text>
+          </View>
+        </Card>
+
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "buy" && styles.activeTab]}
+            onPress={() => setActiveTab("buy")}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "buy" && styles.activeTabText,
+              ]}
+            >
+              Buy
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "sell" && styles.activeTab]}
+            onPress={() => setActiveTab("sell")}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "sell" && styles.activeTabText,
+              ]}
+            >
+              Sell
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "swap" && styles.activeTab]}
+            onPress={() => setActiveTab("swap")}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "swap" && styles.activeTabText,
+              ]}
+            >
+              Swap
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Buy Tab */}
+        {activeTab === "buy" && (
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionLabel}>SELECT CRYPTO</Text>
+            <TouchableOpacity
+              style={styles.cryptoSelector}
               onPress={() => {
                 setCurrencyModalMode("single");
                 setIsCurrencyModalVisible(true);
               }}
+              activeOpacity={0.8}
             >
               {selectedCurrency ? (
-                <View style={styles.selectedCurrency}>
-                  <View
-                    style={[
-                      styles.currencyIcon,
-                      { backgroundColor: getCurrencyColor(selectedCurrency.coin) },
-                    ]}
+                <>
+                  <LinearGradient
+                    colors={getCurrencyGradient(selectedCurrency.coin)}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.cryptoIcon}
                   >
                     <Ionicons
                       name={getCurrencyIcon(selectedCurrency.coin)}
                       size={24}
                       color="#fff"
                     />
-                  </View>
-                  <View style={styles.currencyInfo}>
-                    <Text style={styles.currencyName}>
+                  </LinearGradient>
+                  <View style={styles.cryptoInfo}>
+                    <Text style={styles.cryptoName}>
+                      {selectedCurrency.coin}
+                    </Text>
+                    <Text style={styles.cryptoFullName}>
                       {selectedCurrency.name}
                     </Text>
-                    <Text style={styles.currencyNetwork}>
-                      {selectedCurrency.network}
+                  </View>
+                  <View style={styles.cryptoPrice}>
+                    <Text style={styles.cryptoPriceValue}>
+                      {formatBalance(
+                        getCurrencyPriceData(selectedCurrency).price
+                      )}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cryptoPriceChange,
+                        getCurrencyPriceData(selectedCurrency).change >= 0
+                          ? styles.positiveChange
+                          : styles.negativeChange,
+                      ]}
+                    >
+                      {getCurrencyPriceData(selectedCurrency).change >= 0
+                        ? "+"
+                        : ""}
+                      {getCurrencyPriceData(selectedCurrency).change.toFixed(1)}
+                      %
                     </Text>
                   </View>
-                </View>
+                </>
               ) : (
                 <Text style={styles.placeholderText}>
                   Select cryptocurrency
                 </Text>
               )}
               <Ionicons
-                name="chevron-forward"
-                size={24}
+                name="chevron-down"
+                size={20}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
 
-            <Input
-              label="Amount (NGN)"
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="Enter amount in NGN"
-              keyboardType="numeric"
-              style={styles.input}
-            />
+            <Text style={styles.sectionLabel}>AMOUNT</Text>
+            <View style={styles.amountInputContainer}>
+              <Text style={styles.amountPrefix}>₦</Text>
+              <TextInput
+                style={styles.amountInput}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+                placeholderTextColor={AppColors.textMuted}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.quickAmounts}>
+              {QUICK_AMOUNTS.map((quickAmount) => (
+                <TouchableOpacity
+                  key={quickAmount}
+                  style={styles.quickAmountButton}
+                  onPress={() => setAmount(quickAmount.toString())}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.quickAmountText}>
+                    ₦{quickAmount.toLocaleString()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             {selectedCurrency && amount.trim() && (
               <View style={styles.estimateContainer}>
-                <Text style={styles.estimateLabel}>Estimated:</Text>
+                <Text style={styles.estimateLabel}>You will receive:</Text>
                 <Text style={styles.estimateValue}>
                   {(
-                    parseFloat(amount) / (selectedCurrency.rate_usd || 1)
-                  ).toFixed(8)}{" "}
+                    parseFloat(amount) /
+                    (getCurrencyPriceData(selectedCurrency).price * 1500)
+                  ) // Convert USD price to NGN (approximate rate)
+                    .toFixed(8)}{" "}
                   {selectedCurrency.coin}
                 </Text>
               </View>
             )}
 
-            <Button
-              title="Buy Crypto"
-              onPress={handleBuy}
-              loading={buyCrypto.isPending}
-              disabled={!selectedCurrency || !amount.trim() || buyCrypto.isPending}
-              style={styles.submitButton}
-            />
-          </Card>
+            <LinearGradient
+              colors={[AppColors.primary, AppColors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.actionButton}
+            >
+              <TouchableOpacity
+                onPress={handleBuy}
+                disabled={
+                  !selectedCurrency || !amount.trim() || buyCrypto.isPending
+                }
+                style={styles.actionButtonTouchable}
+                activeOpacity={0.8}
+              >
+                {buyCrypto.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="trending-up" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>
+                      Buy {selectedCurrency?.coin || "Crypto"}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
         )}
 
+        {/* Sell Tab */}
         {activeTab === "sell" && (
-          <Card style={styles.formCard}>
-            <Text style={styles.formTitle}>Sell Crypto</Text>
-            <Text style={styles.formDescription}>
-              Sell crypto for NGN
-            </Text>
-
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionLabel}>SELECT CRYPTO</Text>
             <TouchableOpacity
-              style={styles.currencySelector}
+              style={styles.cryptoSelector}
               onPress={() => {
                 setCurrencyModalMode("single");
                 setIsCurrencyModalVisible(true);
               }}
+              activeOpacity={0.8}
             >
               {selectedCurrency ? (
-                <View style={styles.selectedCurrency}>
-                  <View
-                    style={[
-                      styles.currencyIcon,
-                      { backgroundColor: getCurrencyColor(selectedCurrency.coin) },
-                    ]}
+                <>
+                  <LinearGradient
+                    colors={getCurrencyGradient(selectedCurrency.coin)}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.cryptoIcon}
                   >
                     <Ionicons
                       name={getCurrencyIcon(selectedCurrency.coin)}
                       size={24}
                       color="#fff"
                     />
-                  </View>
-                  <View style={styles.currencyInfo}>
-                    <Text style={styles.currencyName}>
+                  </LinearGradient>
+                  <View style={styles.cryptoInfo}>
+                    <Text style={styles.cryptoName}>
+                      {selectedCurrency.coin}
+                    </Text>
+                    <Text style={styles.cryptoFullName}>
                       {selectedCurrency.name}
                     </Text>
-                    <Text style={styles.currencyNetwork}>
-                      {selectedCurrency.network} • Balance:{" "}
-                      {getWalletBalance(selectedCurrency).toFixed(8)}
+                  </View>
+                  <View style={styles.cryptoPrice}>
+                    <Text style={styles.cryptoPriceValue}>
+                      {formatBalance(
+                        getCurrencyPriceData(selectedCurrency).price
+                      )}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cryptoPriceChange,
+                        getCurrencyPriceData(selectedCurrency).change >= 0
+                          ? styles.positiveChange
+                          : styles.negativeChange,
+                      ]}
+                    >
+                      {getCurrencyPriceData(selectedCurrency).change >= 0
+                        ? "+"
+                        : ""}
+                      {getCurrencyPriceData(selectedCurrency).change.toFixed(1)}
+                      %
                     </Text>
                   </View>
-                </View>
+                </>
               ) : (
                 <Text style={styles.placeholderText}>
                   Select cryptocurrency
                 </Text>
               )}
               <Ionicons
-                name="chevron-forward"
-                size={24}
+                name="chevron-down"
+                size={20}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
 
-            <Input
-              label="Amount (Crypto)"
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="Enter amount to sell"
-              keyboardType="numeric"
-              style={styles.input}
-            />
+            <Text style={styles.sectionLabel}>AMOUNT</Text>
+            <View style={styles.amountInputContainer}>
+              <TextInput
+                style={styles.amountInput}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+                placeholderTextColor={AppColors.textMuted}
+                keyboardType="numeric"
+              />
+              <Text style={styles.amountSuffix}>
+                {selectedCurrency?.coin || ""}
+              </Text>
+            </View>
+
+            {selectedCurrency && (
+              <View style={styles.balanceInfo}>
+                <Text style={styles.balanceInfoText}>
+                  Available: {getWalletBalance(selectedCurrency).toFixed(8)}{" "}
+                  {selectedCurrency.coin}
+                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    setAmount(getWalletBalance(selectedCurrency).toString())
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.maxButton}>MAX</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {selectedCurrency && amount.trim() && (
               <View style={styles.estimateContainer}>
-                <Text style={styles.estimateLabel}>Estimated:</Text>
+                <Text style={styles.estimateLabel}>You will receive:</Text>
                 <Text style={styles.estimateValue}>
-                  ₦
-                  {(
-                    parseFloat(amount) * (selectedCurrency.rate_usd || 1)
-                  ).toLocaleString("en-NG")}
+                  {formatNGN(
+                    parseFloat(amount) *
+                      getCurrencyPriceData(selectedCurrency).price *
+                      1500 // Convert USD price to NGN (approximate rate)
+                  )}
                 </Text>
               </View>
             )}
 
-            <Button
-              title="Sell Crypto"
-              onPress={handleSell}
-              loading={sellCrypto.isPending}
-              disabled={
-                !selectedCurrency ||
-                !amount.trim() ||
-                sellCrypto.isPending
-              }
-              style={styles.submitButton}
-            />
-          </Card>
+            <LinearGradient
+              colors={["#FF3B30", AppColors.orange]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.actionButton}
+            >
+              <TouchableOpacity
+                onPress={handleSell}
+                disabled={
+                  !selectedCurrency || !amount.trim() || sellCrypto.isPending
+                }
+                style={styles.actionButtonTouchable}
+                activeOpacity={0.8}
+              >
+                {sellCrypto.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="trending-down" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>
+                      Sell {selectedCurrency?.coin || "Crypto"}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
         )}
 
+        {/* Swap Tab */}
         {activeTab === "swap" && (
-          <Card style={styles.formCard}>
-            <Text style={styles.formTitle}>Swap Crypto</Text>
-            <Text style={styles.formDescription}>
-              Exchange one crypto for another
-            </Text>
-
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionLabel}>FROM</Text>
             <TouchableOpacity
-              style={styles.currencySelector}
+              style={styles.cryptoSelector}
               onPress={() => {
                 setCurrencyModalMode("from");
                 setIsCurrencyModalVisible(true);
               }}
+              activeOpacity={0.8}
             >
               {fromCurrency ? (
-                <View style={styles.selectedCurrency}>
-                  <View
-                    style={[
-                      styles.currencyIcon,
-                      { backgroundColor: getCurrencyColor(fromCurrency.coin) },
-                    ]}
+                <>
+                  <LinearGradient
+                    colors={getCurrencyGradient(fromCurrency.coin)}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.cryptoIcon}
                   >
                     <Ionicons
                       name={getCurrencyIcon(fromCurrency.coin)}
                       size={24}
                       color="#fff"
                     />
-                  </View>
-                  <View style={styles.currencyInfo}>
-                    <Text style={styles.currencyName}>{fromCurrency.name}</Text>
-                    <Text style={styles.currencyNetwork}>
-                      {fromCurrency.network}
+                  </LinearGradient>
+                  <View style={styles.cryptoInfo}>
+                    <Text style={styles.cryptoName}>{fromCurrency.coin}</Text>
+                    <Text style={styles.cryptoFullName}>
+                      {fromCurrency.name}
                     </Text>
                   </View>
-                </View>
+                  <View style={styles.cryptoPrice}>
+                    <Text style={styles.cryptoPriceValue}>
+                      {formatBalance(getCurrencyPriceData(fromCurrency).price)}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cryptoPriceChange,
+                        getCurrencyPriceData(fromCurrency).change >= 0
+                          ? styles.positiveChange
+                          : styles.negativeChange,
+                      ]}
+                    >
+                      {getCurrencyPriceData(fromCurrency).change >= 0
+                        ? "+"
+                        : ""}
+                      {getCurrencyPriceData(fromCurrency).change.toFixed(1)}%
+                    </Text>
+                  </View>
+                </>
               ) : (
                 <Text style={styles.placeholderText}>From</Text>
               )}
               <Ionicons
-                name="chevron-forward"
-                size={24}
+                name="chevron-down"
+                size={20}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
 
-            <View style={styles.swapArrow}>
-              <Ionicons
-                name="swap-vertical"
-                size={24}
-                color={AppColors.primary}
+            <View style={styles.amountInputContainer}>
+              <TextInput
+                style={styles.amountInput}
+                value={swapAmount}
+                onChangeText={setSwapAmount}
+                placeholder="0.00"
+                placeholderTextColor={AppColors.textMuted}
+                keyboardType="numeric"
               />
+              <Text style={styles.amountSuffix}>
+                {fromCurrency?.coin || ""}
+              </Text>
             </View>
 
+            <View style={styles.swapArrowContainer}>
+              <View style={styles.swapArrowCircle}>
+                <Ionicons
+                  name="swap-vertical"
+                  size={24}
+                  color={AppColors.primary}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.sectionLabel}>TO</Text>
             <TouchableOpacity
-              style={styles.currencySelector}
+              style={styles.cryptoSelector}
               onPress={() => {
                 setCurrencyModalMode("to");
                 setIsCurrencyModalVisible(true);
               }}
+              activeOpacity={0.8}
             >
               {toCurrency ? (
-                <View style={styles.selectedCurrency}>
-                  <View
-                    style={[
-                      styles.currencyIcon,
-                      { backgroundColor: getCurrencyColor(toCurrency.coin) },
-                    ]}
+                <>
+                  <LinearGradient
+                    colors={getCurrencyGradient(toCurrency.coin)}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.cryptoIcon}
                   >
                     <Ionicons
                       name={getCurrencyIcon(toCurrency.coin)}
                       size={24}
                       color="#fff"
                     />
+                  </LinearGradient>
+                  <View style={styles.cryptoInfo}>
+                    <Text style={styles.cryptoName}>{toCurrency.coin}</Text>
+                    <Text style={styles.cryptoFullName}>{toCurrency.name}</Text>
                   </View>
-                  <View style={styles.currencyInfo}>
-                    <Text style={styles.currencyName}>{toCurrency.name}</Text>
-                    <Text style={styles.currencyNetwork}>
-                      {toCurrency.network}
+                  <View style={styles.cryptoPrice}>
+                    <Text style={styles.cryptoPriceValue}>
+                      {formatBalance(getCurrencyPriceData(toCurrency).price)}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cryptoPriceChange,
+                        getCurrencyPriceData(toCurrency).change >= 0
+                          ? styles.positiveChange
+                          : styles.negativeChange,
+                      ]}
+                    >
+                      {getCurrencyPriceData(toCurrency).change >= 0 ? "+" : ""}
+                      {getCurrencyPriceData(toCurrency).change.toFixed(1)}%
                     </Text>
                   </View>
-                </View>
+                </>
               ) : (
                 <Text style={styles.placeholderText}>To</Text>
               )}
               <Ionicons
-                name="chevron-forward"
-                size={24}
+                name="chevron-down"
+                size={20}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
 
-            <Input
-              label="Amount"
-              value={swapAmount}
-              onChangeText={setSwapAmount}
-              placeholder="Enter amount"
-              keyboardType="numeric"
-              style={styles.input}
-            />
+            <View style={styles.amountInputContainer}>
+              <TextInput
+                style={styles.amountInput}
+                value={
+                  fromCurrency && toCurrency && swapAmount.trim()
+                    ? (
+                        (parseFloat(swapAmount) *
+                          getCurrencyPriceData(fromCurrency).price) /
+                        getCurrencyPriceData(toCurrency).price
+                      ).toFixed(8)
+                    : "0.00"
+                }
+                placeholder="0.00"
+                placeholderTextColor={AppColors.textMuted}
+                keyboardType="numeric"
+                editable={false}
+              />
+              <Text style={styles.amountSuffix}>{toCurrency?.coin || ""}</Text>
+            </View>
 
-            <Button
-              title="Swap"
-              onPress={handleSwap}
-              loading={swapCrypto.isPending}
-              disabled={
-                !fromCurrency ||
-                !toCurrency ||
-                !swapAmount.trim() ||
-                swapCrypto.isPending
-              }
-              style={styles.submitButton}
-            />
-          </Card>
+            {fromCurrency && toCurrency && swapAmount.trim() && (
+              <View style={styles.estimateContainer}>
+                <Text style={styles.estimateLabel}>Exchange rate:</Text>
+                <Text style={styles.estimateValue}>
+                  1 {fromCurrency.coin} ={" "}
+                  {(
+                    getCurrencyPriceData(fromCurrency).price /
+                    getCurrencyPriceData(toCurrency).price
+                  ).toFixed(8)}{" "}
+                  {toCurrency.coin}
+                </Text>
+              </View>
+            )}
+
+            <LinearGradient
+              colors={[AppColors.primary, AppColors.blue]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.actionButton}
+            >
+              <TouchableOpacity
+                onPress={handleSwap}
+                disabled={
+                  !fromCurrency ||
+                  !toCurrency ||
+                  !swapAmount.trim() ||
+                  swapCrypto.isPending
+                }
+                style={styles.actionButtonTouchable}
+                activeOpacity={0.8}
+              >
+                {swapCrypto.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.actionButtonText}>
+                    Swap {fromCurrency?.coin || ""} → {toCurrency?.coin || ""}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
         )}
       </ScrollView>
 
@@ -544,7 +910,9 @@ export default function CryptoScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Currency</Text>
-              <TouchableOpacity onPress={() => setIsCurrencyModalVisible(false)}>
+              <TouchableOpacity
+                onPress={() => setIsCurrencyModalVisible(false)}
+              >
                 <Ionicons name="close" size={24} color={AppColors.text} />
               </TouchableOpacity>
             </View>
@@ -556,9 +924,7 @@ export default function CryptoScreen() {
             ) : (
               <FlatList
                 data={allCurrencies}
-                keyExtractor={(item) =>
-                  `${item.currency_id}_${item.network}`
-                }
+                keyExtractor={(item) => `${item.currency_id}_${item.network}`}
                 renderItem={({ item }) => {
                   const isSelected =
                     currencyModalMode === "from"
@@ -569,6 +935,8 @@ export default function CryptoScreen() {
                         toCurrency?.network === item.network
                       : selectedCurrency?.currency_id === item.currency_id &&
                         selectedCurrency?.network === item.network;
+
+                  const priceData = getCurrencyPriceData(item);
 
                   return (
                     <TouchableOpacity
@@ -588,23 +956,24 @@ export default function CryptoScreen() {
                           setIsCurrencyModalVisible(false);
                         }
                       }}
+                      activeOpacity={0.7}
                     >
-                      <View
-                        style={[
-                          styles.currencyIcon,
-                          { backgroundColor: getCurrencyColor(item.coin) },
-                        ]}
+                      <LinearGradient
+                        colors={getCurrencyGradient(item.coin)}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.currencyIcon}
                       >
                         <Ionicons
                           name={getCurrencyIcon(item.coin)}
                           size={24}
                           color="#fff"
                         />
-                      </View>
+                      </LinearGradient>
                       <View style={styles.currencyInfo}>
                         <Text style={styles.currencyName}>{item.name}</Text>
                         <Text style={styles.currencyNetwork}>
-                          {item.network} • ${item.rate_usd?.toFixed(2) || "0.00"}
+                          {item.network} • {formatBalance(priceData.price)}
                         </Text>
                       </View>
                       {isSelected && (
@@ -632,21 +1001,72 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
   },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  balanceCard: {
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
+  },
+  balanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  balanceHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  walletIcon: {
+    marginRight: 8,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    fontWeight: "500",
+  },
+  balanceAmount: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: AppColors.text,
+    marginBottom: 8,
+  },
+  balanceChange: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  balanceChangeText: {
+    fontSize: 14,
+    color: AppColors.green,
+    fontWeight: "600",
+  },
+  balanceChangePercentage: {
+    fontSize: 14,
+    color: AppColors.green,
+    fontWeight: "600",
+  },
   tabContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     gap: 12,
+    marginBottom: 24,
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: AppColors.surface,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   activeTab: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: AppColors.surface,
+    borderColor: AppColors.primary,
+    borderWidth: 2,
   },
   tabText: {
     fontSize: 16,
@@ -654,75 +1074,137 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
   },
   activeTabText: {
-    color: AppColors.background,
+    color: AppColors.primary,
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+  tabContent: {
+    gap: 16,
   },
-  formCard: {
-    marginBottom: 20,
-  },
-  formTitle: {
-    fontSize: 20,
+  sectionLabel: {
+    fontSize: 12,
+    color: AppColors.textSecondary,
     fontWeight: "600",
-    color: AppColors.text,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     marginBottom: 8,
   },
-  formDescription: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    marginBottom: 24,
-  },
-  currencySelector: {
+  cryptoSelector: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 20,
     borderWidth: 1,
     borderColor: AppColors.border,
+    gap: 12,
   },
-  selectedCurrency: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  currencyIcon: {
+  cryptoIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
   },
-  currencyInfo: {
+  cryptoInfo: {
     flex: 1,
   },
-  currencyName: {
+  cryptoName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: AppColors.text,
+    marginBottom: 4,
+  },
+  cryptoFullName: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  cryptoPrice: {
+    alignItems: "flex-end",
+  },
+  cryptoPriceValue: {
     fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
     marginBottom: 4,
   },
-  currencyNetwork: {
+  cryptoPriceChange: {
     fontSize: 14,
-    color: AppColors.textSecondary,
+    fontWeight: "600",
+  },
+  positiveChange: {
+    color: AppColors.green,
+  },
+  negativeChange: {
+    color: AppColors.error,
   },
   placeholderText: {
     fontSize: 16,
     color: AppColors.textSecondary,
     flex: 1,
   },
-  input: {
-    marginBottom: 0,
+  amountInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    gap: 8,
+  },
+  amountPrefix: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.textSecondary,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  amountSuffix: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.primary,
+  },
+  quickAmounts: {
+    flexDirection: "row",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  quickAmountButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  quickAmountText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  balanceInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  balanceInfoText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  maxButton: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: AppColors.primary,
   },
   estimateContainer: {
     backgroundColor: AppColors.surface,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 20,
+    marginTop: 8,
   },
   estimateLabel: {
     fontSize: 14,
@@ -731,15 +1213,39 @@ const styles = StyleSheet.create({
   },
   estimateValue: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: AppColors.text,
   },
-  submitButton: {
-    marginTop: 0,
-  },
-  swapArrow: {
+  swapArrowContainer: {
     alignItems: "center",
-    marginVertical: 16,
+    marginVertical: 8,
+  },
+  swapArrowCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: AppColors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: AppColors.primary,
+  },
+  actionButton: {
+    borderRadius: 16,
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  actionButtonTouchable: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
   },
   modalOverlay: {
     flex: 1,
@@ -780,9 +1286,30 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
+    gap: 12,
   },
   currencyItemSelected: {
     borderColor: AppColors.primary,
     borderWidth: 2,
+  },
+  currencyIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  currencyInfo: {
+    flex: 1,
+  },
+  currencyName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.text,
+    marginBottom: 4,
+  },
+  currencyNetwork: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
   },
 });

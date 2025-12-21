@@ -373,18 +373,6 @@ export default function FiatWithdrawalScreen() {
                         onPress={() => handleSelectBank(bankData as Bank)}
                         activeOpacity={0.8}
                       >
-                        <View
-                          style={[
-                            styles.accountIcon,
-                            { backgroundColor: iconData.iconBg },
-                          ]}
-                        >
-                          <Ionicons
-                            name={iconData.icon}
-                            size={24}
-                            color={iconData.iconColor}
-                          />
-                        </View>
                         <View style={styles.accountInfo}>
                           <Text style={styles.accountName}>{bank.name}</Text>
                         </View>

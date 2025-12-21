@@ -224,7 +224,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 40,
   },
   introText: {
     fontSize: 14,

@@ -14,11 +14,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
+import { NotificationPermissionModal } from "@/components/notification-permission-modal";
 import { toastConfig } from "@/components/ui/toast-config";
-import { showInfoToast } from "@/utils/toast";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFirebaseToken } from "@/hooks/use-firebase-token";
 import { QueryProvider } from "@/hooks/use-query-client";
+import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
+import { showInfoToast } from "@/utils/toast";
 
 // Import background message handler (must be imported to register it)
 import "@/utils/firebase-background-message";
@@ -35,6 +37,7 @@ export default function RootLayout() {
   const router = useRouter();
   const { fcmToken, isLoading: isTokenLoading } = useFirebaseToken();
   const [isRemoteMessage, setIsRemoteMessage] = useState<string>("");
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
     // Hide the splash screen immediately
@@ -47,6 +50,50 @@ export default function RootLayout() {
     };
     configureNavigationBar();
   }, []);
+
+  // Check notification permission on app start
+  useEffect(() => {
+    const checkNotificationPermission = async () => {
+      try {
+        // Check if user has already dismissed the modal
+        const hasDismissed = await getBoolean(
+          StorageKeys.NOTIFICATION_PERMISSION_DISMISSED
+        );
+
+        if (hasDismissed) {
+          return; // Don't show modal if user dismissed it before
+        }
+
+        // Check if we have a token - if we do, notifications are enabled
+        // If no token and not loading, show the modal
+        if (!fcmToken && !isTokenLoading) {
+          // Small delay to ensure app is fully loaded
+          setTimeout(() => {
+            setShowNotificationModal(true);
+          }, 1500);
+        }
+      } catch (error) {
+        console.error("Error checking notification permission:", error);
+      }
+    };
+
+    // Only check after token loading is complete
+    if (!isTokenLoading) {
+      checkNotificationPermission();
+    }
+  }, [isTokenLoading, fcmToken]);
+
+  const handleNotificationModalClose = async () => {
+    setShowNotificationModal(false);
+    // Mark as dismissed so we don't show it again
+    await setBoolean(StorageKeys.NOTIFICATION_PERMISSION_DISMISSED, true);
+  };
+
+  const handleNotificationEnabled = async () => {
+    setShowNotificationModal(false);
+    // Don't mark as dismissed if user enabled it
+    // This way if they disable it later, we can show the modal again
+  };
 
   // Setup push notification handlers
   useEffect(() => {
@@ -93,8 +140,7 @@ export default function RootLayout() {
           showInfoToast({
             title: remoteMessage.notification.title || "New Notification",
             message:
-              remoteMessage.notification.body ||
-              "You have a new notification",
+              remoteMessage.notification.body || "You have a new notification",
           });
         }
 
@@ -136,6 +182,11 @@ export default function RootLayout() {
         </BottomSheetModalProvider>
       </GestureHandlerRootView>
       <Toast config={toastConfig} />
+      <NotificationPermissionModal
+        visible={showNotificationModal}
+        onClose={handleNotificationModalClose}
+        onEnable={handleNotificationEnabled}
+      />
     </QueryProvider>
   );
 }

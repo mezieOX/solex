@@ -35,6 +35,7 @@ export interface BillItem {
   code: string;
   amount: number;
   currency: string;
+  biller_name?: string;
 }
 
 export interface BillItemsResponse {
