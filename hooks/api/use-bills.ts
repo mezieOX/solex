@@ -23,7 +23,7 @@ export function useBillCategories() {
     queryKey: billsKeys.categories(),
     queryFn: () => billsApi.getCategories(),
     retry: false,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours (categories don't change often)
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -36,7 +36,7 @@ export function useBillers(category: string, enabled: boolean = true) {
     queryFn: () => billsApi.getBillers(category),
     enabled: enabled && !!category,
     retry: false,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -49,7 +49,7 @@ export function useBillItems(biller_code: string, enabled: boolean = true) {
     queryFn: () => billsApi.getBillItems(biller_code),
     enabled: enabled && !!biller_code,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -91,7 +91,7 @@ export function useValidateCustomerQuery(
       }),
     enabled: enabled && !!biller_code && !!item_code && !!customer,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 1000, // 1 second
   });
 }
 

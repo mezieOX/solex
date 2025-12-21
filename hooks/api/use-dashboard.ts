@@ -18,7 +18,7 @@ export function useDashboard() {
   return useQuery({
     queryKey: dashboardKeys.data(),
     queryFn: () => dashboardApi.getDashboard(),
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1 * 1000, // 1 second
     refetchInterval: 60 * 1000, // Refetch every minute
   });
 }

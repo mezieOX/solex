@@ -92,6 +92,39 @@ export const accountApi = {
     );
     return response;
   },
+
+  /**
+   * Update profile image
+   * @param imageUri - URI of the image file to upload
+   */
+  updateProfileImage: async (
+    imageUri: string
+  ): Promise<ApiResponse<{ profile_image_url: string }>> => {
+    // Extract file extension to determine MIME type
+    const fileExtension = imageUri.split(".").pop()?.toLowerCase() || "jpg";
+    const mimeType =
+      fileExtension === "png"
+        ? "image/png"
+        : fileExtension === "jpg" || fileExtension === "jpeg"
+        ? "image/jpeg"
+        : "image/jpeg";
+
+    // Extract filename from URI or use default
+    const filename =
+      imageUri.split("/").pop() || `profile_image.${fileExtension}`;
+
+    const formData = new FormData();
+    formData.append("profile_image", {
+      uri: imageUri,
+      type: mimeType,
+      name: filename,
+    } as any);
+
+    const response = await apiClient.post<
+      ApiResponse<{ profile_image_url: string }>
+    >("/account/profile-image/update", formData);
+    return response;
+  },
 };
 
 export interface VirtualAccountData {

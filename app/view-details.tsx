@@ -23,6 +23,9 @@ type TransactionType =
   | "transfer"
   | "exchange"
   | "payment"
+  | "giftcard"
+  | "giftcard_buy"
+  | "giftcard_sell"
   | "other";
 
 interface TransactionData {
@@ -156,6 +159,25 @@ export default function ViewDetailsScreen() {
           recipientLabel: "Payee",
           dateLabel: "Payment Date",
         };
+      case "giftcard":
+      case "giftcard_buy":
+        return {
+          ...baseConfig,
+          title: "Gift Card Purchase",
+          successMessage: "Gift Card Purchased Successfully",
+          receiptTitle: "Gift Card Receipt",
+          recipientLabel: "Product",
+          dateLabel: "Purchase Date",
+        };
+      case "giftcard_sell":
+        return {
+          ...baseConfig,
+          title: "Gift Card Sale",
+          successMessage: "Gift Card Sale Submitted Successfully",
+          receiptTitle: "Gift Card Sale Receipt",
+          recipientLabel: "Product",
+          dateLabel: "Sale Date",
+        };
       default:
         return {
           ...baseConfig,
@@ -170,32 +192,13 @@ export default function ViewDetailsScreen() {
 
   // Format amount with currency symbol
   const formattedAmount = useMemo(() => {
-    const amountValue =
+    const amount =
       transactionData?.formData?.amount ||
       transactionData?.amount ||
       transactionData?.data?.amount ||
       "0";
-    const currency =
-      transactionData?.currency || transactionData?.formData?.currency || "₦";
 
-    // Clean the amount string: remove currency symbols, commas, and whitespace
-    const cleanedAmount = String(amountValue)
-      .replace(/[₦$€£¥,\s]/g, "")
-      .trim();
-
-    const amount = parseFloat(cleanedAmount);
-
-    // Check if amount is valid
-    if (isNaN(amount) || amount === 0) {
-      return "₦0.00";
-    }
-
-    const currencySymbol =
-      currency === "NGN" || currency === "₦" ? "₦" : currency;
-    return `${currencySymbol}${new Intl.NumberFormat("en-NG", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)}`;
+    return amount;
   }, [transactionData]);
 
   // Format account number (mask middle digits)
@@ -491,7 +494,6 @@ export default function ViewDetailsScreen() {
         });
       }
     } catch (error: any) {
-      console.error("Error sharing receipt:", error);
       showErrorToast({
         message: error?.message || "Failed to share receipt. Please try again.",
       });
@@ -521,7 +523,6 @@ export default function ViewDetailsScreen() {
         });
       }
     } catch (error: any) {
-      console.error("Error downloading receipt:", error);
       showErrorToast({
         message:
           error?.message || "Failed to download receipt. Please try again.",
@@ -626,7 +627,7 @@ export default function ViewDetailsScreen() {
               size={80}
               logo={require("@/assets/images/app-logo.png")}
               logoBorderRadius={300}
-            />  
+            />
           </View>
           <TouchableOpacity style={styles.reportButton}>
             <Text style={styles.reportButtonText}>Report</Text>

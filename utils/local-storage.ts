@@ -23,7 +23,6 @@ export async function setString(key: string, value: string): Promise<boolean> {
     await AsyncStorage.setItem(getKey(key), value);
     return true;
   } catch (error) {
-    console.error(`Error saving string for key "${key}":`, error);
     return false;
   }
 }
@@ -35,7 +34,6 @@ export async function getString(key: string): Promise<string | null> {
   try {
     return await AsyncStorage.getItem(getKey(key));
   } catch (error) {
-    console.error(`Error getting string for key "${key}":`, error);
     return null;
   }
 }
@@ -48,7 +46,6 @@ export async function setNumber(key: string, value: number): Promise<boolean> {
     await AsyncStorage.setItem(getKey(key), value.toString());
     return true;
   } catch (error) {
-    console.error(`Error saving number for key "${key}":`, error);
     return false;
   }
 }
@@ -63,7 +60,6 @@ export async function getNumber(key: string): Promise<number | null> {
     const num = parseFloat(value);
     return isNaN(num) ? null : num;
   } catch (error) {
-    console.error(`Error getting number for key "${key}":`, error);
     return null;
   }
 }
@@ -79,7 +75,6 @@ export async function setBoolean(
     await AsyncStorage.setItem(getKey(key), value ? "true" : "false");
     return true;
   } catch (error) {
-    console.error(`Error saving boolean for key "${key}":`, error);
     return false;
   }
 }
@@ -93,7 +88,6 @@ export async function getBoolean(key: string): Promise<boolean | null> {
     if (value === null) return null;
     return value === "true";
   } catch (error) {
-    console.error(`Error getting boolean for key "${key}":`, error);
     return null;
   }
 }
@@ -107,7 +101,6 @@ export async function setObject<T>(key: string, value: T): Promise<boolean> {
     await AsyncStorage.setItem(getKey(key), jsonString);
     return true;
   } catch (error) {
-    console.error(`Error saving object for key "${key}":`, error);
     return false;
   }
 }
@@ -121,7 +114,6 @@ export async function getObject<T>(key: string): Promise<T | null> {
     if (value === null) return null;
     return JSON.parse(value) as T;
   } catch (error) {
-    console.error(`Error getting object for key "${key}":`, error);
     return null;
   }
 }
@@ -135,7 +127,6 @@ export async function setArray<T>(key: string, value: T[]): Promise<boolean> {
     await AsyncStorage.setItem(getKey(key), jsonString);
     return true;
   } catch (error) {
-    console.error(`Error saving array for key "${key}":`, error);
     return false;
   }
 }
@@ -149,7 +140,6 @@ export async function getArray<T>(key: string): Promise<T[] | null> {
     if (value === null) return null;
     return JSON.parse(value) as T[];
   } catch (error) {
-    console.error(`Error getting array for key "${key}":`, error);
     return null;
   }
 }
@@ -162,7 +152,6 @@ export async function remove(key: string): Promise<boolean> {
     await AsyncStorage.removeItem(getKey(key));
     return true;
   } catch (error) {
-    console.error(`Error removing key "${key}":`, error);
     return false;
   }
 }
@@ -176,7 +165,6 @@ export async function removeMultiple(keys: string[]): Promise<boolean> {
     await AsyncStorage.multiRemove(prefixedKeys);
     return true;
   } catch (error) {
-    console.error(`Error removing multiple keys:`, error);
     return false;
   }
 }
@@ -191,7 +179,6 @@ export async function clear(): Promise<boolean> {
     await AsyncStorage.multiRemove(appKeys);
     return true;
   } catch (error) {
-    console.error("Error clearing storage:", error);
     return false;
   }
 }
@@ -204,7 +191,6 @@ export async function clearAll(): Promise<boolean> {
     await AsyncStorage.clear();
     return true;
   } catch (error) {
-    console.error("Error clearing all storage:", error);
     return false;
   }
 }
@@ -219,7 +205,6 @@ export async function getAllKeys(): Promise<string[]> {
       .filter((key) => key.startsWith(STORAGE_PREFIX))
       .map((key) => key.replace(STORAGE_PREFIX, ""));
   } catch (error) {
-    console.error("Error getting all keys:", error);
     return [];
   }
 }
@@ -232,7 +217,6 @@ export async function hasKey(key: string): Promise<boolean> {
     const value = await AsyncStorage.getItem(getKey(key));
     return value !== null;
   } catch (error) {
-    console.error(`Error checking key "${key}":`, error);
     return false;
   }
 }
@@ -255,7 +239,6 @@ export async function getMultiple(
 
     return result;
   } catch (error) {
-    console.error("Error getting multiple values:", error);
     return {};
   }
 }
@@ -273,7 +256,6 @@ export async function setMultiple(
     await AsyncStorage.multiSet(entries);
     return true;
   } catch (error) {
-    console.error("Error setting multiple values:", error);
     return false;
   }
 }
@@ -293,7 +275,6 @@ export async function set<T>(key: string, value: T): Promise<boolean> {
   } else if (typeof value === "object" && value !== null) {
     return setObject(key, value);
   } else {
-    console.error(`Unsupported type for key "${key}"`);
     return false;
   }
 }

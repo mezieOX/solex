@@ -61,7 +61,7 @@ const COIN_GECKO_MAP: Record<string, string> = {
 
 const { height } = Dimensions.get("window");
 
-export default function CryptoDepositScreen() {
+export default function CryptoWithdrawalSelectScreen() {
   const router = useRouter();
   const {
     data: currenciesData,
@@ -150,16 +150,16 @@ export default function CryptoDepositScreen() {
   // Handle currency selection
   const handleSelectCurrency = (currency: CryptoCurrency) => {
     router.push({
-      pathname: "/btc-deposit",
+      pathname: "/crypto-withdrawal",
       params: {
         currencyId: currency.currency_id.toString(),
-        wallet: JSON.stringify({
+        currency: JSON.stringify({
           id: currency.currency_id,
           name: currency.name,
           symbol: currency.coin,
           image_url: currency.image_url,
           network: currency.network,
-          min_deposit: currency.min_deposit,
+          balance: currency.balance,
         }),
         network: currency.network,
       },
@@ -168,7 +168,7 @@ export default function CryptoDepositScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenTitle title="Crypto Deposit" />
+      <ScreenTitle title="Crypto Withdrawal" />
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -378,14 +378,5 @@ const styles = StyleSheet.create({
   },
   skeletonName: {
     marginBottom: 6,
-  },
-  skeletonPrice: {
-    marginRight: 8,
-  },
-  skeletonChange: {
-    marginLeft: 4,
-  },
-  skeletonHoldings: {
-    marginTop: 0,
   },
 });

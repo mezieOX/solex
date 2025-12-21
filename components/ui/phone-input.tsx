@@ -61,11 +61,6 @@ export const PhoneInput: FC<PhoneInputProps> = ({
         try {
           // getAllCountries requires flagType parameter
           const allCountries = await getAllCountries(FlagType.EMOJI);
-          console.log(
-            "Fetched countries:",
-            allCountries?.length,
-            allCountries?.[0]
-          );
           if (
             allCountries &&
             Array.isArray(allCountries) &&
@@ -73,11 +68,9 @@ export const PhoneInput: FC<PhoneInputProps> = ({
           ) {
             setCountries(allCountries);
             setFilteredCountries(allCountries);
-          } else {
-            console.warn("No countries fetched or empty array");
           }
         } catch (error) {
-          console.error("Error getting countries:", error);
+          // Error fetching countries
         }
       };
       fetchCountries();
@@ -124,7 +117,7 @@ export const PhoneInput: FC<PhoneInputProps> = ({
         setSelectedCountryCode(countryCode);
         setIsCountryPickerVisible(false);
       } catch (error) {
-        console.error("Error selecting country:", error);
+        // Error selecting country
       }
     }
   };

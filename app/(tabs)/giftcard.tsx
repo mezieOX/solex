@@ -12,9 +12,11 @@ import {
   useSellGiftCard,
 } from "@/hooks/api/use-giftcards";
 import { GiftCardProduct } from "@/services/api/giftcards";
+import { allCurrencies } from "@/utils/country_currency_symbol";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import {
@@ -40,8 +42,12 @@ export default function GiftCardScreen() {
   const [cardCurrency, setCardCurrency] = useState("NGN");
   const [cardCode, setCardCode] = useState("");
   const [faceValue, setFaceValue] = useState("");
-  const [isSellModalVisible, setIsSellModalVisible] = useState(false);
+  const [pin, setPin] = useState("");
+  const [expectedRate, setExpectedRate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [, setIsSellModalVisible] = useState(false);
   const [isCurrencyModalVisible, setIsCurrencyModalVisible] = useState(false);
+  const [currencySearchQuery, setCurrencySearchQuery] = useState("");
 
   const { data: productsData, isLoading, error } = useGiftCardProducts("US");
   const buyGiftCard = useBuyGiftCard();
@@ -93,11 +99,19 @@ export default function GiftCardScreen() {
         quantity: quantity.trim(),
       });
 
-      if (result) {
+      if (result && result.purchase?.transaction_id) {
         showSuccessToast({ message: "Gift card purchased successfully" });
         setIsBuyModalVisible(false);
         setSelectedProduct(null);
         setQuantity("1");
+
+        // Navigate to gift card codes screen
+        router.push({
+          pathname: "/giftcard-codes",
+          params: {
+            transaction_id: result.purchase.transaction_id.toString(),
+          },
+        });
       }
     } catch (error: any) {
       const errorMessage =
@@ -120,6 +134,11 @@ export default function GiftCardScreen() {
         card_currency: cardCurrency,
         code: cardCode.trim(),
         face_value: faceValue.trim(),
+        pin: pin.trim() || undefined,
+        expected_rate: expectedRate.trim()
+          ? parseFloat(expectedRate.trim())
+          : undefined,
+        notes: notes.trim() || undefined,
       });
 
       if (result) {
@@ -130,6 +149,9 @@ export default function GiftCardScreen() {
         setBrandName("");
         setCardCode("");
         setFaceValue("");
+        setPin("");
+        setExpectedRate("");
+        setNotes("");
         setCardCurrency("NGN");
       }
     } catch (error: any) {
@@ -164,11 +186,22 @@ export default function GiftCardScreen() {
     return totalCostNGN;
   };
 
-  const currencies = ["NGN", "USD"];
+  // Filter currencies based on search query
+  const filteredCurrencies = useMemo(() => {
+    if (!currencySearchQuery.trim()) return allCurrencies;
+    const query = currencySearchQuery.toLowerCase().trim();
+    return allCurrencies.filter(
+      (currency) =>
+        currency.code.toLowerCase().includes(query) ||
+        currency.name.toLowerCase().includes(query) ||
+        currency.symbol.toLowerCase().includes(query)
+    );
+  }, [allCurrencies, currencySearchQuery]);
 
-  const handleSelectCurrency = (currency: string) => {
-    setCardCurrency(currency);
+  const handleSelectCurrency = (currencyCode: string) => {
+    setCardCurrency(currencyCode);
     setIsCurrencyModalVisible(false);
+    setCurrencySearchQuery(""); // Clear search when selecting
   };
 
   return (
@@ -266,7 +299,6 @@ export default function GiftCardScreen() {
                   <FlatList
                     data={products}
                     horizontal
-                    showsHorizontalScrollIndicator={false}
                     keyExtractor={(product) => product.id.toString()}
                     renderItem={({ item: product }) => (
                       <TouchableOpacity
@@ -314,7 +346,7 @@ export default function GiftCardScreen() {
                         )}
                       </TouchableOpacity>
                     )}
-                    contentContainerStyle={styles.productsList}
+                    {...({ contentContainerStyle: styles.productsList } as any)}
                   />
                 </View>
               )}
@@ -324,8 +356,7 @@ export default function GiftCardScreen() {
                   description="Try adjusting your search"
                 />
               )}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
+              {...({ contentContainerStyle: styles.listContent } as any)}
             />
           )}
         </>
@@ -355,14 +386,16 @@ export default function GiftCardScreen() {
                 onPress={() => setIsCurrencyModalVisible(true)}
                 activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.currencySelectorText,
-                    !cardCurrency && styles.currencySelectorPlaceholder,
-                  ]}
-                >
-                  {cardCurrency || "Select currency"}
-                </Text>
+                <View style={styles.currencySelectorContent}>
+                  <Text
+                    style={[
+                      styles.currencySelectorText,
+                      !cardCurrency && styles.currencySelectorPlaceholder,
+                    ]}
+                  >
+                    {cardCurrency || "Select currency"}
+                  </Text>
+                </View>
                 <Ionicons
                   name="chevron-down"
                   size={20}
@@ -385,6 +418,34 @@ export default function GiftCardScreen() {
               onChangeText={setFaceValue}
               placeholder="Enter card value"
               keyboardType="numeric"
+              style={styles.input}
+            />
+
+            <Input
+              label="PIN (Optional)"
+              value={pin}
+              onChangeText={setPin}
+              placeholder="Enter PIN if available"
+              secureTextEntry
+              style={styles.input}
+            />
+
+            <Input
+              label="Expected Rate (Optional)"
+              value={expectedRate}
+              onChangeText={setExpectedRate}
+              placeholder={`NGN per 1 ${cardCurrency || "USD"}`}
+              keyboardType="numeric"
+              style={styles.input}
+            />
+
+            <Input
+              label="Notes (Optional)"
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Additional notes or comments"
+              multiline
+              numberOfLines={4}
               style={styles.input}
             />
 
@@ -478,54 +539,95 @@ export default function GiftCardScreen() {
         visible={isCurrencyModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setIsCurrencyModalVisible(false)}
+        onRequestClose={() => {
+          setIsCurrencyModalVisible(false);
+          setCurrencySearchQuery("");
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Currency</Text>
               <TouchableOpacity
-                onPress={() => setIsCurrencyModalVisible(false)}
+                onPress={() => {
+                  setIsCurrencyModalVisible(false);
+                  setCurrencySearchQuery("");
+                }}
               >
                 <Ionicons name="close" size={24} color={AppColors.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              style={styles.currencyList}
-              showsVerticalScrollIndicator={false}
-            >
-              {currencies.map((currency) => {
-                const isSelected = cardCurrency === currency;
-                return (
-                  <TouchableOpacity
-                    key={currency}
-                    style={[
-                      styles.currencyItem,
-                      isSelected && styles.currencyItemSelected,
-                    ]}
-                    onPress={() => handleSelectCurrency(currency)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
+            {/* Search Input */}
+            <View style={styles.currencySearchContainer}>
+              <Input
+                value={currencySearchQuery}
+                onChangeText={setCurrencySearchQuery}
+                placeholder="Search currency..."
+                style={styles.currencySearchInput}
+                placeholderTextColor={AppColors.textSecondary}
+                leftIcon={
+                  <Ionicons
+                    name="search"
+                    size={20}
+                    color={AppColors.textSecondary}
+                  />
+                }
+              />
+            </View>
+
+            {filteredCurrencies.length === 0 ? (
+              <View style={styles.emptyCurrencyContainer}>
+                <Text style={styles.emptyCurrencyText}>
+                  No currencies found
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredCurrencies}
+                keyExtractor={(item) => item.code}
+                style={styles.currencyList}
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item: currency }) => {
+                  const isSelected = cardCurrency === currency.code;
+                  return (
+                    <TouchableOpacity
                       style={[
-                        styles.currencyItemText,
-                        isSelected && styles.currencyItemTextSelected,
+                        styles.currencyItem,
+                        isSelected && styles.currencyItemSelected,
                       ]}
+                      onPress={() => handleSelectCurrency(currency.code)}
+                      activeOpacity={0.7}
                     >
-                      {currency}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={AppColors.primary}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                      <View style={styles.currencyItemContent}>
+                        <View style={styles.currencyItemLeft}>
+                          <View style={styles.currencyInfo}>
+                            <Text
+                              style={[
+                                styles.currencyCode,
+                                isSelected && styles.currencyCodeSelected,
+                              ]}
+                            >
+                              {currency.code}
+                            </Text>
+                            <Text style={styles.currencyName}>
+                              {currency.name}
+                            </Text>
+                          </View>
+                        </View>
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={24}
+                            color={AppColors.primary}
+                          />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            )}
           </View>
         </View>
       </Modal>
@@ -756,6 +858,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AppColors.border,
   },
+  currencySelectorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  currencySelectorSymbol: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
   currencySelectorText: {
     fontSize: 16,
     color: AppColors.text,
@@ -763,13 +875,16 @@ const styles = StyleSheet.create({
   currencySelectorPlaceholder: {
     color: AppColors.textSecondary,
   },
+  currencySearchContainer: {
+    marginBottom: 16,
+  },
+  currencySearchInput: {
+    marginBottom: 0,
+  },
   currencyList: {
     maxHeight: 400,
   },
   currencyItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
@@ -778,12 +893,47 @@ const styles = StyleSheet.create({
   currencyItemSelected: {
     backgroundColor: AppColors.surface,
   },
-  currencyItemText: {
-    fontSize: 16,
-    color: AppColors.text,
+  currencyItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  currencyItemTextSelected: {
+  currencyItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  currencySymbol: {
+    fontSize: 24,
     fontWeight: "600",
+    color: AppColors.text,
+    minWidth: 30,
+  },
+  currencyInfo: {
+    flex: 1,
+  },
+  currencyCode: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: AppColors.text,
+    marginBottom: 2,
+  },
+  currencyCodeSelected: {
     color: AppColors.primary,
+    fontWeight: "600",
+  },
+  currencyName: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  emptyCurrencyContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCurrencyText: {
+    fontSize: 16,
+    color: AppColors.textSecondary,
   },
 });

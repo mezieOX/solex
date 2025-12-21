@@ -9,17 +9,16 @@ export interface CryptoCurrency {
   currency_id: number;
   name: string;
   coin: string; // This is the symbol
+  network: string;
   rate_usd: number;
   min_deposit: string | number | null;
   fee_network: string | number | null;
   image_url?: string;
-  network?: string;
+  balance: number;
 }
 
 export interface CryptoCurrenciesResponse {
-  networks: {
-    [networkName: string]: CryptoCurrency[];
-  };
+  currencies: CryptoCurrency[];
 }
 
 export interface CryptoDepositAddressResponse {
@@ -27,20 +26,28 @@ export interface CryptoDepositAddressResponse {
   qr_code?: string;
   minimum_deposit?: string;
   confirmations_required?: number;
+  destinationTag?: string;
 }
 
 export interface ExchangeRateResponse {
   pair: string;
   from: string;
   to: string;
-  rate_ngn_per_1: number;
-  rate_usd_per_1: number;
-  rate_usd_ngn: number;
-  inverse_rate_crypto: number;
+  from_currency_id?: number;
+  to_currency_id?: number;
+  // For crypto to fiat (buy/sell)
+  rate_ngn_per_1?: number;
+  rate_usd_per_1?: number;
+  rate_usd_ngn?: number;
+  inverse_rate_crypto?: number;
+  // For crypto to crypto (swap)
+  rate?: number;
+  from_usd?: number;
+  to_usd?: number;
 }
 
 export interface CryptoWithdrawRequest {
-  wallet_id: number;
+  currency_id?: number;
   address_to: string;
   destination_tag?: string;
   amount: string;
@@ -73,7 +80,7 @@ export interface SwapResponse {
 }
 
 export interface WithdrawFeesRequest {
-  wallet_id: number;
+  currency_id?: number;
   address_to: string;
   amount: string;
 }
@@ -124,13 +131,44 @@ export const cryptoApi = {
   },
 
   /**
+   * Get exchange rate by currency ID
+   */
+  getExchangeRateByCurrencyId: async (params: {
+    currency_id: number;
+    to_currency_id?: number | null;
+    to: string;
+  }): Promise<ExchangeRateResponse> => {
+    const queryParams: Record<string, any> = {
+      currency_id: params.currency_id,
+      to: params.to,
+    };
+
+    // Include to_currency_id only if it's not null/undefined
+    // If null, explicitly set it to null string for API
+    if (params.to_currency_id !== null && params.to_currency_id !== undefined) {
+      queryParams.to_currency_id = params.to_currency_id;
+    } else {
+      // API expects "null" as string when to_currency_id is null
+      queryParams.to_currency_id = "null";
+    }
+
+    const response = await apiClient.get<ApiResponse<ExchangeRateResponse>>(
+      "/wallets/crypto/exchange-rate",
+      queryParams
+    );
+    return response.data;
+  },
+
+  /**
    * Withdraw crypto
    */
   withdraw: async (
     data: CryptoWithdrawRequest
   ): Promise<CryptoWithdrawResponse> => {
     const formData = new FormData();
-    formData.append("wallet_id", String(data.wallet_id));
+    if (data.currency_id !== undefined) {
+      formData.append("currency_id", String(data.currency_id));
+    }
     formData.append("address_to", data.address_to);
     formData.append("amount", data.amount);
     if (data.destination_tag !== undefined) {
@@ -162,13 +200,16 @@ export const cryptoApi = {
     data: WithdrawFeesRequest
   ): Promise<WithdrawFeesResponse> => {
     const formData = new FormData();
-    formData.append("wallet_id", String(data.wallet_id));
+    if (data.currency_id !== undefined) {
+      formData.append("currency_id", String(data.currency_id));
+    }
     formData.append("address_to", data.address_to);
     formData.append("amount", data.amount);
 
-    const response = await apiClient.post<
-      ApiResponse<WithdrawFeesResponse>
-    >("/wallets/crypto/withdraw/fees", formData);
+    const response = await apiClient.post<ApiResponse<WithdrawFeesResponse>>(
+      "/wallets/crypto/withdraw/fees",
+      formData
+    );
     return response.data;
   },
 };

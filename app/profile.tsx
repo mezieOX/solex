@@ -1,16 +1,17 @@
+import { SkeletonAvatar, SkeletonText } from "@/components/skeleton";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
-import { useUser } from "@/hooks/api/use-auth";
+import { authKeys, useUser } from "@/hooks/api/use-auth";
 import { accountApi } from "@/services/api/account";
 import { showErrorToast, showInfoToast, showSuccessToast } from "@/utils/toast";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ClipboardLib from "expo-clipboard";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -31,13 +32,21 @@ interface ProfileField {
 }
 
 export default function ProfileScreen() {
-  const { data: user } = useUser();
+  const { data: user, isLoading } = useUser();
+  const queryClient = useQueryClient();
   const [profileImage, setProfileImage] = useState<string | null>(
-    user?.avatar || null
+    user?.profile_image_url || user?.avatar || null
   );
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  console.log(user?.phone);
+  // Sync profile image with user profile_image_url when user data changes
+  useEffect(() => {
+    if (user?.profile_image_url) {
+      setProfileImage(user.profile_image_url);
+    } else if (user?.avatar) {
+      setProfileImage(user.avatar);
+    }
+  }, [user?.profile_image_url, user?.avatar]);
 
   // Update phone mutation
   const updatePhoneMutation = useMutation({
@@ -68,6 +77,32 @@ export default function ProfileScreen() {
     },
   });
 
+  // Update profile image mutation
+  const updateProfileImageMutation = useMutation({
+    mutationFn: (imageUri: string) => accountApi.updateProfileImage(imageUri),
+    onSuccess: (result) => {
+      if (result.status === "success" && result.data?.profile_image_url) {
+        // Update local state with the new image URL
+        setProfileImage(result.data.profile_image_url);
+        // Invalidate user query to refresh user data
+        queryClient.invalidateQueries({ queryKey: authKeys.user() });
+        showSuccessToast({
+          message: result.message || "Profile image updated successfully",
+        });
+      }
+    },
+    onError: (error: any) => {
+      showErrorToast({
+        message:
+          error?.message ||
+          error?.data?.message ||
+          "Failed to update profile image. Please try again.",
+      });
+      // Revert to previous image on error
+      setProfileImage(user?.profile_image_url || user?.avatar || null);
+    },
+  });
+
   // Extract first name from full name
   const firstName = user?.name?.split(" ")[0] || "User";
 
@@ -81,17 +116,6 @@ export default function ProfileScreen() {
       return email;
     }
     return email;
-  };
-
-  // Mask date of birth year
-  const formatDateOfBirth = (dateString?: string) => {
-    if (!dateString) return "N/A";
-    // If format is DD/MM/YYYY, mask the year
-    const parts = dateString.split("/");
-    if (parts.length === 3) {
-      return `${parts[0]}/${parts[1]}/****`;
-    }
-    return dateString;
   };
 
   // Format phone number
@@ -114,13 +138,6 @@ export default function ProfileScreen() {
     setTimeout(() => {
       setCopiedField(null);
     }, 2000);
-  };
-
-  const handleEdit = (field: string) => {
-    showInfoToast({
-      title: "Edit",
-      message: `Edit ${field} functionality coming soon`,
-    });
   };
 
   const handleChangeProfilePicture = async () => {
@@ -148,12 +165,11 @@ export default function ProfileScreen() {
       }
 
       const uri = result.assets[0].uri;
+      // Optimistically update the UI
       setProfileImage(uri);
 
-      // TODO: upload to backend when API is available
-      showSuccessToast({
-        message: "Profile picture updated",
-      });
+      // Upload to backend
+      updateProfileImageMutation.mutate(uri);
     } catch (error: any) {
       showErrorToast({
         message:
@@ -275,114 +291,169 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Profile Picture Section */}
-        <View style={styles.profileSection}>
-          <View style={styles.profileImageContainer}>
-            {profileImage ? (
-              <Image
-                source={{ uri: profileImage }}
-                style={styles.profileImage}
+        {isLoading ? (
+          <>
+            {/* Profile Picture Section Skeleton */}
+            <View style={styles.profileSection}>
+              <SkeletonAvatar
+                size={100}
+                type="circle"
+                style={styles.skeletonAvatar}
               />
-            ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Image
-                  source={require("@/assets/images/no-user-img.png")}
-                  style={styles.profileImage}
-                  contentFit="cover"
-                />
-              </View>
-            )}
-            <View style={styles.profileImageBorder} />
-            <TouchableOpacity
-              style={styles.cameraIconContainer}
-              onPress={handleChangeProfilePicture}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="camera" size={20} color={AppColors.text} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.userName}>{firstName}</Text>
-        </View>
+              <SkeletonText
+                width="40%"
+                height={20}
+                style={styles.skeletonUserName}
+              />
+            </View>
 
-        {/* Account Details Section */}
-        <View style={styles.detailsSection}>
-          {profileFields.map((field, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.detailRow,
-                index === profileFields.length - 1 && styles.lastDetailRow,
-              ]}
-              onPress={field.onPress}
-              activeOpacity={field.onPress ? 0.7 : 1}
-              disabled={!field.onPress}
-            >
-              <Text style={styles.detailLabel}>{field.label}</Text>
-              <View style={styles.detailValueContainer}>
-                <Text
+            {/* Account Details Section Skeleton */}
+            <View style={styles.detailsSection}>
+              {[1, 2, 3, 4, 5, 6, 7].map((index) => (
+                <View
+                  key={index}
                   style={[
-                    styles.detailValue,
-                    field.valueColor && { color: field.valueColor },
+                    styles.detailRow,
+                    index === 7 && styles.lastDetailRow,
                   ]}
                 >
-                  {field.value}
-                </Text>
-                {field.showCopy && (
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() =>
-                      field.value !== "N/A" &&
-                      handleCopy(field.value, field.label)
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={
-                        copiedField === field.label
-                          ? "checkmark-circle"
-                          : "copy-outline"
-                      }
-                      size={20}
-                      color={
-                        copiedField === field.label
-                          ? AppColors.green
-                          : AppColors.text
-                      }
-                    />
-                  </TouchableOpacity>
-                )}
-                {field.showEdit && (
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={field.onPress}
-                    activeOpacity={0.7}
-                    disabled={
-                      field.label === "Mobile Number" &&
-                      updatePhoneMutation.isPending
-                    }
-                  >
-                    {field.label === "Mobile Number" &&
-                    updatePhoneMutation.isPending ? (
-                      <ActivityIndicator
-                        size="small"
-                        color={AppColors.primary}
-                      />
-                    ) : (
-                      <Feather name="edit" size={20} color={AppColors.text} />
-                    )}
-                  </TouchableOpacity>
-                )}
-                {field.showChevron && (
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={AppColors.textSecondary}
+                  <SkeletonText
+                    width="30%"
+                    height={16}
+                    style={styles.skeletonLabel}
                   />
+                  <SkeletonText
+                    width="50%"
+                    height={16}
+                    style={styles.skeletonValue}
+                  />
+                </View>
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            {/* Profile Picture Section */}
+            <View style={styles.profileSection}>
+              <View style={styles.profileImageContainer}>
+                {profileImage ? (
+                  <Image
+                    source={{ uri: profileImage }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View style={styles.profileImagePlaceholder}>
+                    <Image
+                      source={require("@/assets/images/no-user-img.png")}
+                      style={styles.profileImage}
+                      contentFit="cover"
+                    />
+                  </View>
                 )}
+                <View style={styles.profileImageBorder} />
+                <TouchableOpacity
+                  style={styles.cameraIconContainer}
+                  onPress={handleChangeProfilePicture}
+                  activeOpacity={0.8}
+                  disabled={updateProfileImageMutation.isPending}
+                >
+                  {updateProfileImageMutation.isPending ? (
+                    <ActivityIndicator size="small" color={AppColors.text} />
+                  ) : (
+                    <Ionicons name="camera" size={20} color={AppColors.text} />
+                  )}
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+              <Text style={styles.userName}>{firstName}</Text>
+            </View>
+
+            {/* Account Details Section */}
+            <View style={styles.detailsSection}>
+              {profileFields.map((field, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.detailRow,
+                    index === profileFields.length - 1 && styles.lastDetailRow,
+                  ]}
+                  onPress={field.onPress}
+                  activeOpacity={field.onPress ? 0.7 : 1}
+                  disabled={!field.onPress}
+                >
+                  <Text style={styles.detailLabel}>{field.label}</Text>
+                  <View style={styles.detailValueContainer}>
+                    <Text
+                      style={[
+                        styles.detailValue,
+                        field.valueColor
+                          ? { color: field.valueColor }
+                          : undefined,
+                      ]}
+                    >
+                      {field.value}
+                    </Text>
+                    {field.showCopy && (
+                      <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={() =>
+                          field.value !== "N/A" &&
+                          handleCopy(field.value, field.label)
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={
+                            copiedField === field.label
+                              ? "checkmark-circle"
+                              : "copy-outline"
+                          }
+                          size={20}
+                          color={
+                            copiedField === field.label
+                              ? AppColors.green
+                              : AppColors.text
+                          }
+                        />
+                      </TouchableOpacity>
+                    )}
+                    {field.showEdit && (
+                      <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={field.onPress}
+                        activeOpacity={0.7}
+                        disabled={
+                          field.label === "Mobile Number" &&
+                          updatePhoneMutation.isPending
+                        }
+                      >
+                        {field.label === "Mobile Number" &&
+                        updatePhoneMutation.isPending ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={AppColors.primary}
+                          />
+                        ) : (
+                          <Feather
+                            name="edit"
+                            size={20}
+                            color={AppColors.text}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                    {field.showChevron && (
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={AppColors.textSecondary}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -480,5 +551,18 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
+  },
+  skeletonAvatar: {
+    marginBottom: 12,
+  },
+  skeletonUserName: {
+    marginTop: 0,
+    alignSelf: "center",
+  },
+  skeletonLabel: {
+    marginBottom: 0,
+  },
+  skeletonValue: {
+    marginTop: 0,
   },
 });

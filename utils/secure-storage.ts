@@ -26,7 +26,6 @@ export async function setSecureItem(
     await SecureStore.setItemAsync(getKey(key), value);
     return true;
   } catch (error) {
-    console.error(`Error saving secure item for key "${key}":`, error);
     return false;
   }
 }
@@ -38,7 +37,6 @@ export async function getSecureItem(key: string): Promise<string | null> {
   try {
     return await SecureStore.getItemAsync(getKey(key));
   } catch (error) {
-    console.error(`Error getting secure item for key "${key}":`, error);
     return null;
   }
 }
@@ -51,7 +49,6 @@ export async function removeSecureItem(key: string): Promise<boolean> {
     await SecureStore.deleteItemAsync(getKey(key));
     return true;
   } catch (error) {
-    console.error(`Error removing secure item for key "${key}":`, error);
     return false;
   }
 }
@@ -67,7 +64,6 @@ export async function isSecureStorageAvailable(): Promise<boolean> {
     await SecureStore.deleteItemAsync(testKey);
     return true;
   } catch (error) {
-    console.error("Secure storage not available:", error);
     return false;
   }
 }

@@ -3,7 +3,6 @@ import React from "react";
 import { StyleSheet } from "react-native";
 
 export default function ShowImage({ source }: { source: string }) {
-  console.log(source);
   const imagesUrls =
     source === "MTN NIGERIA" || source === "MTN DATA BUNDLE"
       ? require("@/assets/images/mtn.png")

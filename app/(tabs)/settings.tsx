@@ -73,7 +73,6 @@ export default function SettingsScreen() {
         router.replace("/auth/login");
       }, 500);
     } catch (error: any) {
-      console.error("Logout error:", error);
       showErrorToast({
         message: error?.message || "Failed to logout. Please try again.",
       });
@@ -248,11 +247,19 @@ export default function SettingsScreen() {
         {user && (
           <View style={styles.userSection}>
             <View style={styles.avatarContainer}>
-              <Image
-                source={require("@/assets/images/no-user-img.png")}
-                style={styles.avatarContainer}
-                contentFit="cover"
-              />
+              {user?.profile_image_url ? (
+                <Image
+                  source={{ uri: user.profile_image_url }}
+                  style={styles.avatarContainer}
+                  contentFit="cover"
+                />
+              ) : (
+                <Image
+                  source={require("@/assets/images/no-user-img.png")}
+                  style={styles.avatarContainer}
+                  contentFit="cover"
+                />
+              )}
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{user.name || "User"}</Text>

@@ -1,7 +1,12 @@
+import Skeleton, { SkeletonText } from "@/components/skeleton";
 import { Card } from "@/components/ui/card";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
-import { useCryptoCurrencies, useCryptoPrices } from "@/hooks/api/use-crypto";
+import {
+  useCryptoCurrencies,
+  useCryptoPrices,
+  useExchangeRateByCurrencyId,
+} from "@/hooks/api/use-crypto";
 import {
   useBuyCrypto,
   useSellCrypto,
@@ -12,6 +17,7 @@ import { useWallets } from "@/hooks/api/use-wallet";
 import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useState } from "react";
@@ -43,14 +49,33 @@ export default function CryptoScreen() {
   const [fromCurrency, setFromCurrency] = useState<any>(null);
   const [toCurrency, setToCurrency] = useState<any>(null);
   const [swapAmount, setSwapAmount] = useState("");
+  const [currencySearchQuery, setCurrencySearchQuery] = useState("");
 
   const { data: dashboardData } = useDashboard();
-  const { data: currenciesData, isLoading: isLoadingCurrencies } =
-    useCryptoCurrencies();
+  const {
+    data: currenciesData,
+    isLoading: isLoadingCurrencies,
+    refetch: refetchCurrencies,
+  } = useCryptoCurrencies();
   const { data: walletsData } = useWallets();
   const buyCrypto = useBuyCrypto();
   const sellCrypto = useSellCrypto();
   const swapCrypto = useSwapCryptoTrade();
+
+  // Get exchange rate for buying/selling crypto to/from NGN
+  const {
+    data: exchangeRateData,
+    isLoading: isLoadingExchangeRate,
+    error: exchangeRateError,
+  } = useExchangeRateByCurrencyId(
+    activeTab === "swap"
+      ? fromCurrency?.currency_id
+      : selectedCurrency?.currency_id,
+    activeTab === "swap" ? toCurrency?.currency_id : null,
+    activeTab === "swap" ? "CRYPTO" : "NGN",
+    ((activeTab === "buy" || activeTab === "sell") && !!selectedCurrency) ||
+      (activeTab === "swap" && !!fromCurrency && !!toCurrency)
+  );
 
   // Get crypto prices for selected currencies
   const cryptoIds = useMemo(() => {
@@ -104,20 +129,23 @@ export default function CryptoScreen() {
     loadShowBalance();
   }, []);
 
-  // Flatten currencies from networks
+  // Get all currencies from API (now flat array)
   const allCurrencies = useMemo(() => {
-    if (!currenciesData?.networks) return [];
-    const currencies: any[] = [];
-    Object.entries(currenciesData.networks).forEach(([network, coins]) => {
-      coins.forEach((coin: any) => {
-        currencies.push({
-          ...coin,
-          network,
-        });
-      });
-    });
-    return currencies;
+    if (!currenciesData?.currencies) return [];
+    return currenciesData.currencies;
   }, [currenciesData]);
+
+  // Filter currencies based on search query
+  const filteredCurrencies = useMemo(() => {
+    if (!currencySearchQuery.trim()) return allCurrencies;
+    const query = currencySearchQuery.toLowerCase().trim();
+    return allCurrencies.filter(
+      (currency) =>
+        currency.name?.toLowerCase().includes(query) ||
+        currency.coin?.toLowerCase().includes(query) ||
+        currency.network?.toLowerCase().includes(query)
+    );
+  }, [allCurrencies, currencySearchQuery]);
 
   // Get user's crypto wallets
   const cryptoWallets = useMemo(() => {
@@ -127,14 +155,9 @@ export default function CryptoScreen() {
 
   // Calculate total balance and change
   const totalBalance = useMemo(() => {
-    if (!dashboardData?.total_balance_ngn) return 0;
-    return dashboardData.total_balance_ngn;
+    if (!dashboardData?.ngn_balance) return 0;
+    return dashboardData.ngn_balance;
   }, [dashboardData]);
-
-  const balanceChange = useMemo(() => {
-    // Mock change for now - can be calculated from crypto prices
-    return { amount: 324.5, percentage: 2.68 };
-  }, []);
 
   // Get price and change for currency
   const getCurrencyPriceData = (currency: any) => {
@@ -149,6 +172,27 @@ export default function CryptoScreen() {
     const id = coinMap[currency.coin.toUpperCase()];
     if (!id) return { price: currency.rate_usd || 0, change: 0 };
     const priceData = cryptoPrices.find((p) => p.id === id);
+
+    // For swap, use exchange rate from API if available
+    if (activeTab === "swap" && exchangeRateData?.rate !== undefined) {
+      return {
+        price: exchangeRateData.rate,
+        change: 0, // Swap doesn't have change percentage
+      };
+    }
+
+    // For buy/sell, use exchange rate from API if available, otherwise fallback to CoinGecko
+    if (
+      (activeTab === "buy" || activeTab === "sell") &&
+      exchangeRateData?.rate_ngn_per_1
+    ) {
+      return {
+        price: exchangeRateData.rate_ngn_per_1,
+        change: priceData?.price_change_percentage_24h || 0,
+      };
+    }
+
+    // Fallback to CoinGecko prices
     return {
       price: priceData?.current_price || currency.rate_usd || 0,
       change: priceData?.price_change_percentage_24h || 0,
@@ -166,7 +210,7 @@ export default function CryptoScreen() {
         currency_id: selectedCurrency.currency_id.toString(),
         amount_ngn: amount.trim(),
       });
-
+      refetchCurrencies();
       if (result) {
         showSuccessToast({ message: "Crypto purchased successfully" });
         setAmount("");
@@ -187,23 +231,12 @@ export default function CryptoScreen() {
       return;
     }
 
-    const wallet = cryptoWallets.find(
-      (w) =>
-        w.currency === selectedCurrency.coin &&
-        w.meta?.network === selectedCurrency.network
-    );
-
-    if (!wallet || wallet.balance < parseFloat(amount)) {
-      showErrorToast({ message: "Insufficient balance" });
-      return;
-    }
-
     try {
       const result = await sellCrypto.mutateAsync({
         currency_id: selectedCurrency.currency_id.toString(),
         amount_crypto: amount.trim(),
       });
-
+      refetchCurrencies();
       if (result) {
         showSuccessToast({ message: "Crypto sold successfully" });
         setAmount("");
@@ -228,11 +261,11 @@ export default function CryptoScreen() {
 
     try {
       const result = await swapCrypto.mutateAsync({
-        from: `${fromCurrency.coin}_${fromCurrency.network}`,
-        to: `${toCurrency.coin}_${toCurrency.network}`,
+        from: fromCurrency.currency_id,
+        to: toCurrency.currency_id,
         amount: swapAmount.trim(),
       });
-
+      refetchCurrencies();
       if (result) {
         showSuccessToast({ message: "Crypto swapped successfully" });
         setSwapAmount("");
@@ -262,23 +295,6 @@ export default function CryptoScreen() {
         return "diamond";
       default:
         return "wallet";
-    }
-  };
-
-  const getCurrencyColor = (coin: string): string => {
-    const upperCoin = coin.toUpperCase();
-    switch (upperCoin) {
-      case "BTC":
-        return AppColors.orange;
-      case "ETH":
-        return AppColors.blue;
-      case "USDT":
-      case "USDC":
-        return AppColors.green;
-      case "BNB":
-        return AppColors.primary;
-      default:
-        return AppColors.primary;
     }
   };
 
@@ -359,14 +375,6 @@ export default function CryptoScreen() {
           <Text style={styles.balanceAmount}>
             {showBalance ? formatNGN(totalBalance) : "********"}
           </Text>
-          <View style={styles.balanceChange}>
-            <Text style={styles.balanceChangeText}>
-              +{formatNGN(balanceChange.amount)}
-            </Text>
-            <Text style={styles.balanceChangePercentage}>
-              +{balanceChange.percentage}%
-            </Text>
-          </View>
         </Card>
 
         {/* Tabs */}
@@ -505,7 +513,7 @@ export default function CryptoScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={styles.quickAmountText}>
-                    ₦{quickAmount.toLocaleString()}
+                    {quickAmount.toLocaleString()}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -515,12 +523,13 @@ export default function CryptoScreen() {
               <View style={styles.estimateContainer}>
                 <Text style={styles.estimateLabel}>You will receive:</Text>
                 <Text style={styles.estimateValue}>
-                  {(
-                    parseFloat(amount) /
-                    (getCurrencyPriceData(selectedCurrency).price * 1500)
-                  ) // Convert USD price to NGN (approximate rate)
-                    .toFixed(8)}{" "}
-                  {selectedCurrency.coin}
+                  {exchangeRateData?.rate_ngn_per_1
+                    ? `${
+                        parseFloat(amount) / exchangeRateData.rate_ngn_per_1
+                      } ${selectedCurrency.coin}`
+                    : isLoadingExchangeRate
+                    ? "Calculating..."
+                    : "An Error Occurred"}
                 </Text>
               </View>
             )}
@@ -640,13 +649,10 @@ export default function CryptoScreen() {
             {selectedCurrency && (
               <View style={styles.balanceInfo}>
                 <Text style={styles.balanceInfoText}>
-                  Available: {getWalletBalance(selectedCurrency).toFixed(8)}{" "}
-                  {selectedCurrency.coin}
+                  Available: {selectedCurrency?.balance} {selectedCurrency.coin}
                 </Text>
                 <TouchableOpacity
-                  onPress={() =>
-                    setAmount(getWalletBalance(selectedCurrency).toString())
-                  }
+                  onPress={() => setAmount(selectedCurrency?.balance || "0")}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.maxButton}>MAX</Text>
@@ -657,13 +663,32 @@ export default function CryptoScreen() {
             {selectedCurrency && amount.trim() && (
               <View style={styles.estimateContainer}>
                 <Text style={styles.estimateLabel}>You will receive:</Text>
-                <Text style={styles.estimateValue}>
-                  {formatNGN(
-                    parseFloat(amount) *
-                      getCurrencyPriceData(selectedCurrency).price *
-                      1500 // Convert USD price to NGN (approximate rate)
-                  )}
-                </Text>
+                {isLoadingExchangeRate ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color={AppColors.primary} />
+                    <Text style={styles.estimateValue}>Calculating...</Text>
+                  </View>
+                ) : exchangeRateData?.rate_ngn_per_1 ? (
+                  <Text style={styles.estimateValue}>
+                    {formatNGN(
+                      parseFloat(amount) * exchangeRateData.rate_ngn_per_1
+                    )}
+                  </Text>
+                ) : (
+                  <Text style={styles.estimateValue}>
+                    {formatNGN(
+                      parseFloat(amount) *
+                        getCurrencyPriceData(selectedCurrency).price *
+                        1500
+                    )}
+                  </Text>
+                )}
               </View>
             )}
 
@@ -771,6 +796,22 @@ export default function CryptoScreen() {
               </Text>
             </View>
 
+            {fromCurrency && (
+              <View style={styles.balanceInfo}>
+                <Text style={styles.balanceInfoText}>
+                  Available: {fromCurrency?.balance || 0} {fromCurrency.coin}
+                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    setSwapAmount(fromCurrency?.balance?.toString() || "0")
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.maxButton}>MAX</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={styles.swapArrowContainer}>
               <View style={styles.swapArrowCircle}>
                 <Ionicons
@@ -840,11 +881,17 @@ export default function CryptoScreen() {
                 style={styles.amountInput}
                 value={
                   fromCurrency && toCurrency && swapAmount.trim()
-                    ? (
-                        (parseFloat(swapAmount) *
-                          getCurrencyPriceData(fromCurrency).price) /
-                        getCurrencyPriceData(toCurrency).price
-                      ).toFixed(8)
+                    ? exchangeRateData?.rate !== undefined
+                      ? (
+                          parseFloat(swapAmount) * exchangeRateData.rate
+                        ).toFixed(8)
+                      : isLoadingExchangeRate
+                      ? "Calculating..."
+                      : (
+                          (parseFloat(swapAmount) *
+                            getCurrencyPriceData(fromCurrency).price) /
+                          getCurrencyPriceData(toCurrency).price
+                        ).toFixed(8)
                     : "0.00"
                 }
                 placeholder="0.00"
@@ -858,14 +905,32 @@ export default function CryptoScreen() {
             {fromCurrency && toCurrency && swapAmount.trim() && (
               <View style={styles.estimateContainer}>
                 <Text style={styles.estimateLabel}>Exchange rate:</Text>
-                <Text style={styles.estimateValue}>
-                  1 {fromCurrency.coin} ={" "}
-                  {(
-                    getCurrencyPriceData(fromCurrency).price /
-                    getCurrencyPriceData(toCurrency).price
-                  ).toFixed(8)}{" "}
-                  {toCurrency.coin}
-                </Text>
+                {isLoadingExchangeRate ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color={AppColors.primary} />
+                    <Text style={styles.estimateValue}>Calculating...</Text>
+                  </View>
+                ) : exchangeRateData?.rate !== undefined ? (
+                  <Text style={styles.estimateValue}>
+                    1 {fromCurrency.coin} = {exchangeRateData.rate.toFixed(8)}{" "}
+                    {toCurrency.coin}
+                  </Text>
+                ) : (
+                  <Text style={styles.estimateValue}>
+                    1 {fromCurrency.coin} ={" "}
+                    {(
+                      getCurrencyPriceData(fromCurrency).price /
+                      getCurrencyPriceData(toCurrency).price
+                    ).toFixed(8)}{" "}
+                    {toCurrency.coin}
+                  </Text>
+                )}
               </View>
             )}
 
@@ -911,19 +976,76 @@ export default function CryptoScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Currency</Text>
               <TouchableOpacity
-                onPress={() => setIsCurrencyModalVisible(false)}
+                onPress={() => {
+                  setIsCurrencyModalVisible(false);
+                  setCurrencySearchQuery("");
+                }}
               >
                 <Ionicons name="close" size={24} color={AppColors.text} />
               </TouchableOpacity>
             </View>
 
+            {/* Search Input */}
+            <View style={styles.searchContainer}>
+              <Ionicons
+                name="search"
+                size={20}
+                color={AppColors.textSecondary}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search currencies..."
+                placeholderTextColor={AppColors.textMuted}
+                value={currencySearchQuery}
+                onChangeText={setCurrencySearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {currencySearchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setCurrencySearchQuery("")}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={AppColors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+
             {isLoadingCurrencies ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={AppColors.primary} />
-              </View>
+              <FlatList
+                data={[1, 2, 3, 4, 5]}
+                keyExtractor={(item) => item.toString()}
+                renderItem={() => (
+                  <View style={styles.currencyItem}>
+                    <Skeleton
+                      type="square"
+                      size={48}
+                      style={styles.skeletonCurrencyIcon}
+                    />
+                    <View style={styles.currencyInfo}>
+                      <SkeletonText
+                        width="60%"
+                        height={16}
+                        style={styles.skeletonCurrencyName}
+                      />
+                      <SkeletonText
+                        width="50%"
+                        height={14}
+                        style={styles.skeletonCurrencyNetwork}
+                      />
+                    </View>
+                  </View>
+                )}
+                {...({ contentContainerStyle: styles.currencyList } as any)}
+              />
             ) : (
               <FlatList
-                data={allCurrencies}
+                data={filteredCurrencies}
                 keyExtractor={(item) => `${item.currency_id}_${item.network}`}
                 renderItem={({ item }) => {
                   const isSelected =
@@ -936,7 +1058,7 @@ export default function CryptoScreen() {
                       : selectedCurrency?.currency_id === item.currency_id &&
                         selectedCurrency?.network === item.network;
 
-                  const priceData = getCurrencyPriceData(item);
+                  const balance = item.balance || 0;
 
                   return (
                     <TouchableOpacity
@@ -958,23 +1080,21 @@ export default function CryptoScreen() {
                       }}
                       activeOpacity={0.7}
                     >
-                      <LinearGradient
-                        colors={getCurrencyGradient(item.coin)}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.currencyIcon}
-                      >
-                        <Ionicons
-                          name={getCurrencyIcon(item.coin)}
-                          size={24}
-                          color="#fff"
-                        />
-                      </LinearGradient>
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.currencyIconImage}
+                        contentFit="contain"
+                      />
                       <View style={styles.currencyInfo}>
                         <Text style={styles.currencyName}>{item.name}</Text>
-                        <Text style={styles.currencyNetwork}>
-                          {item.network} • {formatBalance(priceData.price)}
-                        </Text>
+                        <View style={styles.currencyBalanceContainer}>
+                          <Text style={styles.currencyNetwork}>
+                            {item.network}
+                          </Text>
+                          <Text style={styles.currencyBalance}>
+                            {balance} {item.coin}
+                          </Text>
+                        </View>
                       </View>
                       {isSelected && (
                         <Ionicons
@@ -986,7 +1106,7 @@ export default function CryptoScreen() {
                     </TouchableOpacity>
                   );
                 }}
-                contentContainerStyle={styles.currencyList}
+                {...({ contentContainerStyle: styles.currencyList } as any)}
               />
             )}
           </View>
@@ -997,6 +1117,11 @@ export default function CryptoScreen() {
 }
 
 const styles = StyleSheet.create({
+  currencyBalanceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -1291,6 +1416,7 @@ const styles = StyleSheet.create({
   currencyItemSelected: {
     borderColor: AppColors.primary,
     borderWidth: 2,
+    alignItems: "center",
   },
   currencyIcon: {
     width: 48,
@@ -1299,6 +1425,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  currencyIconImage: {
+    width: 48,
+    height: 48,
+  },
   currencyInfo: {
     flex: 1,
   },
@@ -1306,10 +1436,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 4,
   },
   currencyNetwork: {
     fontSize: 14,
     color: AppColors.textSecondary,
+  },
+  currencyBalance: {
+    fontSize: 13,
+    color: AppColors.textSecondary,
+    marginTop: 2,
+  },
+  skeletonCurrencyIcon: {
+    marginRight: 12,
+    borderRadius: 24,
+  },
+  skeletonCurrencyName: {
+    marginBottom: 4,
+  },
+  skeletonCurrencyNetwork: {
+    marginTop: 0,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    gap: 12,
+  },
+  searchIcon: {
+    marginRight: 4,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: AppColors.text,
+    padding: 0,
   },
 });

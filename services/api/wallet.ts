@@ -12,6 +12,7 @@ export interface Wallet {
   provider: string;
   balance: number;
   external_address: string | null;
+  image_url?: string | null;
   meta: any;
   created_at: string;
   updated_at: string;
@@ -34,6 +35,7 @@ export interface Transaction {
   date: string;
   amount: string;
   status: "Confirmed" | "Pending" | "Failed";
+  reference?: string | number;
 }
 
 export interface TransactionsResponse {

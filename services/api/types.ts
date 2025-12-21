@@ -48,6 +48,7 @@ export interface User {
   created_at: string;
   updated_at: string;
   avatar?: string;
+  profile_image_url?: string;
   va_account_number?: string;
   va_account_name?: string;
   va_bank_name?: string;

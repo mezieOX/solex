@@ -22,10 +22,6 @@
       "icon": "./assets/images/adaptive-icon.png",
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
-      "navigationBar": {
-        "backgroundColor": "#000000",
-        "barStyle": "dark-content"
-      },
       "package": "com.solex.tradeapp"
     },
     "web": {

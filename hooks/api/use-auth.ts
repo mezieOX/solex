@@ -23,7 +23,7 @@ export function useUser() {
     queryKey: authKeys.user(),
     queryFn: () => authApi.getCurrentUser(),
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -43,13 +43,11 @@ export function useLogin() {
 
       // Send FCM token to backend if available
       const fcmToken = getGlobalFcmToken();
-      console.log("🔄 FCM Token:", fcmToken);
       if (fcmToken) {
         try {
           await accountApi.updateFcmToken(fcmToken);
         } catch (err) {
           // silently ignore; token can be sent later
-          console.warn("Failed to update FCM token:", err);
         }
       }
     },

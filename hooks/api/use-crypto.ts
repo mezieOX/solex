@@ -11,6 +11,18 @@ export const cryptoKeys = {
   currencies: () => [...cryptoKeys.all, "currencies"] as const,
   exchangeRate: (from: string, to: string) =>
     [...cryptoKeys.all, "exchange-rate", from, to] as const,
+  exchangeRateByCurrencyId: (
+    currencyId: number,
+    toCurrencyId: number | null | undefined | string,
+    to: string
+  ) =>
+    [
+      ...cryptoKeys.all,
+      "exchange-rate-by-currency-id",
+      currencyId,
+      toCurrencyId,
+      to,
+    ] as const,
   prices: (ids: string[]) => [...cryptoKeys.all, "prices", ids] as const,
   withdrawFees: (walletId: number, address: string, amount: string) =>
     [...cryptoKeys.all, "withdraw-fees", walletId, address, amount] as const,
@@ -33,7 +45,7 @@ export function useCryptoCurrencies() {
     queryKey: cryptoKeys.currencies(),
     queryFn: () => cryptoApi.getCurrencies(),
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -58,7 +70,45 @@ export function useExchangeRate(from: string, to: string) {
     queryFn: () => cryptoApi.getExchangeRate(from, to),
     enabled: !!from && !!to,
     retry: false,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1 * 1000, // 1 second
+  });
+}
+
+/**
+ * Hook to get exchange rate by currency ID
+ */
+export function useExchangeRateByCurrencyId(
+  currencyId: number | null,
+  toCurrencyId: number | null | undefined | string,
+  to: string | null,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: cryptoKeys.exchangeRateByCurrencyId(
+      currencyId || 0,
+      toCurrencyId,
+      to || ""
+    ),
+    queryFn: () => {
+      // Convert string to number if needed, or handle null/undefined
+      let toCurrencyIdValue: number | null | undefined;
+      if (toCurrencyId === null || toCurrencyId === undefined) {
+        toCurrencyIdValue = null;
+      } else if (typeof toCurrencyId === "string") {
+        const parsed = parseInt(toCurrencyId, 10);
+        toCurrencyIdValue = isNaN(parsed) ? null : parsed;
+      } else {
+        toCurrencyIdValue = toCurrencyId;
+      }
+
+      return cryptoApi.getExchangeRateByCurrencyId({
+        currency_id: currencyId!,
+        to_currency_id: toCurrencyIdValue,
+        to: to || "",
+      });
+    },
+    retry: false,
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -82,7 +132,7 @@ export function useSwapCrypto() {
 export function useWithdrawCrypto() {
   return useMutation({
     mutationFn: (data: {
-      wallet_id: number;
+      currency_id?: number;
       address_to: string;
       amount: string;
       destination_tag?: string;
@@ -94,32 +144,28 @@ export function useWithdrawCrypto() {
  * Hook to get withdrawal fees
  */
 export function useWithdrawFees(
-  walletId: number | null,
+  currencyId: number | null,
   address: string,
   amount: string,
   enabled: boolean = true
 ) {
   return useQuery({
-    queryKey: cryptoKeys.withdrawFees(
-      walletId || 0,
-      address,
-      amount
-    ),
+    queryKey: cryptoKeys.withdrawFees(currencyId || 0, address, amount),
     queryFn: () =>
       cryptoApi.getWithdrawFees({
-        wallet_id: walletId!,
+        currency_id: currencyId!,
         address_to: address,
         amount: amount,
       }),
     enabled:
       enabled &&
-      walletId !== null &&
+      currencyId !== null &&
       address.trim().length > 0 &&
       amount.trim().length > 0 &&
       !isNaN(parseFloat(amount)) &&
       parseFloat(amount) > 0,
     retry: false,
-    staleTime: 10 * 1000, // 10 seconds
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -156,6 +202,6 @@ export function useCryptoPrices(
     },
     enabled: ids.length > 0,
     refetchInterval: refetchInterval || false,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1 * 1000, // 1 second
   });
 }

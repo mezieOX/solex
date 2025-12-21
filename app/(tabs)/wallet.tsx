@@ -3,8 +3,10 @@ import Skeleton, { SkeletonText, SkeletonTitle } from "@/components/skeleton";
 import { Card } from "@/components/ui/card";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
+import { useCryptoPrices } from "@/hooks/api/use-crypto";
 import { useWallets } from "@/hooks/api/use-wallet";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo } from "react";
@@ -15,6 +17,24 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+// CoinGecko ID mapping
+const COIN_GECKO_MAP: Record<string, string> = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  USDT: "tether",
+  USDC: "usd-coin",
+  BNB: "binancecoin",
+};
+
+// Coin full names mapping
+const COIN_NAMES: Record<string, string> = {
+  BTC: "Bitcoin",
+  ETH: "Ethereum",
+  USDT: "Tether USDT",
+  USDC: "USD Coin",
+  BNB: "Binance Coin",
+};
 
 export default function WalletScreen() {
   const { data: walletsData, isLoading, error } = useWallets();
@@ -29,6 +49,20 @@ export default function WalletScreen() {
     return { fiatWallets: fiat, cryptoWallets: crypto };
   }, [walletsData]);
 
+  // Get CoinGecko IDs for crypto wallets
+  const cryptoIds = useMemo(() => {
+    if (!cryptoWallets.length) return [];
+    const ids = new Set<string>();
+    cryptoWallets.forEach((wallet) => {
+      const coinId = COIN_GECKO_MAP[wallet.currency.toUpperCase()];
+      if (coinId) ids.add(coinId);
+    });
+    return Array.from(ids);
+  }, [cryptoWallets]);
+
+  // Fetch crypto prices
+  const { data: cryptoPrices } = useCryptoPrices(cryptoIds, "usd", 30000);
+
   const formatBalance = (balance: number, currency: string) => {
     if (currency === "NGN") {
       return `₦${new Intl.NumberFormat("en-NG", {
@@ -37,6 +71,29 @@ export default function WalletScreen() {
       }).format(balance)}`;
     }
     return `${balance.toFixed(8)} ${currency}`;
+  };
+
+  // Get crypto price and calculate USD value
+  const getCryptoPriceData = (currency: string) => {
+    const coinId = COIN_GECKO_MAP[currency.toUpperCase()];
+    if (coinId && cryptoPrices) {
+      const priceData = cryptoPrices.find((p) => p.id === coinId);
+      if (priceData) {
+        return {
+          price: priceData.current_price,
+          change: priceData.price_change_percentage_24h || 0,
+        };
+      }
+    }
+    return { price: 0, change: 0 };
+  };
+
+  // Format USD value
+  const formatUSD = (value: number) => {
+    return `$${new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)}`;
   };
 
   const getCryptoIcon = (currency: string): keyof typeof Ionicons.glyphMap => {
@@ -215,6 +272,11 @@ export default function WalletScreen() {
                 wallet.currency.toUpperCase()
               ] || [cryptoColor, cryptoColor];
 
+              const priceData = getCryptoPriceData(wallet.currency);
+              const usdValue = wallet.balance * priceData.price;
+              const coinName =
+                COIN_NAMES[wallet.currency.toUpperCase()] || wallet.currency;
+
               return (
                 <TouchableOpacity
                   key={wallet.id}
@@ -222,69 +284,34 @@ export default function WalletScreen() {
                   style={styles.walletCardWrapper}
                 >
                   <Card style={styles.walletCard}>
-                    <View style={styles.walletHeader}>
-                      <LinearGradient
-                        colors={gradientColors}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.iconContainer}
-                      >
-                        <Ionicons
-                          name={getCryptoIcon(wallet.currency)}
-                          size={24}
-                          color="#fff"
+                    <View style={styles.walletRow}>
+                      {/* Coin Column */}
+                      <View style={styles.coinColumn}>
+                        <Image
+                          source={{
+                            uri: wallet?.image_url || "",
+                          }}
+                          style={styles.coinIcon}
+                          contentFit="cover"
                         />
-                      </LinearGradient>
-                      <View style={styles.walletInfo}>
-                        <Text style={styles.walletCurrency}>
-                          {wallet.currency}
+                        <View style={styles.coinInfo}>
+                          <Text style={styles.coinTicker}>
+                            {wallet.currency}
+                          </Text>
+                          <Text style={styles.coinName}>{coinName}</Text>
+                        </View>
+                      </View>
+
+                      {/* Amount Column */}
+                      <View style={styles.amountColumn}>
+                        <Text style={styles.amountValue}>
+                          {wallet.balance.toFixed(4)}
                         </Text>
-                        <View style={styles.walletTypeRow}>
-                          <View style={styles.networkBadge}>
-                            <Text style={styles.networkText}>
-                              {wallet.meta?.network || "Network"}
-                            </Text>
-                          </View>
-                          <Text style={styles.walletProvider}>
-                            {wallet.provider}
-                          </Text>
-                        </View>
+                        <Text style={styles.amountUSD}>
+                          {formatUSD(usdValue)} USD
+                        </Text>
                       </View>
                     </View>
-                    <View style={styles.balanceContainer}>
-                      <Text style={styles.balanceLabel}>Available Balance</Text>
-                      <Text style={styles.balanceAmount}>
-                        {formatBalance(wallet.balance, wallet.currency)}
-                      </Text>
-                    </View>
-                    {wallet.external_address && (
-                      <View style={styles.addressContainer}>
-                        <View style={styles.addressHeader}>
-                          <Text style={styles.addressLabel}>
-                            Wallet Address
-                          </Text>
-                          <TouchableOpacity
-                            onPress={() => {
-                              // Copy to clipboard
-                            }}
-                            style={styles.copyButton}
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons
-                              name="copy-outline"
-                              size={18}
-                              color={AppColors.primary}
-                            />
-                            <Text style={styles.copyButtonText}>Copy</Text>
-                          </TouchableOpacity>
-                        </View>
-                        <View style={styles.addressBox}>
-                          <Text style={styles.addressText} numberOfLines={1}>
-                            {wallet.external_address}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
                   </Card>
                 </TouchableOpacity>
               );
@@ -352,11 +379,74 @@ const styles = StyleSheet.create({
   },
   walletCard: {
     marginBottom: 0,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     backgroundColor: AppColors.surface,
     borderWidth: 1,
     borderColor: AppColors.border,
+  },
+  walletRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  coinColumn: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  coinIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  coinInfo: {
+    flex: 1,
+  },
+  coinTicker: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: AppColors.text,
+    marginBottom: 2,
+  },
+  coinName: {
+    fontSize: 13,
+    color: AppColors.textSecondary,
+    fontWeight: "400",
+  },
+  amountColumn: {
+    alignItems: "flex-end",
+    flex: 1,
+    marginRight: 16,
+  },
+  amountValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: AppColors.text,
+    marginBottom: 2,
+  },
+  amountUSD: {
+    fontSize: 13,
+    color: AppColors.textSecondary,
+    fontWeight: "400",
+  },
+  pnlColumn: {
+    alignItems: "flex-end",
+    minWidth: 80,
+  },
+  pnlValue: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: AppColors.text,
+    marginBottom: 2,
+  },
+  pnlPercentage: {
+    fontSize: 13,
+    color: AppColors.textSecondary,
+    fontWeight: "400",
   },
   walletHeader: {
     flexDirection: "row",

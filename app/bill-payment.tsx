@@ -287,13 +287,6 @@ export default function BillPaymentScreen() {
   }, []);
 
   const handleSelectItem = useCallback((item: BillItem) => {
-    console.log("📦 Selected Package Data:", {
-      id: item.id,
-      name: item.name,
-      code: item.code,
-      amount: item.amount,
-      fullItem: item,
-    });
     setSelectedItem(item);
     if (item.amount > 0) {
       setAmount(item.amount.toString());
@@ -329,7 +322,6 @@ export default function BillPaymentScreen() {
 
       setContacts(contactsWithPhones);
     } catch (error: any) {
-      console.error("Contact picker error:", error);
       showErrorToast({
         message: error?.message || "Failed to load contacts. Please try again.",
       });
@@ -460,20 +452,6 @@ export default function BillPaymentScreen() {
         // it might be that the query didn't trigger or the API returned empty
         // In this case, we'll allow proceeding - the backend will validate anyway
         // This handles cases where the validation query doesn't return data but there's no error
-        console.log(
-          "Validation query didn't return data but no error - allowing proceed:",
-          {
-            hasValidatedCustomer: !!validatedCustomer,
-            customerName: validatedCustomer?.customer_name,
-            validateCustomerError: !!validateCustomerError,
-            isValidatingCustomer,
-            selectedItem: !!selectedItem,
-            selectedBiller: !!selectedBiller,
-            billerCode: selectedBiller?.biller_code,
-            itemCode: selectedItem?.code,
-            customer: customer.trim(),
-          }
-        );
 
         // Allow proceeding - backend will validate
         // The user has entered all required info, and there's no validation error
@@ -498,25 +476,11 @@ export default function BillPaymentScreen() {
       (selectedItem as any)?.item_code ||
       (selectedItem as any)?.itemCode;
 
-    // Debug: Log selectedItem structure to see what we actually have
-    if (selectedItem && !itemCode) {
-      console.log("Selected item structure:", {
-        selectedItem,
-        hasCode: "code" in selectedItem,
-        hasItemCode: "item_code" in selectedItem,
-        hasItemCodeCamel: "itemCode" in selectedItem,
-        keys: Object.keys(selectedItem),
-        itemId: selectedItem.id,
-        itemName: selectedItem.name,
-        fullItem: JSON.stringify(selectedItem),
-      });
-    }
 
     if (!itemCode) {
       if (hasItems) {
         if (selectedItem) {
           // Item is selected but doesn't have code - this is unexpected
-          console.error("Selected item missing code property:", selectedItem);
           showErrorToast({
             message:
               "Selected package is missing required code. Please try selecting a different package or contact support.",
@@ -1002,12 +966,9 @@ export default function BillPaymentScreen() {
                       </Text>
                     </View>
                   )}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={
-                    filteredCategories.length === 0
-                      ? styles.emptyListContainer
-                      : { paddingBottom: 10 }
-                  }
+                  {...(filteredCategories.length === 0
+                    ? { style: styles.emptyListContainer }
+                    : { contentContainerStyle: { paddingBottom: 10 } })}
                 />
               )}
             </View>
@@ -1106,12 +1067,9 @@ export default function BillPaymentScreen() {
                       </Text>
                     </View>
                   )}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={
-                    filteredBillers.length === 0
-                      ? styles.emptyListContainer
-                      : { paddingBottom: 10 }
-                  }
+                  {...(filteredBillers.length === 0
+                    ? { style: styles.emptyListContainer }
+                    : { contentContainerStyle: { paddingBottom: 10 } })}
                 />
               )}
             </View>
@@ -1208,12 +1166,9 @@ export default function BillPaymentScreen() {
                       </Text>
                     </View>
                   )}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={
-                    filteredItems.length === 0
-                      ? styles.emptyListContainer
-                      : { paddingBottom: 10 }
-                  }
+                  {...(filteredItems.length === 0
+                    ? { style: styles.emptyListContainer }
+                    : { contentContainerStyle: { paddingBottom: 10 } })}
                 />
               )}
             </View>
@@ -1314,12 +1269,9 @@ export default function BillPaymentScreen() {
                       </Text>
                     </View>
                   )}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={
-                    filteredContacts.length === 0
-                      ? styles.emptyListContainer
-                      : { paddingBottom: 10 }
-                  }
+                  {...(filteredContacts.length === 0
+                    ? { style: styles.emptyListContainer }
+                    : { contentContainerStyle: { paddingBottom: 10 } })}
                 />
               )}
             </View>

@@ -291,25 +291,19 @@ export default function FlutterwavePaymentScreen() {
     // Store the last URL for error handling
     setLastUrl(url);
 
-    console.log("Navigation state change - URL:", url);
-
     // If URL contains redirect URL, treat as success immediately
     // (Flutterwave redirects here after successful payment, even if page fails to load)
     if (url.toLowerCase().includes(redirectUrl.toLowerCase())) {
-      console.log("Redirect URL detected in navigation - treating as success");
       handlePaymentSuccess();
       return;
     }
 
     // Check payment status in order: success > cancelled > failed
     if (isPaymentSuccess(url)) {
-      console.log("Payment success detected");
       handlePaymentSuccess();
     } else if (isPaymentCancelled(url)) {
-      console.log("Payment cancelled detected");
       handlePaymentCancelled();
     } else if (isPaymentFailed(url)) {
-      console.log("Payment failed detected");
       handlePaymentFailed();
     }
   };
@@ -318,7 +312,6 @@ export default function FlutterwavePaymentScreen() {
   const handleWebViewError = (syntheticEvent: any) => {
     // If payment was already handled, don't process errors
     if (paymentHandled) {
-      console.log("Payment already handled, ignoring error");
       return;
     }
 
@@ -328,14 +321,9 @@ export default function FlutterwavePaymentScreen() {
     // Use last URL if error URL is empty
     const urlToCheck = errorUrl || lastUrl;
 
-    console.warn("WebView error - Error URL:", errorUrl, "Last URL:", lastUrl);
-
     // FIRST: Check if error URL contains success indicators (status=completed, etc.)
     // This catches the fallback URL: https://api.solextrade.co/api/flutterwave/fallback?status=completed
     if (errorUrl && isPaymentSuccess(errorUrl)) {
-      console.log(
-        "Payment success detected in error URL - treating as success"
-      );
       handlePaymentSuccess();
       return;
     }
@@ -346,9 +334,6 @@ export default function FlutterwavePaymentScreen() {
       urlToCheck &&
       urlToCheck.toLowerCase().includes(redirectUrl.toLowerCase())
     ) {
-      console.log(
-        "Redirect URL detected in error/last URL - treating as success"
-      );
       handlePaymentSuccess();
       return;
     }
@@ -356,9 +341,6 @@ export default function FlutterwavePaymentScreen() {
     // Check payment status on last URL as well
     // Priority: success > cancelled > failed > error
     if (isPaymentSuccess(urlToCheck)) {
-      console.log(
-        "Payment success detected in URL to check - treating as success"
-      );
       handlePaymentSuccess();
       return;
     } else if (isPaymentCancelled(errorUrl) || isPaymentCancelled(urlToCheck)) {

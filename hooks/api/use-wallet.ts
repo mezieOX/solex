@@ -24,7 +24,7 @@ export function useWallets() {
     queryKey: walletKeys.wallets(),
     queryFn: () => walletApi.getWallets(),
     retry: false,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -45,7 +45,7 @@ export function useTransactions(params?: {
     queryKey: walletKeys.transactions(params),
     queryFn: () => walletApi.getTransactions(params),
     retry: false,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -57,7 +57,7 @@ export function useBanks() {
     queryKey: walletKeys.banks(),
     queryFn: () => walletApi.getBanks(),
     retry: false,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours (banks don't change often)
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -88,7 +88,7 @@ export function useResolveAccountQuery(
       }),
     enabled: enabled && accountNumber.length === 10 && !!bankCode,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 1000, // 1 second
   });
 }
 

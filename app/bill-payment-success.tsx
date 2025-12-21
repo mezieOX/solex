@@ -76,7 +76,7 @@ export default function BillPaymentSuccessScreen() {
         setCopiedField(null);
       }, 2000);
     } catch (error) {
-      console.error("Clipboard error:", error);
+      // Clipboard error
     }
   };
 

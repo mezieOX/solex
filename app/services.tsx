@@ -3,7 +3,7 @@ import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
 import { useServices } from "@/hooks/api/use-services";
 import React from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 export default function ServicesScreen() {
   const { services, isLoading } = useServices();
@@ -16,13 +16,7 @@ export default function ServicesScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={AppColors.primary} />
-          </View>
-        ) : (
-          <QuickActions actions={services} />
-        )}
+        <QuickActions actions={services} isLoading={isLoading} numColumns={4} />
       </ScrollView>
     </View>
   );
@@ -41,11 +35,5 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 0,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
   },
 });

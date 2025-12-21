@@ -73,7 +73,7 @@ export default function RootLayout() {
           }, 1500);
         }
       } catch (error) {
-        console.error("Error checking notification permission:", error);
+        // Error checking notification permission
       }
     };
 
@@ -102,10 +102,6 @@ export default function RootLayout() {
       .getInitialNotification()
       .then(async (remoteMessage) => {
         if (remoteMessage) {
-          console.log(
-            "📬 App opened from notification (app was closed):",
-            remoteMessage
-          );
           setIsRemoteMessage("true");
 
           // Navigate to notifications screen or handle based on notification data
@@ -113,16 +109,12 @@ export default function RootLayout() {
         }
       })
       .catch((error) => {
-        console.error("Error getting initial notification:", error);
+        // Error getting initial notification
       });
 
     // Handle notification when app is opened from background
     const unsubscribeOnNotificationOpened = messaging().onNotificationOpenedApp(
       (remoteMessage) => {
-        console.log(
-          "📬 Notification opened app (app was in background):",
-          remoteMessage
-        );
         setIsRemoteMessage("true");
 
         // Navigate to notifications screen or handle based on notification data
@@ -133,8 +125,6 @@ export default function RootLayout() {
     // Handle foreground messages (when app is open)
     const unsubscribeOnMessage = messaging().onMessage(
       async (remoteMessage) => {
-        console.log("📬 Foreground notification received:", remoteMessage);
-
         if (remoteMessage?.notification) {
           // Show toast for foreground notifications
           showInfoToast({

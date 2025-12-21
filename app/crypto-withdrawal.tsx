@@ -1,3 +1,5 @@
+import Error from "@/components/error";
+import Skeleton, { SkeletonText } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppColors } from "@/constants/theme";
@@ -9,11 +11,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ClipboardLib from "expo-clipboard";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -59,15 +60,19 @@ const formatBalance = (balance: number): string => {
 
 export default function CryptoWithdrawalScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const {
     data: walletsData,
     isLoading: walletsLoading,
     error: walletsError,
+    refetch: refetchWallets,
+    isRefetching: isRefetchingWallets,
   } = useWallets();
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [cryptoAddress, setCryptoAddress] = useState("");
   const cryptoAddressRef = useRef(cryptoAddress);
   const [amount, setAmount] = useState("");
+  const [destinationTag, setDestinationTag] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [isWalletModalVisible, setIsWalletModalVisible] = useState(false);
@@ -75,8 +80,9 @@ export default function CryptoWithdrawalScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const withdrawCrypto = useWithdrawCrypto();
 
-  // Debounced amount for API calls
+  // Debounced amount and address for API calls
   const [debouncedAmount, setDebouncedAmount] = useState("");
+  const [debouncedAddress, setDebouncedAddress] = useState("");
 
   // Filter only crypto wallets
   const cryptoWallets = useMemo(() => {
@@ -84,12 +90,46 @@ export default function CryptoWithdrawalScreen() {
     return walletsData.filter((wallet) => wallet.type === "crypto");
   }, [walletsData]);
 
-  // Set default wallet when data loads
+  // Get selected currency from params if available
+  const selectedCurrency = useMemo(() => {
+    try {
+      if (params.currency) {
+        return JSON.parse(params.currency as string);
+      }
+    } catch {
+      // Fallback to default
+    }
+    return null;
+  }, [params.currency]);
+
+  // Get balance from params (previous screen) or from selected wallet
+  const displayBalance = useMemo(() => {
+    if (selectedCurrency?.balance !== undefined) {
+      return selectedCurrency.balance;
+    }
+    return selectedWallet?.balance || 0;
+  }, [selectedCurrency?.balance, selectedWallet?.balance]);
+
+  // Set default wallet when data loads or match with selected currency
   useEffect(() => {
     if (cryptoWallets.length > 0 && !selectedWallet) {
+      if (selectedCurrency) {
+        // Try to find matching wallet by currency symbol and network
+        const matchingWallet = cryptoWallets.find(
+          (wallet) =>
+            wallet.currency.toUpperCase() ===
+              selectedCurrency.symbol?.toUpperCase() &&
+            wallet.meta?.network === selectedCurrency.network
+        );
+        if (matchingWallet) {
+          setSelectedWallet(matchingWallet);
+          return;
+        }
+      }
+      // Fallback to first wallet
       setSelectedWallet(cryptoWallets[0]);
     }
-  }, [cryptoWallets, selectedWallet]);
+  }, [cryptoWallets, selectedWallet, selectedCurrency]);
 
   // Debounce amount input to avoid too many API calls
   useEffect(() => {
@@ -100,15 +140,43 @@ export default function CryptoWithdrawalScreen() {
     return () => clearTimeout(timer);
   }, [amount]);
 
-  // Fetch withdrawal fees when amount, wallet, or address changes
-  const { data: feesData, isLoading: feesLoading } = useWithdrawFees(
-    selectedWallet?.id || null,
-    cryptoAddress,
+  // Debounce address input to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedAddress(cryptoAddress);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [cryptoAddress]);
+
+  // Fetch withdrawal fees automatically when wallet, address, and amount are provided
+  const {
+    data: feesData,
+    isLoading: feesLoading,
+    error: feesError,
+  } = useWithdrawFees(
+    selectedCurrency?.id || null,
+    debouncedAddress,
     debouncedAmount,
     debouncedAmount.trim().length > 0 &&
-      selectedWallet !== null &&
-      cryptoAddress.trim().length > 0
+      selectedCurrency !== null &&
+      debouncedAddress.trim().length > 0
   );
+
+  // Show error toast when fees fetch fails (only if address and amount are entered)
+  useEffect(() => {
+    if (
+      feesError &&
+      debouncedAddress.trim().length > 1 &&
+      debouncedAmount.trim().length > 1
+    ) {
+      const errorMessage =
+        (feesError as any)?.message ||
+        (feesError as any)?.data?.message ||
+        "Failed to fetch withdrawal fees";
+      showErrorToast({ message: errorMessage });
+    }
+  }, [feesError, debouncedAddress, debouncedAmount]);
 
   // Get network fee from API response
   const networkFee = useMemo(() => {
@@ -133,10 +201,6 @@ export default function CryptoWithdrawalScreen() {
     return (amt + networkFee).toFixed(10);
   }, [amount, networkFee, feesData]);
 
-  const handleOpenSheet = () => {
-    setIsWalletModalVisible(true);
-  };
-
   const handleSelectWallet = (wallet: Wallet) => {
     setSelectedWallet(wallet);
     setIsWalletModalVisible(false);
@@ -144,8 +208,8 @@ export default function CryptoWithdrawalScreen() {
   };
 
   const handleMaxAmount = () => {
-    if (selectedWallet) {
-      setAmount(selectedWallet.balance.toFixed(8));
+    if (displayBalance > 0) {
+      setAmount(displayBalance.toFixed(8));
     }
   };
 
@@ -154,36 +218,7 @@ export default function CryptoWithdrawalScreen() {
     cryptoAddressRef.current = cryptoAddress;
   }, [cryptoAddress]);
 
-  const handleCopyAddress = async () => {
-    // Use ref to get the most current value - this ensures we have the latest value
-    const currentValue = cryptoAddressRef.current || cryptoAddress;
-
-    if (!currentValue || !currentValue.trim()) {
-      return;
-    }
-
-    try {
-      // Copy to clipboard using system standard API
-      // DO NOT modify state - only copy to clipboard
-      await ClipboardLib.setStringAsync(currentValue.trim());
-      showSuccessToast({
-        message: "Address copied to clipboard",
-      });
-    } catch (error) {
-      console.error("Clipboard error:", error);
-      showErrorToast({
-        message: "Failed to copy to clipboard",
-      });
-    }
-  };
-
   const handlePasteAddress = async () => {
-    if (cryptoAddress && cryptoAddress.trim()) {
-      // If there's a value, copy it instead
-      handleCopyAddress();
-      return;
-    }
-
     try {
       const clipboardText = await ClipboardLib.getStringAsync();
       if (clipboardText && clipboardText.trim()) {
@@ -197,7 +232,6 @@ export default function CryptoWithdrawalScreen() {
         });
       }
     } catch (error) {
-      console.error("Clipboard error:", error);
       showErrorToast({
         message: "Failed to access clipboard",
       });
@@ -285,17 +319,20 @@ export default function CryptoWithdrawalScreen() {
       return;
     }
 
-    if (amountNum > selectedWallet.balance) {
+    if (amountNum > displayBalance) {
       showErrorToast({ message: "Insufficient balance" });
       return;
     }
 
     withdrawCrypto.mutate(
       {
-        wallet_id: selectedWallet.id,
+        currency_id: selectedCurrency?.id,
         address_to: cryptoAddress,
         amount: amount,
-        destination_tag: selectedWallet.meta?.destinationTag || "",
+        destination_tag:
+          destinationTag.trim() ||
+          selectedWallet.meta?.destinationTag ||
+          undefined,
       },
       {
         onSuccess: (response) => {
@@ -310,6 +347,7 @@ export default function CryptoWithdrawalScreen() {
               network: selectedWallet.meta?.network || "",
               address: cryptoAddress,
               amount: amount,
+              destinationTag: destinationTag.trim() || "",
               networkFee: networkFee.toString(),
               totalAmount: totalAmount,
               data: JSON.stringify(response.data ?? {}),
@@ -344,163 +382,164 @@ export default function CryptoWithdrawalScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {walletsError && (
-          <Text style={[styles.emptyText, { marginBottom: 16 }]}>
-            Failed to load wallets. Pull to retry.
-          </Text>
-        )}
-        {/* Choose Wallet Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Choose Wallet</Text>
-            <TouchableOpacity onPress={handleOpenSheet}>
-              <Ionicons name="chevron-down" size={24} color={AppColors.text} />
-            </TouchableOpacity>
-          </View>
-
-          {walletsLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={AppColors.primary} />
-            </View>
-          ) : selectedWallet ? (
-            <TouchableOpacity
-              style={styles.walletCard}
-              onPress={handleOpenSheet}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.walletIcon,
-                  { backgroundColor: getCryptoColor(selectedWallet.currency) },
-                ]}
-              >
-                <Image
-                  source={getCryptoIcon(selectedWallet.currency)}
-                  style={styles.walletIconImage}
-                  contentFit="contain"
-                />
-              </View>
-              <View style={styles.walletInfo}>
-                <Text style={styles.walletName}>{selectedWallet.currency}</Text>
-                <Text style={styles.walletSymbol}>
-                  {selectedWallet.meta?.network || "Network"}
-                </Text>
-              </View>
-              <View style={styles.walletPrice}>
-                <Text style={styles.walletPriceValue}>
-                  {formatBalance(selectedWallet.balance)}
-                </Text>
-                <Text style={styles.walletPriceChange}>Balance</Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>No wallet selected</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Crypto Address Input */}
-        <View style={styles.section}>
-          <Input
-            label="Crypto Address"
-            placeholder="Enter crypto address"
-            value={cryptoAddress}
-            onChangeText={setCryptoAddress}
-            rightIcon={
-              <View style={styles.addressIcons}>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={handleScanQRCode}
-                >
-                  <Ionicons
-                    name="qr-code-outline"
-                    size={20}
-                    color={AppColors.textSecondary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={handlePasteAddress}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons
-                    name={
-                      cryptoAddress && cryptoAddress.trim()
-                        ? "copy-outline"
-                        : "clipboard-outline"
-                    }
-                    size={20}
-                    color={AppColors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            }
+        {walletsError ? (
+          <Error
+            message="Failed to load wallets"
+            onRetry={() => refetchWallets()}
+            isLoading={isRefetchingWallets}
           />
-        </View>
+        ) : (
+          <>
+            {/* Selected Crypto */}
+            {selectedWallet && (
+              <>
+                <View style={styles.cryptoInfo}>
+                  <Image
+                    source={{
+                      uri:
+                        selectedCurrency?.image_url ||
+                        selectedWallet.meta?.image_url ||
+                        "",
+                    }}
+                    style={styles.cryptoIconImage}
+                    contentFit="contain"
+                  />
+                  <Text style={styles.cryptoName}>
+                    {selectedCurrency?.name || selectedWallet.currency}
+                  </Text>
+                </View>
 
-        {/* Amount Input */}
-        <View style={styles.section}>
-          <View style={styles.amountHeader}>
-            <Text style={styles.inputLabel}>Amount</Text>
-            <TouchableOpacity onPress={handleMaxAmount}>
-              <Text style={styles.maxButton}>
-                Max ~ {selectedWallet?.currency}{" "}
-                {formatBalance(selectedWallet?.balance || 0)}
+                {/* Network Selection */}
+                <View style={styles.networkSection}>
+                  <View style={styles.networkTag}>
+                    <Text style={styles.networkTagText}>
+                      Network:{" "}
+                      {selectedCurrency?.network ||
+                        selectedWallet.meta?.network ||
+                        "Network"}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+
+            {/* Crypto Address Input */}
+            <View style={styles.section}>
+              <Input
+                label="Crypto Address"
+                placeholder="Enter crypto address"
+                value={cryptoAddress}
+                onChangeText={setCryptoAddress}
+                rightIcon={
+                  <View style={styles.addressIcons}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      onPress={handleScanQRCode}
+                    >
+                      <Ionicons
+                        name="qr-code-outline"
+                        size={20}
+                        color={AppColors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      onPress={handlePasteAddress}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons
+                        name="clipboard-outline"
+                        size={20}
+                        color={AppColors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
+            </View>
+
+            {/* Amount Input */}
+            <View style={styles.section}>
+              <View style={styles.amountHeader}>
+                <Text style={styles.inputLabel}>Amount</Text>
+                <TouchableOpacity onPress={handleMaxAmount}>
+                  <Text style={styles.maxButton}>
+                    Balance: {formatBalance(displayBalance)}
+                    {` ${selectedCurrency?.symbol}`}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Input
+                style={styles.amountInput}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                placeholderTextColor={AppColors.textMuted}
+              />
+            </View>
+
+            {/* Destination Tag Input */}
+            <View style={styles.section}>
+              <Input
+                label="Destination Tag (Optional)"
+                placeholder="Enter destination tag if required"
+                value={destinationTag}
+                onChangeText={setDestinationTag}
+                keyboardType="default"
+                placeholderTextColor={AppColors.textMuted}
+              />
+            </View>
+
+            {/* Fees and Total */}
+            <View style={styles.feesSection}>
+              <View style={styles.feesRow}>
+                <Text style={styles.feesLabel}>Network Fees:</Text>
+                <Text style={styles.feesValue}>
+                  {feesLoading ? "..." : formattedNetworkFee}
+                </Text>
+              </View>
+              <View style={styles.feesRow}>
+                <Text style={styles.feesLabel}>Total Amount:</Text>
+                <Text style={styles.feesValue}>
+                  {feesLoading ? "..." : totalAmount}
+                </Text>
+              </View>
+            </View>
+
+            {/* Warning Message */}
+            <View style={styles.warningContainer}>
+              <Ionicons
+                name="warning-outline"
+                size={20}
+                color={AppColors.red}
+                style={styles.warningIcon}
+              />
+              <Text style={styles.warningText}>
+                You can only withdraw{" "}
+                <Text style={styles.warningTextHighlight}>
+                  {selectedCurrency?.name || selectedWallet?.currency}
+                </Text>{" "}
+                coin to{" "}
+                <Text style={styles.warningTextHighlight}>
+                  {selectedCurrency?.network ||
+                    selectedWallet?.meta?.network ||
+                    "Network"}
+                </Text>{" "}
+                Address (Do not paste any other wallet here)
               </Text>
-            </TouchableOpacity>
-          </View>
-          <Input
-            style={styles.amountInput}
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            placeholderTextColor={AppColors.textMuted}
-          />
-          <Text style={styles.balanceText}>
-            Network fee: {feesLoading ? "..." : formattedNetworkFee}
-          </Text>
-        </View>
+            </View>
 
-        {/* Fees and Total */}
-        <View style={styles.feesSection}>
-          <View style={styles.feesRow}>
-            <Text style={styles.feesLabel}>Network Fees:</Text>
-            <Text style={styles.feesValue}>
-              {feesLoading ? "..." : formattedNetworkFee}
-            </Text>
-          </View>
-          <View style={styles.feesRow}>
-            <Text style={styles.feesLabel}>Total Amount:</Text>
-            <Text style={styles.feesValue}>
-              {feesLoading ? "..." : totalAmount}
-            </Text>
-          </View>
-        </View>
-
-        {/* Warning Message */}
-        <View style={styles.warningContainer}>
-          <Ionicons
-            name="warning-outline"
-            size={20}
-            color={AppColors.orange}
-            style={styles.warningIcon}
-          />
-          <Text style={styles.warningText}>
-            To ensure your crypto address is correct, always double-check it
-            before sending or receiving fund.
-          </Text>
-        </View>
-
-        <Button
-          title="Continue"
-          onPress={handleContinue}
-          loading={withdrawCrypto.isPending}
-          disabled={withdrawCrypto.isPending || !selectedWallet}
-          style={styles.button}
-        />
+            <Button
+              title="Continue"
+              onPress={handleContinue}
+              loading={withdrawCrypto.isPending}
+              disabled={withdrawCrypto.isPending || !selectedWallet}
+              style={styles.button}
+            />
+          </>
+        )}
       </ScrollView>
 
       {/* Modal for Wallet Selection */}
@@ -584,9 +623,42 @@ export default function CryptoWithdrawalScreen() {
             )}
 
             {walletsLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={AppColors.primary} />
-              </View>
+              <ScrollView
+                style={styles.countryList}
+                contentContainerStyle={styles.countryListContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {[1, 2, 3, 4, 5].map((index) => (
+                  <View key={index} style={styles.countryItem}>
+                    <Skeleton
+                      type="circle"
+                      size={40}
+                      style={styles.skeletonWalletIcon}
+                    />
+                    <View style={styles.countryInfo}>
+                      <View>
+                        <SkeletonText
+                          width="50%"
+                          height={16}
+                          style={styles.skeletonWalletName}
+                        />
+                        <SkeletonText
+                          width="40%"
+                          height={14}
+                          style={styles.skeletonWalletNetwork}
+                        />
+                      </View>
+                      <View style={styles.walletPrice}>
+                        <SkeletonText
+                          width={60}
+                          height={16}
+                          style={styles.skeletonWalletBalance}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
             ) : walletsError ? (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>Failed to load wallets</Text>
@@ -971,7 +1043,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: AppColors.orange + "30",
+    borderColor: AppColors.red + "30",
   },
   warningIcon: {
     marginRight: 12,
@@ -980,8 +1052,12 @@ const styles = StyleSheet.create({
   warningText: {
     flex: 1,
     fontSize: 12,
-    color: AppColors.textSecondary,
+    color: AppColors.red,
     lineHeight: 18,
+  },
+  warningTextHighlight: {
+    color: AppColors.red,
+    fontWeight: "600",
   },
   button: {
     marginTop: 20,
@@ -1037,7 +1113,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
-    paddingTop: 60,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
   },
@@ -1091,5 +1166,50 @@ const styles = StyleSheet.create({
   },
   permissionButton: {
     minWidth: 200,
+  },
+  skeletonWalletIcon: {
+    marginRight: 12,
+  },
+  skeletonWalletName: {
+    marginBottom: 4,
+  },
+  skeletonWalletNetwork: {
+    marginTop: 0,
+  },
+  skeletonWalletBalance: {
+    marginTop: 0,
+  },
+  cryptoInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  cryptoIconImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  cryptoName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  networkSection: {
+    marginBottom: 24,
+  },
+  networkTag: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  networkTagText: {
+    fontSize: 16,
+    color: AppColors.text,
+    fontWeight: "500",
   },
 });

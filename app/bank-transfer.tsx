@@ -24,7 +24,6 @@ export default function BankTransferScreen() {
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedName, setCopiedName] = useState(false);
   const { data: user } = useUser();
-  console.log(user);
 
   useFocusEffect(
     React.useCallback(() => {

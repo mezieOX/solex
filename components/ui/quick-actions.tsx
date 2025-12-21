@@ -77,6 +77,7 @@ export function QuickActions({
         <FlatList
           data={actions}
           numColumns={numColumns}
+          scrollEnabled={false}
           keyExtractor={(item, index) => `${item.title}-${index}`}
           renderItem={({ item }) => (
             <QuickActionCard
@@ -88,8 +89,7 @@ export function QuickActions({
               onPress={item.onPress}
             />
           )}
-          scrollEnabled={false}
-          contentContainerStyle={styles.actionsContainer}
+          {...({ contentContainerStyle: styles.actionsContainer } as any)}
         />
       )}
     </View>

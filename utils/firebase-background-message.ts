@@ -8,8 +8,6 @@ import messaging from "@react-native-firebase/messaging";
  * or completely closed.
  */
 messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-  console.log("📬 Background notification received:", remoteMessage);
-
   // TODO: Handle background notification
   // You can update local storage, show local notification, etc.
 

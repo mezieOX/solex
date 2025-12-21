@@ -66,7 +66,7 @@ export default function LoginScreen() {
           });
         }
       } catch (error) {
-        console.error("Error loading saved email:", error);
+        // Error loading saved email
       }
     };
 

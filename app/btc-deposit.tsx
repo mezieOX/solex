@@ -1,3 +1,4 @@
+import Skeleton from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
 import { AppColors } from "@/constants/theme";
 import { useCryptoDepositAddress } from "@/hooks/api/use-crypto";
@@ -9,7 +10,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,34 +19,12 @@ import {
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 
-// Helper function to get crypto icon color
-const getCryptoColor = (symbol: string): string => {
-  const colors: { [key: string]: string } = {
-    BTC: AppColors.orange,
-    ETH: AppColors.blue,
-    USDT: AppColors.green,
-    BNB: AppColors.orange,
-    SOL: AppColors.blue,
-    TRX: AppColors.red,
-    NOT: AppColors.orange,
-  };
-  return colors[symbol.toUpperCase()] || AppColors.primary;
-};
-
-// Helper function to get crypto icon
-const getCryptoIcon = (symbol: string) => {
-  const icons: { [key: string]: any } = {
-    BTC: require("@/assets/images/bitcoin.png"),
-    ETH: require("@/assets/images/eth.png"),
-    USDT: require("@/assets/images/usdt.png"),
-  };
-  return icons[symbol.toUpperCase()] || require("@/assets/images/bitcoin.png");
-};
-
+const { height } = Dimensions.get("window");
 export default function BTCDepositScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [copied, setCopied] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const [copiedDestinationTag, setCopiedDestinationTag] = useState(false);
 
   const currencyId = useMemo(() => {
     const id = params.currencyId as string;
@@ -76,8 +55,10 @@ export default function BTCDepositScreen() {
   } = useCryptoDepositAddress(currencyId);
 
   const depositAddress = addressData?.address || "";
-  const minDeposit = addressData?.minimum_deposit || "0.00";
+  const minDeposit =
+    addressData?.minimum_deposit || selectedWallet.min_deposit || "0.00";
   const confirmationsRequired = addressData?.confirmations_required || 0;
+  const destinationTag = addressData?.destinationTag || "";
 
   const handleCopyAddress = async () => {
     if (!depositAddress) {
@@ -85,11 +66,24 @@ export default function BTCDepositScreen() {
       return;
     }
     await ClipboardLib.setStringAsync(depositAddress);
-    setCopied(true);
+    setCopiedAddress(true);
     showSuccessToast({
       message: `${selectedWallet.symbol} address copied to clipboard`,
     });
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopiedAddress(false), 2000);
+  };
+
+  const handleCopyDestinationTag = async () => {
+    if (!destinationTag) {
+      showErrorToast({ message: "Destination tag not available" });
+      return;
+    }
+    await ClipboardLib.setStringAsync(destinationTag);
+    setCopiedDestinationTag(true);
+    showSuccessToast({
+      message: "Destination tag copied to clipboard",
+    });
+    setTimeout(() => setCopiedDestinationTag(false), 2000);
   };
 
   return (
@@ -110,35 +104,53 @@ export default function BTCDepositScreen() {
       >
         {/* Selected Crypto */}
         <View style={styles.cryptoInfo}>
-          <View
-            style={[
-              styles.cryptoIcon,
-              { backgroundColor: getCryptoColor(selectedWallet.symbol) },
-            ]}
-          >
-            <Image
-              source={getCryptoIcon(selectedWallet.symbol)}
-              style={styles.cryptoIconImage}
-              contentFit="contain"
-            />
-          </View>
+          <Image
+            source={{
+              uri: selectedWallet.image_url,
+            }}
+            style={styles.cryptoIconImage}
+            contentFit="contain"
+          />
           <Text style={styles.cryptoName}>{selectedWallet.name}</Text>
         </View>
 
         {/* Network Selection */}
         <View style={styles.networkSection}>
-          <Text style={styles.networkLabel}>Choose Network</Text>
           <View style={styles.networkTag}>
-            <Text style={styles.networkTagText}>{selectedNetwork}</Text>
+            <Text style={styles.networkTagText}>
+              Network: {selectedNetwork}
+            </Text>
           </View>
         </View>
 
         {/* QR Code Section */}
         {isLoadingAddress ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={AppColors.primary} />
-            <Text style={styles.loadingText}>Loading deposit address...</Text>
-          </View>
+          <>
+            <View style={styles.qrSectionLoder}>
+              <View
+                style={[
+                  styles.qrCodeContainer,
+                  {
+                    backgroundColor: AppColors.surface,
+                  },
+                ]}
+              >
+                <Skeleton
+                  type="square"
+                  width={210}
+                  height={210}
+                  style={[
+                    styles.skeletonQRCode,
+                    {
+                      backgroundColor: AppColors.surface,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          </>
         ) : addressError || !depositAddress ? (
           <View style={styles.errorContainer}>
             <Ionicons
@@ -193,13 +205,39 @@ export default function BTCDepositScreen() {
                   onPress={handleCopyAddress}
                 >
                   <Ionicons
-                    name={copied ? "checkmark-circle" : "copy-outline"}
+                    name={copiedAddress ? "checkmark-circle" : "copy-outline"}
                     size={20}
-                    color={copied ? AppColors.green : AppColors.text}
+                    color={copiedAddress ? AppColors.green : AppColors.text}
                   />
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Destination Tag Section */}
+            {destinationTag ? (
+              <View style={styles.addressSection}>
+                <Text style={styles.addressLabel}>Destination Tag</Text>
+                <View style={styles.addressContainer}>
+                  <Text style={styles.addressText}>{destinationTag}</Text>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={handleCopyDestinationTag}
+                  >
+                    <Ionicons
+                      name={
+                        copiedDestinationTag
+                          ? "checkmark-circle"
+                          : "copy-outline"
+                      }
+                      size={20}
+                      color={
+                        copiedDestinationTag ? AppColors.green : AppColors.text
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
 
             {/* Deposit Info */}
             <View style={styles.infoSection}>
@@ -239,6 +277,12 @@ export default function BTCDepositScreen() {
 }
 
 const styles = StyleSheet.create({
+  qrSectionLoder: {
+    alignItems: "center",
+    height: height / 1.9,
+    justifyContent: "center",
+    marginBottom: 50,
+  },
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
@@ -274,6 +318,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   cryptoIconImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  cryptoIconFallback: {
     width: 24,
     height: 24,
   },
@@ -301,7 +351,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.border,
   },
   networkTagText: {
-    fontSize: 14,
+    fontSize: 16,
     color: AppColors.text,
     fontWeight: "500",
   },
@@ -413,5 +463,19 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 20,
+  },
+  skeletonQRCode: {
+    borderRadius: 12,
+  },
+  skeletonInstructionText: {
+    marginBottom: 16,
+    alignSelf: "center",
+  },
+  skeletonAddressLabel: {
+    marginBottom: 12,
+  },
+  skeletonAddress: {
+    flex: 1,
+    marginRight: 12,
   },
 });

@@ -6,7 +6,7 @@ import { TransactionItem } from "@/components/ui/transaction-item";
 import { WalletSelectBottomSheet } from "@/components/ui/wallet-select-bottom-sheet";
 import { AppColors } from "@/constants/theme";
 import { useUser } from "@/hooks/api/use-auth";
-import { useCryptoPrices, type CoinGeckoPrice } from "@/hooks/api/use-crypto";
+import { useCryptoPrices } from "@/hooks/api/use-crypto";
 import { useDashboard } from "@/hooks/api/use-dashboard";
 import { useNotifications } from "@/hooks/api/use-notifications";
 import { useServices } from "@/hooks/api/use-services";
@@ -30,19 +30,18 @@ import {
 // Crypto coin IDs for CoinGecko API
 const CRYPTO_IDS = ["bitcoin", "ethereum", "tether"];
 
-interface CryptoDisplayData {
-  name: string;
-  symbol: string;
-  price: string;
-  change: string;
-  icon: React.ReactNode;
-  color: string;
-}
-
 // Helper function to determine transaction type from name
 const getTransactionType = (
   name: string
-): "withdrawal" | "deposit" | "transfer" | "exchange" | "payment" | "other" => {
+):
+  | "withdrawal"
+  | "deposit"
+  | "transfer"
+  | "exchange"
+  | "payment"
+  | "giftcard_buy"
+  | "giftcard_sell"
+  | "other" => {
   const lowerName = name.toLowerCase();
 
   if (lowerName.includes("withdrawal") || lowerName.includes("withdraw")) {
@@ -54,11 +53,18 @@ const getTransactionType = (
   if (lowerName.includes("transfer")) {
     return "transfer";
   }
-  if (
-    lowerName.includes("swap") ||
-    lowerName.includes("exchange") ||
-    lowerName.includes("gift card")
-  ) {
+  // Check for giftcard buy/sell first (more specific)
+  if (lowerName.includes("giftcard") || lowerName.includes("gift card")) {
+    if (lowerName.includes("buy") || lowerName.includes("purchase")) {
+      return "giftcard_buy";
+    }
+    if (lowerName.includes("sell") || lowerName.includes("sale")) {
+      return "giftcard_sell";
+    }
+    // Default to buy if it's a giftcard transaction but unclear
+    return "giftcard_buy";
+  }
+  if (lowerName.includes("swap") || lowerName.includes("exchange")) {
     return "exchange";
   }
   if (lowerName.includes("bill") || lowerName.includes("payment")) {
@@ -116,12 +122,6 @@ export default function HomeScreen() {
     const unread = notificationsData.notifications.filter(
       (notification) =>
         notification.read_at === null || notification.read_at === undefined
-    );
-    console.log("Total notifications:", notificationsData.notifications.length);
-    console.log("Unread count:", unread.length);
-    console.log(
-      "Unread notifications:",
-      unread.map((n) => ({ id: n.id, read_at: n.read_at }))
     );
     return unread.length;
   }, [notificationsData]);
@@ -181,18 +181,24 @@ export default function HomeScreen() {
   // Format fiat balance
   const fiatBalance = useMemo(() => {
     if (isLoadingDashboard) return "Loading...";
-    if (!dashboardData?.total_balance_ngn) return "₦0.00";
+    if (!dashboardData?.ngn_balance) return "₦0.00";
     return showFiatBalance
-      ? formatBalance(dashboardData.total_balance_ngn)
+      ? formatBalance(dashboardData.ngn_balance)
       : "********";
   }, [dashboardData, showFiatBalance, isLoadingDashboard]);
+
+  // Format crypto balance
+  const cryptoBalance = useMemo(() => {
+    if (isLoadingDashboard) return "Loading...";
+    if (!dashboardData?.total_crypto_usdt) return "0.00 USD";
+    return `${dashboardData.total_crypto_usdt.toFixed(2)} USD`;
+  }, [dashboardData, isLoadingDashboard]);
 
   // Map dashboard transactions to TransactionItem format
   const transactions = useMemo(() => {
     if (!dashboardData?.transactions) return [];
     return dashboardData.transactions.map((transaction) => {
       const isCredit = transaction.amount.startsWith("+");
-      const isDebit = transaction.amount.startsWith("-");
       const amount = transaction.amount.replace(/[+-]/g, "");
       const { time, date } = parseDateString(transaction.date);
 
@@ -217,133 +223,14 @@ export default function HomeScreen() {
         title: transaction.name,
         time: time,
         date: date,
-        amount: amount,
+        amount: transaction.amount,
         type: (isCredit ? "credit" : "debit") as "credit" | "debit",
         icon,
         transactionType: getTransactionType(transaction.name),
+        status: transaction.status,
       };
     });
   }, [dashboardData]);
-
-  // Map crypto prices to display format
-  const cryptoData = useMemo((): CryptoDisplayData[] => {
-    if (!cryptoPrices || cryptoPrices.length === 0) {
-      // Return fallback data if API fails
-      return [
-        {
-          name: "Bitcoin",
-          symbol: "BTC",
-          price: "$0.00",
-          change: "0.00%",
-          icon: (
-            <Image
-              source={require("@/assets/images/bitcoin.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          ),
-          color: AppColors.orange,
-        },
-        {
-          name: "Ethereum",
-          symbol: "ETH",
-          price: "$0.00",
-          change: "0.00%",
-          icon: (
-            <Image
-              source={require("@/assets/images/eth.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          ),
-          color: AppColors.blue,
-        },
-        {
-          name: "Tether",
-          symbol: "USDT",
-          price: "$0.00",
-          change: "0.00%",
-          icon: (
-            <Image
-              source={require("@/assets/images/usdt.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          ),
-          color: AppColors.green,
-        },
-      ];
-    }
-
-    return cryptoPrices.map((crypto: CoinGeckoPrice) => {
-      // Format price with commas
-      const formattedPrice = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(crypto.current_price);
-
-      // Format percentage change
-      const change = crypto.price_change_percentage_24h || 0;
-      const formattedChange = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
-
-      // Get icon and color based on crypto symbol
-      let icon: React.ReactNode;
-      let color: string;
-
-      switch (crypto.symbol.toLowerCase()) {
-        case "btc":
-          icon = (
-            <Image
-              source={require("@/assets/images/bitcoin.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          );
-          color = AppColors.orange;
-          break;
-        case "eth":
-          icon = (
-            <Image
-              source={require("@/assets/images/eth.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          );
-          color = AppColors.blue;
-          break;
-        case "usdt":
-          icon = (
-            <Image
-              source={require("@/assets/images/usdt.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          );
-          color = AppColors.green;
-          break;
-        default:
-          icon = (
-            <Image
-              source={require("@/assets/images/bitcoin.png")}
-              style={{ width: 32, height: 32 }}
-              contentFit="contain"
-            />
-          );
-          color = AppColors.orange;
-      }
-
-      return {
-        name: crypto.name,
-        symbol: crypto.symbol.toUpperCase(),
-        price: formattedPrice,
-        change: formattedChange,
-        icon,
-        color,
-      };
-    });
-  }, [cryptoPrices]);
 
   return (
     <View style={styles.container}>
@@ -355,11 +242,19 @@ export default function HomeScreen() {
           style={styles.profileSection}
         >
           <View style={styles.avatar}>
-            <Image
-              source={require("@/assets/images/no-user-img.png")}
-              style={styles.avatar}
-              contentFit="cover"
-            />
+            {user?.profile_image_url ? (
+              <Image
+                source={{ uri: user.profile_image_url }}
+                style={styles.avatar}
+                contentFit="cover"
+              />
+            ) : (
+              <Image
+                source={require("@/assets/images/no-user-img.png")}
+                style={styles.avatar}
+                contentFit="cover"
+              />
+            )}
           </View>
           <Text style={styles.greeting}>
             Hi,{" "}
@@ -410,7 +305,7 @@ export default function HomeScreen() {
                   isLoadingDashboard ? (
                     <ActivityIndicator size={32} color={AppColors.text} />
                   ) : (
-                    "$250.00"
+                    cryptoBalance
                   )
                 ) : (
                   "********"
@@ -549,19 +444,15 @@ export default function HomeScreen() {
           />
           {transactions.slice(0, 3).map((item) => {
             const handlePress = () => {
-              // Clean amount: remove currency symbols, commas, and whitespace for storage
-              const cleanedAmount = item.amount
-                .replace(/[₦$€£¥,\s]/g, "")
-                .trim();
-
               const transactionData = {
-                amount: cleanedAmount || "0",
+                amount: item.amount || "0",
                 currency: "NGN",
                 reference: item.id.toString(),
                 date: item.date || item.time,
                 time: item.time,
                 name: item.title,
                 id: item.id,
+                status: item.status,
               };
 
               router.push({
@@ -583,6 +474,7 @@ export default function HomeScreen() {
                 type={item.type}
                 icon={item.icon}
                 onPress={handlePress}
+                status={item.status}
               />
             );
           })}
@@ -593,36 +485,7 @@ export default function HomeScreen() {
             />
           ) : null}
         </View>
-
-        {/* Market */}
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: AppColors.surface,
-              paddingVertical: 10,
-              borderRadius: 16,
-            },
-          ]}
-        >
-          <SectionHeader title="Market" actionText="Price" />
-          {cryptoData.map((crypto: CryptoDisplayData, index: number) => (
-            <TransactionItem
-              loading={isLoadingCrypto}
-              key={index}
-              title={crypto.name}
-              subtitle={crypto.symbol}
-              amount={crypto.price}
-              change={crypto.change}
-              icon={{
-                customIcon: crypto.icon,
-                backgroundColor: crypto.color,
-              }}
-            />
-          ))}
-        </View>
       </ScrollView>
-      {/* )} */}
 
       <WalletSelectBottomSheet
         bottomSheetModalRef={walletSelectBottomSheetRef}
@@ -638,7 +501,7 @@ export default function HomeScreen() {
           } else {
             // Withdrawal mode
             if (walletType === "crypto") {
-              router.push("/crypto-withdrawal");
+              router.push("/crypto-withdrawal-select");
             } else {
               router.push("/fiat-withdrawal");
             }

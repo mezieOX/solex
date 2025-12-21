@@ -24,6 +24,7 @@ interface TransactionItemProps {
   change?: string;
   onPress?: () => void;
   loading?: boolean;
+  status?: "Pending" | "Confirmed" | "Failed";
 }
 
 export function TransactionItem({
@@ -34,6 +35,7 @@ export function TransactionItem({
   icon,
   subtitle,
   change,
+  status,
   onPress,
   loading = false,
 }: TransactionItemProps) {
@@ -70,7 +72,6 @@ export function TransactionItem({
       : type === "debit"
       ? AppColors.red
       : AppColors.text;
-  const amountPrefix = type === "credit" ? "+" : type === "debit" ? "-" : "";
 
   return (
     <TouchableOpacity
@@ -105,10 +106,7 @@ export function TransactionItem({
           ) : null}
         </View>
         <View style={styles.amountContainer}>
-          <Text style={[styles.amount, { color: amountColor }]}>
-            {amountPrefix}
-            {amount}
-          </Text>
+          <Text style={[styles.amount, { color: amountColor }]}>{amount}</Text>
           {change && (
             <Text
               style={[
@@ -123,6 +121,23 @@ export function TransactionItem({
               {change}
             </Text>
           )}
+          {status ? (
+            <Text
+              style={[
+                styles.status,
+                {
+                  color:
+                    status === "Pending"
+                      ? AppColors.warning
+                      : status === "Confirmed"
+                      ? AppColors.success
+                      : AppColors.error,
+                },
+              ]}
+            >
+              {status}
+            </Text>
+          ) : null}
         </View>
       </View>
     </TouchableOpacity>
@@ -192,5 +207,9 @@ const styles = StyleSheet.create({
   },
   skeletonChange: {
     marginTop: 4,
+  },
+  status: {
+    fontSize: 12,
+    color: AppColors.textSecondary,
   },
 });

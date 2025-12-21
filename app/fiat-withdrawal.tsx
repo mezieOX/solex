@@ -398,12 +398,9 @@ export default function FiatWithdrawalScreen() {
                       </Text>
                     </View>
                   )}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={
-                    filteredBanks && filteredBanks.length === 0
-                      ? styles.emptyListContainer
-                      : { paddingBottom: 10 }
-                  }
+                  {...(filteredBanks && filteredBanks.length === 0
+                    ? { style: styles.emptyListContainer }
+                    : { contentContainerStyle: { paddingBottom: 10 } })}
                   removeClippedSubviews={true}
                   maxToRenderPerBatch={10}
                   updateCellsBatchingPeriod={50}

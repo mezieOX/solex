@@ -21,7 +21,6 @@ export async function saveToken(token: string): Promise<void> {
     await setSecureItem(TOKEN_KEY, token);
     apiClient.setToken(token);
   } catch (error) {
-    console.error("Error saving token:", error);
   }
 }
 
@@ -36,7 +35,6 @@ export async function getToken(): Promise<string | null> {
     }
     return token;
   } catch (error) {
-    console.error("Error getting token:", error);
     return null;
   }
 }
@@ -48,7 +46,6 @@ export async function saveRefreshToken(token: string): Promise<void> {
   try {
     await setSecureItem(REFRESH_TOKEN_KEY, token);
   } catch (error) {
-    console.error("Error saving refresh token:", error);
   }
 }
 
@@ -59,7 +56,6 @@ export async function getRefreshToken(): Promise<string | null> {
   try {
     return await getSecureItem(REFRESH_TOKEN_KEY);
   } catch (error) {
-    console.error("Error getting refresh token:", error);
     return null;
   }
 }
@@ -73,7 +69,6 @@ export async function clearTokens(): Promise<void> {
     await removeSecureItem(REFRESH_TOKEN_KEY);
     apiClient.setToken(null);
   } catch (error) {
-    console.error("Error clearing tokens:", error);
   }
 }
 

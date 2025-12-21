@@ -1,5 +1,6 @@
 import Empty from "@/components/empty";
 import Error from "@/components/error";
+import { SkeletonTitle } from "@/components/skeleton";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { TransactionItem } from "@/components/ui/transaction-item";
 import { AppColors } from "@/constants/theme";
@@ -29,7 +30,15 @@ interface TransactionGroup {
 // Helper function to determine transaction type from name
 const getTransactionType = (
   name: string
-): "withdrawal" | "deposit" | "transfer" | "exchange" | "payment" | "other" => {
+):
+  | "withdrawal"
+  | "deposit"
+  | "transfer"
+  | "exchange"
+  | "payment"
+  | "giftcard_buy"
+  | "giftcard_sell"
+  | "other" => {
   const lowerName = name.toLowerCase();
 
   if (lowerName.includes("withdrawal") || lowerName.includes("withdraw")) {
@@ -41,11 +50,18 @@ const getTransactionType = (
   if (lowerName.includes("transfer")) {
     return "transfer";
   }
-  if (
-    lowerName.includes("swap") ||
-    lowerName.includes("exchange") ||
-    lowerName.includes("gift card")
-  ) {
+  // Check for giftcard buy/sell first (more specific)
+  if (lowerName.includes("giftcard") || lowerName.includes("gift card")) {
+    if (lowerName.includes("buy") || lowerName.includes("purchase")) {
+      return "giftcard_buy";
+    }
+    if (lowerName.includes("sell") || lowerName.includes("sale")) {
+      return "giftcard_sell";
+    }
+    // Default to buy if it's a giftcard transaction but unclear
+    return "giftcard_buy";
+  }
+  if (lowerName.includes("swap") || lowerName.includes("exchange")) {
     return "exchange";
   }
   if (lowerName.includes("bill") || lowerName.includes("payment")) {
@@ -76,7 +92,21 @@ const getTransactionIcon = (
       backgroundColor: AppColors.red,
     };
   }
-  if (lowerName.includes("gift card")) {
+  // Check for giftcard transactions - differentiate buy and sell
+  if (lowerName.includes("giftcard") || lowerName.includes("gift card")) {
+    if (lowerName.includes("buy") || lowerName.includes("purchase")) {
+      return {
+        name: "gift",
+        backgroundColor: AppColors.primary,
+      };
+    }
+    if (lowerName.includes("sell") || lowerName.includes("sale")) {
+      return {
+        name: "gift-outline",
+        backgroundColor: AppColors.orange,
+      };
+    }
+    // Default to buy icon if it's a giftcard but unclear
     return {
       name: "gift",
       backgroundColor: AppColors.primary,
@@ -182,6 +212,7 @@ export default function TransactionHistoryScreen() {
       from_date?: string;
       to_date?: string;
       per_page?: number;
+      reference?: string;
     } = {};
 
     // Map filter to API params
@@ -219,9 +250,12 @@ export default function TransactionHistoryScreen() {
 
     // Apply client-side filters for Gift Card Exchange
     if (selectedFilter === "Gift Card Exchange") {
-      transactions = transactions.filter((t) =>
-        t.name.toLowerCase().includes("gift card")
-      );
+      transactions = transactions.filter((t) => {
+        const lowerName = t.name.toLowerCase();
+        return (
+          lowerName.includes("giftcard") || lowerName.includes("gift card")
+        );
+      });
     }
 
     // Group by date
@@ -229,8 +263,6 @@ export default function TransactionHistoryScreen() {
 
     return grouped;
   }, [transactionsData, selectedFilter]);
-
-  console.log(filteredTransactions[0]);
 
   return (
     <View style={styles.container}>
@@ -273,8 +305,24 @@ export default function TransactionHistoryScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <TransactionItem key={index} loading={true} title="" amount="" />
+            {[1, 2].map((groupIndex) => (
+              <View key={groupIndex} style={styles.groupContainer}>
+                <SkeletonTitle
+                  width="30%"
+                  height={18}
+                  style={styles.skeletonDate}
+                />
+                {Array.from({ length: groupIndex === 1 ? 3 : 2 }).map(
+                  (_, index) => (
+                    <TransactionItem
+                      key={`${groupIndex}-${index}`}
+                      loading={true}
+                      title=""
+                      amount=""
+                    />
+                  )
+                )}
+              </View>
             ))}
           </View>
         ) : error ? (
@@ -295,7 +343,7 @@ export default function TransactionHistoryScreen() {
               {group.transactions.map((transaction) => {
                 const { time, date } = parseDateString(transaction.date);
                 // Remove +/- prefix and clean the amount
-                const amount = transaction.amount.replace(/^[+-]/, "").trim();
+                const amount = transaction.amount;
                 const type = transaction.amount.startsWith("+")
                   ? "credit"
                   : transaction.amount.startsWith("-")
@@ -307,14 +355,10 @@ export default function TransactionHistoryScreen() {
                 // Prepare transaction data for view-details screen
                 const handlePress = () => {
                   // Clean amount: remove currency symbols, commas, and whitespace for storage
-                  const cleanedAmount = amount
-                    .replace(/[₦$€£¥,\s]/g, "")
-                    .trim();
 
                   const transactionData = {
-                    amount: cleanedAmount || "0",
-                    currency: "NGN",
-                    reference: transaction.id.toString(),
+                    amount: transaction.amount,
+                    reference: transaction.reference?.toString(),
                     date: date,
                     time: time,
                     name: transaction.name,
@@ -339,6 +383,7 @@ export default function TransactionHistoryScreen() {
                     type={type}
                     icon={icon}
                     onPress={handlePress}
+                    status={transaction.status}
                   />
                 );
               })}
@@ -393,6 +438,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
+    marginBottom: 16,
+  },
+  skeletonDate: {
     marginBottom: 16,
   },
   loadingContainer: {

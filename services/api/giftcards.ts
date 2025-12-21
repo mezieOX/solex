@@ -127,6 +127,9 @@ export interface SellGiftCardRequest {
   card_currency: string;
   code: string;
   face_value: string;
+  pin?: string;
+  expected_rate?: number;
+  notes?: string;
   card_image?: string;
 }
 
@@ -192,6 +195,15 @@ export const giftCardsApi = {
     formData.append("card_currency", data.card_currency);
     formData.append("code", data.code);
     formData.append("face_value", data.face_value);
+    if (data.pin) {
+      formData.append("pin", data.pin);
+    }
+    if (data.expected_rate !== undefined && data.expected_rate !== null) {
+      formData.append("expected_rate", data.expected_rate.toString());
+    }
+    if (data.notes) {
+      formData.append("notes", data.notes);
+    }
     if (data.card_image) {
       formData.append("card_image", data.card_image);
     }

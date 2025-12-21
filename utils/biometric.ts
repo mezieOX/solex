@@ -20,7 +20,6 @@ export async function isBiometricAvailable(): Promise<boolean> {
     const enrolled = await LocalAuthentication.isEnrolledAsync();
     return compatible && enrolled;
   } catch (error) {
-    console.error("Error checking biometric availability:", error);
     return false;
   }
 }
@@ -82,7 +81,6 @@ export async function getBiometricType(): Promise<string> {
 
     return "Biometric";
   } catch (error) {
-    console.error("Error getting biometric type:", error);
     return "Biometric";
   }
 }
@@ -100,7 +98,6 @@ export async function authenticateWithBiometric(): Promise<boolean> {
 
     return result.success;
   } catch (error) {
-    console.error("Error during biometric authentication:", error);
     return false;
   }
 }
@@ -113,7 +110,6 @@ export async function isBiometricEnabled(): Promise<boolean> {
     const enabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
     return enabled === "true";
   } catch (error) {
-    console.error("Error checking biometric enabled:", error);
     return false;
   }
 }
@@ -131,7 +127,6 @@ export async function enableBiometric(
     await setSecureItem(BIOMETRIC_PASSWORD_KEY, password);
     return true;
   } catch (error) {
-    console.error("Error enabling biometric:", error);
     return false;
   }
 }
@@ -146,7 +141,6 @@ export async function disableBiometric(): Promise<boolean> {
     await removeSecureItem(BIOMETRIC_PASSWORD_KEY);
     return true;
   } catch (error) {
-    console.error("Error disabling biometric:", error);
     return false;
   }
 }
@@ -163,7 +157,6 @@ export async function getBiometricCredentials(): Promise<{
     const password = await getSecureItem(BIOMETRIC_PASSWORD_KEY);
     return { email, password };
   } catch (error) {
-    console.error("Error getting biometric credentials:", error);
     return { email: null, password: null };
   }
 }

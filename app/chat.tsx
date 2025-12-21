@@ -73,13 +73,12 @@ export default function ChatScreen() {
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => {
               setLoading(false);
-              console.log("WebView loaded, Tawk.to chat URL:", TAWKTO_CHAT_URL);
             }}
             onMessage={(event) => {
-              console.log("WebView message:", event.nativeEvent.data);
+              // Handle WebView messages if needed
             }}
             onNavigationStateChange={(navState) => {
-              console.log("Navigation state changed:", navState.url);
+              // Handle navigation state changes if needed
             }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
@@ -96,14 +95,12 @@ export default function ChatScreen() {
             // Handle errors
             onError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
-              console.warn("WebView error: ", nativeEvent);
               setHasError(true);
               setLoading(false);
             }}
             // Handle HTTP errors
             onHttpError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
-              console.warn("WebView HTTP error: ", nativeEvent);
               setHasError(true);
               setLoading(false);
             }}

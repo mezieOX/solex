@@ -33,7 +33,6 @@ export function NotificationPermissionModal({
         onClose();
       }
     } catch (error) {
-      console.error("Error requesting notification permission:", error);
       onClose();
     } finally {
       setIsRequesting(false);

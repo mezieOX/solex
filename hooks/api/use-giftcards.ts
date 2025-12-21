@@ -2,7 +2,7 @@
  * Gift Cards hooks using TanStack Query
  */
 
-import { giftCardsApi } from "@/services/api/giftcards";
+import { giftCardsApi, SellGiftCardRequest } from "@/services/api/giftcards";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Query keys
@@ -22,7 +22,7 @@ export function useGiftCardProducts(countryCode: string = "US") {
     queryKey: giftCardKeys.products(countryCode),
     queryFn: () => giftCardsApi.getProducts(countryCode),
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -52,7 +52,7 @@ export function useGiftCardCodes(transactionId: number | null) {
     queryFn: () => giftCardsApi.getGiftCardCodes(transactionId!),
     enabled: transactionId !== null && transactionId > 0,
     retry: false,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours (codes don't change)
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
@@ -63,13 +63,7 @@ export function useSellGiftCard() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: {
-      brand_name: string;
-      card_currency: string;
-      code: string;
-      face_value: string;
-      card_image?: string;
-    }) => giftCardsApi.sellGiftCard(data),
+    mutationFn: (data: SellGiftCardRequest) => giftCardsApi.sellGiftCard(data),
     onSuccess: () => {
       // Invalidate wallets and transactions after sale
       queryClient.invalidateQueries({ queryKey: ["wallet"] });

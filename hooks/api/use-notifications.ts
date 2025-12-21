@@ -20,7 +20,7 @@ export function useNotifications() {
     queryKey: notificationKeys.list(),
     queryFn: () => notificationsApi.getNotifications(),
     retry: false,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
