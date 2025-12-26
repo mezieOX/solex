@@ -132,33 +132,6 @@ export default function SettingsScreen() {
       ],
     },
     {
-      title: "Preferences",
-      items: [
-        {
-          id: "currency",
-          title: "Currency",
-          icon: "cash-outline",
-          iconColor: AppColors.text,
-          iconBackgroundColor: AppColors.green,
-          rightText: "NGN",
-          onPress: () => {
-            // Navigate to currency settings
-          },
-        },
-        {
-          id: "language",
-          title: "Language",
-          icon: "language-outline",
-          iconColor: AppColors.text,
-          iconBackgroundColor: AppColors.primary,
-          rightText: "English",
-          onPress: () => {
-            // Navigate to language settings
-          },
-        },
-      ],
-    },
-    {
       title: "Support",
       items: [
         {

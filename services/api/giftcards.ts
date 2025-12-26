@@ -3,6 +3,7 @@
  */
 
 import { apiClient } from "./client";
+import { ExchangeRateResponse } from "./crypto";
 import { ApiResponse } from "./types";
 
 export interface GiftCardProduct {
@@ -123,20 +124,57 @@ export interface GiftCardCodesResponse {
 }
 
 export interface SellGiftCardRequest {
-  brand_name: string;
-  card_currency: string;
+  range_id: string;
+  amount: string;
   code: string;
-  face_value: string;
+  image?: string;
   pin?: string;
-  expected_rate?: number;
   notes?: string;
-  card_image?: string;
 }
 
 export interface SellGiftCardResponse {
-  sale_id: number;
+  user_id: number;
+  reference: string;
+  brand_name: string;
+  currency_code: string;
+  card_type: string;
+  face_value: number;
+  rate_at_sale: number;
+  payout_amount_ngn: number;
+  code: string;
+  pin: string;
+  image_proof_url: string;
+  notes: string;
   status: string;
+  updated_at: string;
+  created_at: string;
+  id: number;
 }
+
+// New interfaces for /giftcards/list endpoint
+export interface GiftCardRange {
+  range_id: number;
+  min: number;
+  max: number;
+  rate: number;
+}
+
+export interface GiftCardCurrency {
+  currency_id: number;
+  currency_code: string;
+  currency_icon: string;
+  ranges: GiftCardRange[];
+}
+
+export interface GiftCardForSell {
+  id: number;
+  name: string;
+  image_url: string;
+  physical: GiftCardCurrency[];
+  ecode: GiftCardCurrency[];
+}
+
+export type GiftCardsListResponse = GiftCardForSell[];
 
 export const giftCardsApi = {
   /**
@@ -191,26 +229,58 @@ export const giftCardsApi = {
     data: SellGiftCardRequest
   ): Promise<SellGiftCardResponse> => {
     const formData = new FormData();
-    formData.append("brand_name", data.brand_name);
-    formData.append("card_currency", data.card_currency);
+    formData.append("range_id", data.range_id);
+    formData.append("amount", data.amount);
     formData.append("code", data.code);
-    formData.append("face_value", data.face_value);
     if (data.pin) {
       formData.append("pin", data.pin);
-    }
-    if (data.expected_rate !== undefined && data.expected_rate !== null) {
-      formData.append("expected_rate", data.expected_rate.toString());
     }
     if (data.notes) {
       formData.append("notes", data.notes);
     }
-    if (data.card_image) {
-      formData.append("card_image", data.card_image);
+    if (data.image) {
+      // For React Native, we need to create a proper file object
+      // The image should be a file URI that can be converted to FormData
+      const imageUri = data.image;
+      const filename = imageUri.split("/").pop() || "image.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : "image/jpeg";
+
+      formData.append("image", {
+        uri: imageUri,
+        name: filename,
+        type: type,
+      } as any);
     }
 
     const response = await apiClient.post<ApiResponse<SellGiftCardResponse>>(
       "/giftcards/sell",
       formData
+    );
+    return response.data;
+  },
+
+  /**
+   * Get gift card exchange rate (fiat to fiat)
+   */
+  getExchangeRate: async (
+    from: string,
+    to: string,
+    amount: number
+  ): Promise<ExchangeRateResponse> => {
+    const response = await apiClient.get<ApiResponse<ExchangeRateResponse>>(
+      "/wallets/crypto/exchange-rate",
+      { from, to, amount }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get list of gift cards available for sell
+   */
+  getGiftCardsList: async (): Promise<GiftCardsListResponse> => {
+    const response = await apiClient.get<ApiResponse<GiftCardForSell[]>>(
+      "/giftcards/list"
     );
     return response.data;
   },

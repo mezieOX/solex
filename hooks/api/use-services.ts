@@ -2,13 +2,54 @@
  * Services hooks - Maps bill categories to services format
  */
 
+import { AirtimeIcon } from "@/components/ui/icons/airtime-icon";
+import { DataIcon } from "@/components/ui/icons/data-icon";
+import { DealsIcon } from "@/components/ui/icons/deals-icon";
+import { ElectricityIcon } from "@/components/ui/icons/electricity-icon";
+import { InternetIcon } from "@/components/ui/icons/internet-icon";
+import { MoreIcon } from "@/components/ui/icons/more-icon";
+import { TvIcon } from "@/components/ui/icons/tv-icon";
 import { AppColors } from "@/constants/theme";
 import { useBillCategories } from "@/hooks/api/use-bills";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 
-// Helper function to get category icon
+// Helper function to get category custom icon
+const getCategoryCustomIcon = (
+  categoryCode: string,
+  color: string
+): React.ReactElement | null => {
+  const code = categoryCode.toUpperCase();
+  switch (code) {
+    case "AIRTIME":
+      return React.createElement(AirtimeIcon, { size: 24, color });
+    case "MOBILEDATA":
+      return React.createElement(DataIcon, { size: 24, color });
+    case "CABLEBILLS":
+      return React.createElement(TvIcon, { size: 24, color });
+    case "INTSERVICE":
+      return React.createElement(InternetIcon, { size: 24, color });
+    case "UTILITYBILLS":
+      return React.createElement(ElectricityIcon, { size: 24, color });
+    case "TAX":
+      return null; // Use Expo Ionicons
+    case "DONATIONS":
+      return null; // Use Expo Ionicons
+    case "TRANSLOG":
+      return null; // Use Expo Ionicons
+    case "DEALPAY":
+      return React.createElement(DealsIcon, { size: 24, color });
+    case "RELINST":
+      return null; // Use Expo Ionicons (people)
+    case "SCHPB":
+      return null; // Use Expo Ionicons (school)
+    default:
+      return React.createElement(MoreIcon, { size: 24, color });
+  }
+};
+
+// Helper function to get category icon (kept for backward compatibility)
 const getCategoryIcon = (
   categoryCode: string
 ): keyof typeof Ionicons.glyphMap => {
@@ -41,34 +82,34 @@ const getCategoryIcon = (
   }
 };
 
-// Helper function to get category color
-const getCategoryColor = (categoryCode: string): string => {
+// Helper function to get category short name
+const getCategoryName = (categoryCode: string): string => {
   const code = categoryCode.toUpperCase();
   switch (code) {
     case "AIRTIME":
-      return AppColors.blue;
+      return "Airtime";
     case "MOBILEDATA":
-      return AppColors.primary;
+      return "Data";
     case "CABLEBILLS":
-      return AppColors.red;
+      return "Tv";
     case "INTSERVICE":
-      return AppColors.blueAccent;
+      return "Internet";
     case "UTILITYBILLS":
-      return AppColors.orange;
+      return "Electricity";
     case "TAX":
-      return AppColors.textSecondary;
+      return "Tax";
     case "DONATIONS":
-      return AppColors.red;
+      return "Donate";
     case "TRANSLOG":
-      return AppColors.blue;
+      return "Transport";
     case "DEALPAY":
-      return AppColors.green;
+      return "Ticket";
     case "RELINST":
-      return AppColors.primary;
+      return "Relief";
     case "SCHPB":
-      return AppColors.blueAccent;
+      return "Betting";
     default:
-      return AppColors.primary;
+      return "More";
   }
 };
 
@@ -83,21 +124,26 @@ export function useServices() {
   const services = useMemo(() => {
     if (!categories) return [];
 
-    return categories.map((category) => ({
-      title: category.name,
-      icon: getCategoryIcon(category.code),
-      iconColor: "#fff",
-      iconBackgroundColor: getCategoryColor(category.code),
-      onPress: () => {
-        router.push({
-          pathname: "/bill-payment",
-          params: {
-            categoryCode: category.code,
-            categoryName: category.name,
-          },
-        });
-      },
-    }));
+    return categories.map((category) => {
+      const customIcon = getCategoryCustomIcon(category.code, "#fff");
+      return {
+        title: getCategoryName(category.code),
+        icon: getCategoryIcon(category.code),
+        iconColor: "#fff",
+        iconSize: 24,
+        iconBackgroundColor: AppColors.redAccent,
+        ...(customIcon && { customIcon }),
+        onPress: () => {
+          router.push({
+            pathname: "/bill-payment",
+            params: {
+              categoryCode: category.code,
+              categoryName: category.name,
+            },
+          });
+        },
+      };
+    });
   }, [categories, router]);
 
   return {
@@ -105,4 +151,3 @@ export function useServices() {
     isLoading,
   };
 }
-

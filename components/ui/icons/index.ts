@@ -1,5 +1,6 @@
 export { ActivityIcon } from "./activity-icon";
 export { BulbChargingIcon } from "./bulb-charging-icon";
+export { ChartIcon } from "./chart-icon";
 export { DataIcon } from "./data-icon";
 export { ElementsIcon } from "./elements-icon";
 export { Group47196Icon } from "./group-47196-icon";

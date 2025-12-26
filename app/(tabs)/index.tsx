@@ -1,5 +1,6 @@
 import Empty from "@/components/empty";
 import { Card } from "@/components/ui/card";
+import { MoreIcon } from "@/components/ui/icons/more-icon";
 import { QuickActions } from "@/components/ui/quick-actions";
 import { SectionHeader } from "@/components/ui/section-header";
 import { TransactionItem } from "@/components/ui/transaction-item";
@@ -111,8 +112,8 @@ export default function HomeScreen() {
   const { data: cryptoPrices, isLoading: isLoadingCrypto } = useCryptoPrices(
     CRYPTO_IDS,
     "usd",
-    30000
-  ); // Refetch every 30 seconds
+    1000
+  ); // Refetch every 1 second
   const { data: notificationsData } = useNotifications();
   const { services: allServices, isLoading: isLoadingServices } = useServices();
 
@@ -190,8 +191,8 @@ export default function HomeScreen() {
   // Format crypto balance
   const cryptoBalance = useMemo(() => {
     if (isLoadingDashboard) return "Loading...";
-    if (!dashboardData?.total_crypto_usdt) return "0.00 USD";
-    return `${dashboardData.total_crypto_usdt.toFixed(2)} USD`;
+    if (!dashboardData?.total_crypto_usdt) return "$0.00";
+    return `$${dashboardData.total_crypto_usdt.toFixed(2)}`;
   }, [dashboardData, isLoadingDashboard]);
 
   // Map dashboard transactions to TransactionItem format
@@ -199,7 +200,6 @@ export default function HomeScreen() {
     if (!dashboardData?.transactions) return [];
     return dashboardData.transactions.map((transaction) => {
       const isCredit = transaction.amount.startsWith("+");
-      const amount = transaction.amount.replace(/[+-]/g, "");
       const { time, date } = parseDateString(transaction.date);
 
       // Determine icon based on transaction name
@@ -295,7 +295,7 @@ export default function HomeScreen() {
           >
             <View style={styles.balanceHeader}>
               <Text style={styles.balanceLabel}>Crypto Balance</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push("/wallet")}>
                 <Feather name="arrow-right" size={24} color={AppColors.text} />
               </TouchableOpacity>
             </View>
@@ -338,7 +338,7 @@ export default function HomeScreen() {
                   },
                 ]}
               >
-                Fiat Account
+                Cash Account
               </Text>
               <View style={styles.currencyTag}>
                 <Text style={styles.currencyText}>NGN</Text>
@@ -415,16 +415,27 @@ export default function HomeScreen() {
             styles.section,
             {
               paddingHorizontal: 0,
+              marginHorizontal: 20,
+              borderRadius: 12,
+              paddingTop: 20,
+              marginTop: -14,
+              backgroundColor: AppColors.surface,
             },
           ]}
         >
           <QuickActions
-            title="Services"
-            actions={allServices?.slice(0, 4) || []}
+            actions={
+              allServices?.slice(0, 7).concat({
+                title: "More",
+                icon: "ellipsis-horizontal",
+                customIcon: <MoreIcon size={24} color="#fff" />,
+                iconColor: "#fff",
+                iconSize: 24,
+                iconBackgroundColor: AppColors.redAccent,
+                onPress: () => router.push("/services"),
+              }) || []
+            }
             isLoading={isLoadingServices}
-            headerSectionStyle={{
-              paddingHorizontal: 20,
-            }}
           />
         </View>
 
@@ -433,7 +444,7 @@ export default function HomeScreen() {
           style={[
             styles.section,
             {
-              marginTop: -20,
+              marginTop: 10,
             },
           ]}
         >
@@ -674,7 +685,7 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 14,
   },
   loadingContainer: {
     paddingVertical: 20,

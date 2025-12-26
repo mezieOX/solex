@@ -13,6 +13,7 @@ export interface Wallet {
   balance: number;
   external_address: string | null;
   image_url?: string | null;
+  network?: string;
   meta: any;
   created_at: string;
   updated_at: string;

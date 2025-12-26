@@ -1,5 +1,4 @@
 import Skeleton, { SkeletonText } from "@/components/skeleton";
-import { Card } from "@/components/ui/card";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { AppColors } from "@/constants/theme";
 import {
@@ -12,15 +11,12 @@ import {
   useSellCrypto,
   useSwapCryptoTrade,
 } from "@/hooks/api/use-crypto-trades";
-import { useDashboard } from "@/hooks/api/use-dashboard";
-import { useWallets } from "@/hooks/api/use-wallet";
-import { getBoolean, setBoolean, StorageKeys } from "@/utils/local-storage";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -43,7 +39,6 @@ export default function CryptoScreen() {
   const [currencyModalMode, setCurrencyModalMode] = useState<
     "from" | "to" | "single"
   >("single");
-  const [showBalance, setShowBalance] = useState(true);
 
   // Swap specific state
   const [fromCurrency, setFromCurrency] = useState<any>(null);
@@ -51,31 +46,43 @@ export default function CryptoScreen() {
   const [swapAmount, setSwapAmount] = useState("");
   const [currencySearchQuery, setCurrencySearchQuery] = useState("");
 
-  const { data: dashboardData } = useDashboard();
   const {
     data: currenciesData,
     isLoading: isLoadingCurrencies,
     refetch: refetchCurrencies,
   } = useCryptoCurrencies();
-  const { data: walletsData } = useWallets();
   const buyCrypto = useBuyCrypto();
   const sellCrypto = useSellCrypto();
   const swapCrypto = useSwapCryptoTrade();
 
   // Get exchange rate for buying/selling crypto to/from NGN
+  // Use the appropriate amount and currency based on active tab
+  const amountForExchangeRate = useMemo(() => {
+    if (activeTab === "swap") {
+      return Number(swapAmount) || 0;
+    }
+    return Number(amount) || 0;
+  }, [activeTab, amount, swapAmount]);
+
+  const currencyIdForExchangeRate = useMemo(() => {
+    if (activeTab === "swap") {
+      return fromCurrency?.currency_id;
+    }
+    return selectedCurrency?.currency_id;
+  }, [activeTab, fromCurrency, selectedCurrency]);
+
   const {
     data: exchangeRateData,
     isLoading: isLoadingExchangeRate,
     error: exchangeRateError,
   } = useExchangeRateByCurrencyId(
-    activeTab === "swap"
-      ? fromCurrency?.currency_id
-      : selectedCurrency?.currency_id,
+    currencyIdForExchangeRate,
     activeTab === "swap" ? toCurrency?.currency_id : null,
-    activeTab === "swap" ? "CRYPTO" : "NGN",
-    ((activeTab === "buy" || activeTab === "sell") && !!selectedCurrency) ||
-      (activeTab === "swap" && !!fromCurrency && !!toCurrency)
+    activeTab,
+    amountForExchangeRate
   );
+
+  console.log("exchange-rate-data", exchangeRateData);
 
   // Get crypto prices for selected currencies
   const cryptoIds = useMemo(() => {
@@ -118,17 +125,6 @@ export default function CryptoScreen() {
 
   const { data: cryptoPrices } = useCryptoPrices(cryptoIds, "usd", 30000);
 
-  // Load showBalance preference
-  useEffect(() => {
-    const loadShowBalance = async () => {
-      const savedValue = await getBoolean(StorageKeys.SHOW_BALANCE);
-      if (savedValue !== null) {
-        setShowBalance(savedValue);
-      }
-    };
-    loadShowBalance();
-  }, []);
-
   // Get all currencies from API (now flat array)
   const allCurrencies = useMemo(() => {
     if (!currenciesData?.currencies) return [];
@@ -147,25 +143,12 @@ export default function CryptoScreen() {
     );
   }, [allCurrencies, currencySearchQuery]);
 
-  // Get user's crypto wallets
-  const cryptoWallets = useMemo(() => {
-    if (!walletsData) return [];
-    return walletsData.filter((wallet) => wallet.type === "crypto");
-  }, [walletsData]);
-
-  // Calculate total balance and change
-  const totalBalance = useMemo(() => {
-    if (!dashboardData?.ngn_balance) return 0;
-    return dashboardData.ngn_balance;
-  }, [dashboardData]);
-
   // Get price and change for currency
   const getCurrencyPriceData = (currency: any) => {
     if (!cryptoPrices || !currency) return { price: 0, change: 0 };
     const coinMap: Record<string, string> = {
       BTC: "bitcoin",
       ETH: "ethereum",
-      USDT: "tether",
       USDC: "usd-coin",
       BNB: "binancecoin",
     };
@@ -315,14 +298,6 @@ export default function CryptoScreen() {
     }
   };
 
-  const getWalletBalance = (currency: any): number => {
-    const wallet = cryptoWallets.find(
-      (w) =>
-        w.currency === currency.coin && w.meta?.network === currency.network
-    );
-    return wallet?.balance || 0;
-  };
-
   const formatBalance = (amount: number) => {
     return `$${new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
@@ -346,37 +321,6 @@ export default function CryptoScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Total Balance Section */}
-        <Card style={styles.balanceCard}>
-          <View style={styles.balanceHeader}>
-            <View style={styles.balanceHeaderLeft}>
-              <Ionicons
-                name="wallet"
-                size={24}
-                color={AppColors.primary}
-                style={styles.walletIcon}
-              />
-              <Text style={styles.balanceLabel}>Total Balance</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                setShowBalance(!showBalance);
-                setBoolean(StorageKeys.SHOW_BALANCE, !showBalance);
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={showBalance ? "eye" : "eye-off"}
-                size={24}
-                color={AppColors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.balanceAmount}>
-            {showBalance ? formatNGN(totalBalance) : "********"}
-          </Text>
-        </Card>
-
         {/* Tabs */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
@@ -523,13 +467,11 @@ export default function CryptoScreen() {
               <View style={styles.estimateContainer}>
                 <Text style={styles.estimateLabel}>You will receive:</Text>
                 <Text style={styles.estimateValue}>
-                  {exchangeRateData?.rate_ngn_per_1
-                    ? `${
-                        parseFloat(amount) / exchangeRateData.rate_ngn_per_1
-                      } ${selectedCurrency.coin}`
-                    : isLoadingExchangeRate
+                  {isLoadingExchangeRate
                     ? "Calculating..."
-                    : "An Error Occurred"}
+                    : exchangeRateError
+                    ? "An Error Occurred"
+                    : exchangeRateData?.receive_text || "0"}
                 </Text>
               </View>
             )}
@@ -674,6 +616,12 @@ export default function CryptoScreen() {
                     <ActivityIndicator size="small" color={AppColors.primary} />
                     <Text style={styles.estimateValue}>Calculating...</Text>
                   </View>
+                ) : exchangeRateError ? (
+                  <Text style={styles.estimateValue}>An Error Occurred</Text>
+                ) : exchangeRateData?.receive_text ? (
+                  <Text style={styles.estimateValue}>
+                    {exchangeRateData.receive_text}
+                  </Text>
                 ) : exchangeRateData?.rate_ngn_per_1 ? (
                   <Text style={styles.estimateValue}>
                     {formatNGN(

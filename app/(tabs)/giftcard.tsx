@@ -1,18 +1,19 @@
+import ComingSoon from "@/components/coming-soon";
 import Empty from "@/components/empty";
 import Error from "@/components/error";
-import { SkeletonTitle } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { ExchangeRateCard } from "@/components/ui/exchange-rate-card";
 import { Input } from "@/components/ui/input";
 import { ScreenTitle } from "@/components/ui/screen-title";
+import { SectionHeader } from "@/components/ui/section-header";
+import { TransactionSummaryCard } from "@/components/ui/transaction-summary-card";
 import { AppColors } from "@/constants/theme";
 import {
   useBuyGiftCard,
   useGiftCardProducts,
-  useSellGiftCard,
+  useGiftCardsList,
 } from "@/hooks/api/use-giftcards";
-import { GiftCardProduct } from "@/services/api/giftcards";
-import { allCurrencies } from "@/utils/country_currency_symbol";
+import { GiftCardForSell, GiftCardProduct } from "@/services/api/giftcards";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -30,30 +31,34 @@ import {
 } from "react-native";
 
 export default function GiftCardScreen() {
-  const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
+  const [activeTab, setActiveTab] = useState<"buy" | "sell">("sell");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] =
     useState<GiftCardProduct | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [isBuyModalVisible, setIsBuyModalVisible] = useState(false);
 
-  // Sell form state
-  const [brandName, setBrandName] = useState("");
-  const [cardCurrency, setCardCurrency] = useState("NGN");
-  const [cardCode, setCardCode] = useState("");
-  const [faceValue, setFaceValue] = useState("");
-  const [pin, setPin] = useState("");
-  const [expectedRate, setExpectedRate] = useState("");
-  const [notes, setNotes] = useState("");
-  const [, setIsSellModalVisible] = useState(false);
-  const [isCurrencyModalVisible, setIsCurrencyModalVisible] = useState(false);
-  const [currencySearchQuery, setCurrencySearchQuery] = useState("");
-
+  // Use new API for sell
+  const {
+    data: giftCardsListData,
+    isLoading: isLoadingList,
+    error: listError,
+  } = useGiftCardsList();
   const { data: productsData, isLoading, error } = useGiftCardProducts("US");
   const buyGiftCard = useBuyGiftCard();
-  const sellGiftCard = useSellGiftCard();
 
-  // Filter products based on search
+  // Filter giftcards for sell based on search
+  const filteredGiftCardsForSell = useMemo(() => {
+    if (!giftCardsListData || !Array.isArray(giftCardsListData)) return [];
+    const query = searchQuery.toLowerCase().trim();
+    return query
+      ? giftCardsListData.filter((giftcard) =>
+          giftcard.name.toLowerCase().includes(query)
+        )
+      : giftCardsListData;
+  }, [giftCardsListData, searchQuery]);
+
+  // Filter products based on search (for buy - disabled)
   const filteredProducts = useMemo(() => {
     if (!productsData?.products) return [];
     const query = searchQuery.toLowerCase().trim();
@@ -122,47 +127,6 @@ export default function GiftCardScreen() {
     }
   };
 
-  const handleSellGiftCard = async () => {
-    if (!brandName.trim() || !cardCode.trim() || !faceValue.trim()) {
-      showErrorToast({ message: "Please fill in all required fields" });
-      return;
-    }
-
-    try {
-      const result = await sellGiftCard.mutateAsync({
-        brand_name: brandName.trim(),
-        card_currency: cardCurrency,
-        code: cardCode.trim(),
-        face_value: faceValue.trim(),
-        pin: pin.trim() || undefined,
-        expected_rate: expectedRate.trim()
-          ? parseFloat(expectedRate.trim())
-          : undefined,
-        notes: notes.trim() || undefined,
-      });
-
-      if (result) {
-        showSuccessToast({
-          message: "Gift card submitted for review",
-        });
-        setIsSellModalVisible(false);
-        setBrandName("");
-        setCardCode("");
-        setFaceValue("");
-        setPin("");
-        setExpectedRate("");
-        setNotes("");
-        setCardCurrency("NGN");
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error?.message ||
-        error?.data?.message ||
-        "Failed to submit gift card. Please try again.";
-      showErrorToast({ message: errorMessage });
-    }
-  };
-
   const formatAmount = (amount: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -186,23 +150,8 @@ export default function GiftCardScreen() {
     return totalCostNGN;
   };
 
-  // Filter currencies based on search query
-  const filteredCurrencies = useMemo(() => {
-    if (!currencySearchQuery.trim()) return allCurrencies;
-    const query = currencySearchQuery.toLowerCase().trim();
-    return allCurrencies.filter(
-      (currency) =>
-        currency.code.toLowerCase().includes(query) ||
-        currency.name.toLowerCase().includes(query) ||
-        currency.symbol.toLowerCase().includes(query)
-    );
-  }, [allCurrencies, currencySearchQuery]);
-
-  const handleSelectCurrency = (currencyCode: string) => {
-    setCardCurrency(currencyCode);
-    setIsCurrencyModalVisible(false);
-    setCurrencySearchQuery(""); // Clear search when selecting
-  };
+  // Quick amount buttons for buy
+  const quickAmounts = ["100", "200", "500", "1000", "2000", "5000"];
 
   return (
     <View style={styles.container}>
@@ -211,19 +160,6 @@ export default function GiftCardScreen() {
 
       {/* Tabs */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "buy" && styles.activeTab]}
-          onPress={() => setActiveTab("buy")}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "buy" && styles.activeTabText,
-            ]}
-          >
-            Buy
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === "sell" && styles.activeTab]}
           onPress={() => setActiveTab("sell")}
@@ -237,19 +173,94 @@ export default function GiftCardScreen() {
             Sell
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "buy" && styles.activeTab]}
+          onPress={() => setActiveTab("buy")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "buy" && styles.activeTabText,
+            ]}
+          >
+            Buy
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {activeTab === "buy" ? (
+        // <>
+        //   {/* Search */}
+        //   <View style={styles.searchContainer}>
+        //     <Input
+        //       value={searchQuery}
+        //       onChangeText={setSearchQuery}
+        //       placeholder="Search Gift Card......"
+        //       style={styles.searchInput}
+        //       placeholderTextColor={AppColors.textSecondary}
+        //       rightIcon={
+        //         <Ionicons
+        //           name="search"
+        //           size={20}
+        //           color={AppColors.textSecondary}
+        //         />
+        //       }
+        //     />
+        //   </View>
+
+        //   {/* Products Grid */}
+        //   {isLoading ? (
+        //     <ScrollView
+        //       contentContainerStyle={styles.gridContent}
+        //       showsVerticalScrollIndicator={false}
+        //     >
+        //       <View style={styles.gridContainer}>
+        //         {[1, 2, 3, 4, 5, 6].map((index) => (
+        //           <View
+        //             key={index}
+        //             style={[styles.giftCardContainer, styles.skeletonCard]}
+        //           />
+        //         ))}
+        //       </View>
+        //     </ScrollView>
+        //   ) : error ? (
+        //     <Error message="Failed to load gift cards" onRetry={() => {}} />
+        //   ) : (
+        //     <FlatList
+        //       data={filteredProducts}
+        //       numColumns={2}
+        //       keyExtractor={(product) => product.id.toString()}
+        //       contentContainerStyle={styles.gridContent}
+        //       columnWrapperStyle={styles.gridRow}
+        //       showsVerticalScrollIndicator={false}
+        //       renderItem={({ item: product }) => (
+        //         <GiftCardItem
+        //           product={product}
+        //           onPress={() => handleBuyProduct(product)}
+        //           formatAmount={formatAmount}
+        //         />
+        //       )}
+        //       ListEmptyComponent={() => (
+        //         <Empty
+        //           title="No gift cards found"
+        //           description="Try adjusting your search"
+        //         />
+        //       )}
+        //     />
+        //   )}
+        // </>
+        <ComingSoon />
+      ) : (
         <>
           {/* Search */}
           <View style={styles.searchContainer}>
             <Input
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search gift cards..."
+              placeholder="Search Gift Card......"
               style={styles.searchInput}
               placeholderTextColor={AppColors.textSecondary}
-              leftIcon={
+              rightIcon={
                 <Ionicons
                   name="search"
                   size={20}
@@ -259,205 +270,120 @@ export default function GiftCardScreen() {
             />
           </View>
 
-          {/* Products List */}
-          {isLoading ? (
-            <ScrollView
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {[1, 2, 3].map((categoryIndex) => (
-                <View key={categoryIndex} style={styles.categorySection}>
-                  <SkeletonTitle
-                    width="40%"
-                    height={18}
-                    style={styles.categoryTitleSkeleton}
-                  />
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.productsList}
-                  >
-                    {[1, 2, 3, 4].map((productIndex) => (
-                      <View
-                        key={productIndex}
-                        style={[styles.productCard, styles.skeletonProductCard]}
-                      ></View>
-                    ))}
-                  </ScrollView>
-                </View>
-              ))}
-            </ScrollView>
-          ) : error ? (
-            <Error message="Failed to load gift cards" onRetry={() => {}} />
-          ) : (
-            <FlatList
-              data={Object.entries(productsByCategory)}
-              keyExtractor={([category]) => category}
-              renderItem={({ item: [category, products] }) => (
-                <View style={styles.categorySection}>
-                  <Text style={styles.categoryTitle}>{category}</Text>
-                  <FlatList
-                    data={products}
-                    horizontal
-                    keyExtractor={(product) => product.id.toString()}
-                    renderItem={({ item: product }) => (
-                      <TouchableOpacity
-                        style={styles.productCard}
-                        onPress={() => handleBuyProduct(product)}
-                        activeOpacity={0.8}
-                      >
-                        <Image
-                          source={{ uri: product.logo }}
-                          style={styles.productLogo}
-                          contentFit="contain"
-                        />
-                        <Text style={styles.productName} numberOfLines={2}>
-                          {product.name}
-                        </Text>
-                        <Text style={styles.productBrand}>
-                          {product.brand.name}
-                        </Text>
-                        {product.denomination_type === "FIXED" ? (
-                          <Text style={styles.productPrice}>
-                            {formatAmount(
-                              product.min_recipient_amount,
-                              product.recipient_currency
-                            )}
-                          </Text>
-                        ) : (
-                          <Text style={styles.productPrice}>
-                            {formatAmount(
-                              product.min_recipient_amount,
-                              product.recipient_currency
-                            )}{" "}
-                            -{" "}
-                            {formatAmount(
-                              product.max_recipient_amount,
-                              product.recipient_currency
-                            )}
-                          </Text>
-                        )}
-                        {product.discount_percentage > 0 && (
-                          <View style={styles.discountBadge}>
-                            <Text style={styles.discountText}>
-                              {product.discount_percentage}% OFF
-                            </Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    )}
-                    {...({ contentContainerStyle: styles.productsList } as any)}
-                  />
-                </View>
-              )}
-              ListEmptyComponent={() => (
-                <Empty
-                  title="No gift cards found"
-                  description="Try adjusting your search"
-                />
-              )}
-              {...({ contentContainerStyle: styles.listContent } as any)}
-            />
-          )}
-        </>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.sellContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <Card style={styles.sellCard}>
-            <Text style={styles.sellTitle}>Sell Your Gift Card</Text>
-            <Text style={styles.sellDescription}>
-              Submit your gift card for review. We'll process it shortly.
-            </Text>
-
-            <Input
-              label="Brand Name"
-              value={brandName}
-              onChangeText={setBrandName}
-              placeholder="e.g., Amazon, Apple"
-              style={styles.input}
-            />
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Card Currency</Text>
-              <TouchableOpacity
-                style={styles.currencySelector}
-                onPress={() => setIsCurrencyModalVisible(true)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.currencySelectorContent}>
-                  <Text
-                    style={[
-                      styles.currencySelectorText,
-                      !cardCurrency && styles.currencySelectorPlaceholder,
-                    ]}
-                  >
-                    {cardCurrency || "Select currency"}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={AppColors.textSecondary}
-                />
-              </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.sellContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Available Gift Card Section */}
+            <View style={styles.sectionContainer}>
+              <SectionHeader
+                title="Available Gift Card"
+                titleStyle={styles.sectionTitleSmall}
+              />
+              <View style={styles.availableCardsContainer}>
+                {/* Placeholder cards for owned gift cards */}
+                {[1, 2, 3].map((index) => (
+                  <View key={index} style={styles.availableCardPlaceholder}>
+                    <View style={styles.placeholderCard}></View>
+                  </View>
+                ))}
+              </View>
             </View>
 
-            <Input
-              label="Card Code"
-              value={cardCode}
-              onChangeText={setCardCode}
-              placeholder="Enter gift card code"
-              style={styles.input}
-            />
+            {/* Get More Gift Cards Section */}
+            <View style={styles.sectionContainer}>
+              <SectionHeader
+                title="Get More Gift Cards"
+                titleStyle={styles.sectionTitleSmall}
+              />
+              {isLoadingList ? (
+                <ScrollView
+                  contentContainerStyle={[
+                    styles.gridContent,
+                    {
+                      padding: isLoadingList ? 0 : 20,
+                    },
+                  ]}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.gridContainer}>
+                    {[1, 2, 3, 4].map((index) => (
+                      <View
+                        key={index}
+                        style={[styles.giftCardContainer, styles.skeletonCard]}
+                      />
+                    ))}
+                  </View>
+                </ScrollView>
+              ) : listError ? (
+                <Error message="Failed to load gift cards" onRetry={() => {}} />
+              ) : (
+                <FlatList
+                  data={filteredGiftCardsForSell}
+                  numColumns={2}
+                  keyExtractor={(giftcard) => giftcard.id.toString()}
+                  contentContainerStyle={styles.sellGridContent}
+                  columnWrapperStyle={styles.gridRow}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={false}
+                  renderItem={({
+                    item: giftcard,
+                  }: {
+                    item: GiftCardForSell;
+                  }) => {
+                    // Get the first available currency and range for display
+                    const firstCurrency =
+                      giftcard.physical?.[0] || giftcard.ecode?.[0];
+                    const firstRange = firstCurrency?.ranges?.[0];
+                    const minRate = firstRange?.rate || 0;
+                    // const currencyCode = firstCurrency?.currency_code || "USD";
 
-            <Input
-              label="Face Value"
-              value={faceValue}
-              onChangeText={setFaceValue}
-              placeholder="Enter card value"
-              keyboardType="numeric"
-              style={styles.input}
-            />
-
-            <Input
-              label="PIN (Optional)"
-              value={pin}
-              onChangeText={setPin}
-              placeholder="Enter PIN if available"
-              secureTextEntry
-              style={styles.input}
-            />
-
-            <Input
-              label="Expected Rate (Optional)"
-              value={expectedRate}
-              onChangeText={setExpectedRate}
-              placeholder={`NGN per 1 ${cardCurrency || "USD"}`}
-              keyboardType="numeric"
-              style={styles.input}
-            />
-
-            <Input
-              label="Notes (Optional)"
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Additional notes or comments"
-              multiline
-              numberOfLines={4}
-              style={styles.input}
-            />
-
-            <Button
-              title="Submit for Review"
-              onPress={handleSellGiftCard}
-              loading={sellGiftCard.isPending}
-              disabled={sellGiftCard.isPending}
-              style={styles.submitButton}
-            />
-          </Card>
-        </ScrollView>
+                    return (
+                      <TouchableOpacity
+                        style={styles.giftCardContainer}
+                        onPress={() => {
+                          router.push({
+                            pathname: "/sell-giftcard",
+                            params: {
+                              giftCardId: giftcard.id.toString(),
+                              brandName: giftcard.name,
+                              brandLogo: giftcard.image_url,
+                            },
+                          });
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.giftCardImageContainer}>
+                          <Image
+                            source={{ uri: giftcard.image_url }}
+                            style={styles.giftCardImage}
+                            contentFit="contain"
+                          />
+                        </View>
+                        <View style={styles.giftCardBanner}>
+                          <Text style={styles.giftCardBrand} numberOfLines={1}>
+                            {giftcard.name}
+                          </Text>
+                          {minRate > 0 && (
+                            <Text style={styles.giftCardPrice}>
+                              ₦{minRate.toLocaleString("en-NG")}
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  }}
+                  ListEmptyComponent={() => (
+                    <Empty
+                      title="No gift cards found"
+                      description="Try adjusting your search"
+                    />
+                  )}
+                />
+              )}
+            </View>
+          </ScrollView>
+        </>
       )}
 
       {/* Buy Modal */}
@@ -477,156 +403,152 @@ export default function GiftCardScreen() {
             </View>
 
             {selectedProduct && (
-              <>
-                <View style={styles.productInfo}>
-                  <Image
-                    source={{ uri: selectedProduct.logo }}
-                    style={styles.modalProductLogo}
-                    contentFit="contain"
-                  />
-                  <Text style={styles.modalProductName}>
-                    {selectedProduct.name}
-                  </Text>
-                  <Text style={styles.modalProductBrand}>
-                    {selectedProduct.brand.name}
-                  </Text>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                {/* Gift Card Brand Display */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Gift Card</Text>
+                  <View style={styles.productSelector}>
+                    <View style={styles.productSelectorContent}>
+                      <Image
+                        source={{ uri: selectedProduct.logo }}
+                        style={styles.productSelectorLogo}
+                        contentFit="contain"
+                      />
+                      <Text style={styles.productSelectorText}>
+                        {selectedProduct.name}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
 
+                {/* Card Currency Display */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Card Currency</Text>
+                  <View style={styles.currencyDisplay}>
+                    <Text style={styles.currencyDisplayText}>
+                      {selectedProduct.recipient_currency}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Amount Input */}
                 <Input
-                  label="Quantity"
+                  label="Amount"
                   value={quantity}
                   onChangeText={setQuantity}
-                  placeholder="1"
+                  placeholder="Enter quantity"
                   keyboardType="numeric"
                   style={styles.input}
                 />
 
-                <View style={styles.priceBreakdown}>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Unit Price:</Text>
-                    <Text style={styles.priceValue}>
-                      {formatAmount(
-                        selectedProduct.denomination_type === "FIXED"
+                {/* Quick Amount Buttons - Show for fixed denomination products */}
+                {selectedProduct.denomination_type === "FIXED" && (
+                  <View style={styles.quickAmountContainer}>
+                    {quickAmounts
+                      .filter((amt) => {
+                        const amount = parseFloat(amt);
+                        return (
+                          amount >= selectedProduct.min_recipient_amount &&
+                          amount <= selectedProduct.max_recipient_amount
+                        );
+                      })
+                      .map((amt) => {
+                        const isSelected = quantity === amt;
+                        return (
+                          <TouchableOpacity
+                            key={amt}
+                            style={[
+                              styles.quickAmountButton,
+                              isSelected && styles.quickAmountButtonSelected,
+                            ]}
+                            onPress={() => {
+                              // Calculate quantity based on product's fixed amount
+                              const productAmount =
+                                selectedProduct.min_recipient_amount;
+                              const qty = Math.floor(
+                                parseFloat(amt) / productAmount
+                              );
+                              setQuantity(qty > 0 ? qty.toString() : "1");
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <Text
+                              style={[
+                                styles.quickAmountText,
+                                isSelected && styles.quickAmountTextSelected,
+                              ]}
+                            >
+                              ${amt}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                  </View>
+                )}
+
+                {/* Current Exchange Rate Section */}
+                <ExchangeRateCard
+                  giftCardValue={formatAmount(
+                    (selectedProduct.denomination_type === "FIXED"
+                      ? selectedProduct.min_recipient_amount
+                      : selectedProduct.min_recipient_amount) *
+                      (parseFloat(quantity) || 1),
+                    selectedProduct.recipient_currency
+                  )}
+                  localCurrency={`₦${calculateTotalCost().toLocaleString(
+                    "en-NG",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}`}
+                  ratePerUnit={`₦${selectedProduct.rate_recipient_to_sender.toLocaleString(
+                    "en-NG",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}`}
+                />
+
+                {/* Transaction Summary */}
+                <TransactionSummaryCard
+                  rows={[
+                    {
+                      label: "Gift Card Brand:",
+                      value: selectedProduct.brand.name,
+                    },
+                    {
+                      label: "Amount:",
+                      value: formatAmount(
+                        (selectedProduct.denomination_type === "FIXED"
                           ? selectedProduct.min_recipient_amount
-                          : selectedProduct.min_recipient_amount,
+                          : selectedProduct.min_recipient_amount) *
+                          (parseFloat(quantity) || 1),
                         selectedProduct.recipient_currency
-                      )}
-                    </Text>
-                  </View>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Total Cost:</Text>
-                    <Text style={styles.priceValue}>
-                      ₦{calculateTotalCost().toLocaleString("en-NG")}
-                    </Text>
-                  </View>
-                </View>
+                      ),
+                    },
+                  ]}
+                  totalAmount={`₦${calculateTotalCost().toLocaleString(
+                    "en-NG",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}`}
+                />
 
                 <Button
-                  title="Purchase"
+                  title="Continue"
                   onPress={handleConfirmBuy}
                   loading={buyGiftCard.isPending}
                   disabled={buyGiftCard.isPending}
                   style={styles.purchaseButton}
                 />
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Currency Selection Modal */}
-      <Modal
-        visible={isCurrencyModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
-          setIsCurrencyModalVisible(false);
-          setCurrencySearchQuery("");
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Currency</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setIsCurrencyModalVisible(false);
-                  setCurrencySearchQuery("");
-                }}
-              >
-                <Ionicons name="close" size={24} color={AppColors.text} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Input */}
-            <View style={styles.currencySearchContainer}>
-              <Input
-                value={currencySearchQuery}
-                onChangeText={setCurrencySearchQuery}
-                placeholder="Search currency..."
-                style={styles.currencySearchInput}
-                placeholderTextColor={AppColors.textSecondary}
-                leftIcon={
-                  <Ionicons
-                    name="search"
-                    size={20}
-                    color={AppColors.textSecondary}
-                  />
-                }
-              />
-            </View>
-
-            {filteredCurrencies.length === 0 ? (
-              <View style={styles.emptyCurrencyContainer}>
-                <Text style={styles.emptyCurrencyText}>
-                  No currencies found
-                </Text>
-              </View>
-            ) : (
-              <FlatList
-                data={filteredCurrencies}
-                keyExtractor={(item) => item.code}
-                style={styles.currencyList}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item: currency }) => {
-                  const isSelected = cardCurrency === currency.code;
-                  return (
-                    <TouchableOpacity
-                      style={[
-                        styles.currencyItem,
-                        isSelected && styles.currencyItemSelected,
-                      ]}
-                      onPress={() => handleSelectCurrency(currency.code)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.currencyItemContent}>
-                        <View style={styles.currencyItemLeft}>
-                          <View style={styles.currencyInfo}>
-                            <Text
-                              style={[
-                                styles.currencyCode,
-                                isSelected && styles.currencyCodeSelected,
-                              ]}
-                            >
-                              {currency.code}
-                            </Text>
-                            <Text style={styles.currencyName}>
-                              {currency.name}
-                            </Text>
-                          </View>
-                        </View>
-                        {isSelected && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={24}
-                            color={AppColors.primary}
-                          />
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                }}
-              />
+              </ScrollView>
             )}
           </View>
         </View>
@@ -644,114 +566,144 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 12,
-    gap: 12,
+    gap: 20,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.background,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: AppColors.border,
   },
   activeTab: {
     backgroundColor: AppColors.primary,
+    borderColor: AppColors.primary,
   },
   tabText: {
     fontSize: 16,
     fontWeight: "600",
-    color: AppColors.textSecondary,
+    color: AppColors.text,
   },
   activeTabText: {
     color: AppColors.background,
   },
   searchContainer: {
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginTop: 10,
   },
   searchInput: {
     marginBottom: 0,
   },
-  listContent: {
+  gridContent: {
+    padding: 20,
     paddingBottom: 40,
   },
-  categoryTitleSkeleton: {
-    marginBottom: 12,
-    paddingHorizontal: 20,
+  sellGridContent: {
+    padding: 0,
+    paddingBottom: 0,
   },
-  skeletonProductCard: {
-    marginRight: 12,
-    height: 200,
+  gridRow: {
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
-  skeletonLogo: {
-    marginBottom: 8,
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 0,
   },
-  skeletonProductName: {
-    marginBottom: 4,
-  },
-  skeletonProductBrand: {
-    marginBottom: 8,
-  },
-  skeletonProductPrice: {
-    marginTop: 0,
-  },
-  categorySection: {
-    marginBottom: 24,
-  },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: AppColors.text,
-    marginBottom: 12,
-    paddingHorizontal: 20,
-  },
-  productsList: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  productCard: {
-    width: 160,
-    backgroundColor: AppColors.surface,
+  giftCardContainer: {
+    width: "48%",
     borderRadius: 12,
-    padding: 12,
-    marginRight: 12,
+    overflow: "hidden",
+    backgroundColor: AppColors.surface,
+    marginBottom: 16,
+  },
+  giftCardImageContainer: {
+    width: "100%",
+    height: 180,
+    position: "relative",
+    backgroundColor: AppColors.surfaceLight,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  giftCardImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 0,
+  },
+  skeletonCard: {
+    height: 220,
+    backgroundColor: AppColors.surface,
+  },
+  giftCardBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: AppColors.red,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 40,
   },
-  productLogo: {
-    width: 80,
-    height: 80,
-    marginBottom: 8,
-  },
-  productName: {
+  giftCardBrand: {
     fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    textAlign: "center",
-    marginBottom: 4,
+    flex: 1,
   },
-  productBrand: {
-    fontSize: 12,
-    color: AppColors.textSecondary,
-    marginBottom: 8,
-  },
-  productPrice: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: AppColors.primary,
+  giftCardPrice: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: AppColors.text,
   },
   discountBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
     backgroundColor: AppColors.green,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
-    marginTop: 8,
+    borderRadius: 6,
+    zIndex: 1,
   },
   discountText: {
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#fff",
   },
   sellContainer: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  sectionContainer: {
+    marginBottom: 32,
+  },
+  sectionTitleSmall: {
+    fontSize: 12,
+  },
+  availableCardsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  availableCardPlaceholder: {
+    width: "25%",
+  },
+  placeholderCard: {
+    width: "100%",
+    height: 100,
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sellButton: {
+    marginTop: 24,
+    marginBottom: 20,
   },
   sellCard: {
     marginBottom: 20,
@@ -935,5 +887,261 @@ const styles = StyleSheet.create({
   emptyCurrencyText: {
     fontSize: 16,
     color: AppColors.textSecondary,
+  },
+  brandSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  brandSelectorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  brandIconPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: AppColors.surfaceLight,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  brandIconText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  brandSelectorText: {
+    fontSize: 16,
+    color: AppColors.text,
+  },
+  brandSelectorPlaceholder: {
+    fontSize: 16,
+    color: AppColors.textSecondary,
+  },
+  orContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: AppColors.border,
+  },
+  orText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 16,
+    marginBottom: 20,
+  },
+  uploadButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.primary,
+  },
+  imagePreviewContainer: {
+    position: "relative",
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: AppColors.background + "CC",
+    borderRadius: 12,
+  },
+  exchangeRateCard: {
+    backgroundColor: AppColors.orange + "20",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  exchangeRateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  exchangeRateTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  exchangeRateContent: {
+    gap: 12,
+  },
+  exchangeRateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  exchangeRateLabel: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  exchangeRateValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  exchangeRateArrow: {
+    alignItems: "center",
+    marginVertical: 8,
+  },
+  ratePerUnit: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+  },
+  ratePerUnitLabel: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  ratePerUnitValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: AppColors.primary,
+  },
+  transactionSummaryCard: {
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  transactionSummaryTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: AppColors.text,
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  totalAmountContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+    alignItems: "center",
+  },
+  totalAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: AppColors.primary,
+  },
+  productSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+  },
+  productSelectorContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  productSelectorLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  productSelectorText: {
+    fontSize: 16,
+    color: AppColors.text,
+    flex: 1,
+  },
+  currencyDisplay: {
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  currencyDisplayText: {
+    fontSize: 16,
+    color: AppColors.text,
+  },
+  quickAmountContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 20,
+  },
+  quickAmountButton: {
+    flex: 1,
+    minWidth: "30%",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    alignItems: "center",
+  },
+  quickAmountButtonSelected: {
+    backgroundColor: AppColors.primary,
+    borderColor: AppColors.primary,
+  },
+  quickAmountText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: AppColors.text,
+  },
+  quickAmountTextSelected: {
+    color: AppColors.background,
+  },
+  modalScrollContent: {
+    paddingBottom: 20,
   },
 });

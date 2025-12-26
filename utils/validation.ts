@@ -52,6 +52,32 @@ export const signupSchema = yup.object().shape({
     .string()
     .required("Please confirm your password")
     .oneOf([yup.ref("password")], "Passwords do not match"),
+  dateOfBirth: yup
+    .date()
+    .required("Date of birth is required")
+    .max(new Date(), "Date of birth cannot be in the future")
+    .test(
+      "age",
+      "You must be at least 18 years old",
+      function (value) {
+        if (!value) return false;
+        const today = new Date();
+        const birthDate = new Date(value);
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+          return age - 1 >= 18;
+        }
+        return age >= 18;
+      }
+    ),
+  gender: yup
+    .string()
+    .required("Gender is required")
+    .oneOf(["male", "female", "other"], "Please select a valid gender"),
 });
 
 /**

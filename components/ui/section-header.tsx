@@ -3,6 +3,7 @@ import React from "react";
 import {
   StyleSheet,
   Text,
+  TextStyle,
   TouchableOpacity,
   View,
   ViewStyle,
@@ -13,6 +14,7 @@ interface SectionHeaderProps {
   actionText?: string;
   onActionPress?: () => void;
   style?: ViewStyle;
+  titleStyle?: TextStyle;
 }
 
 export function SectionHeader({
@@ -20,10 +22,11 @@ export function SectionHeader({
   actionText,
   onActionPress,
   style,
+  titleStyle,
 }: SectionHeaderProps) {
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, titleStyle]}>{title}</Text>
       {actionText && (
         <TouchableOpacity onPress={onActionPress}>
           <Text style={styles.actionLink}>{actionText}</Text>

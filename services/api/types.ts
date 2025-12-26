@@ -37,6 +37,8 @@ export interface SignupRequest {
   email: string;
   phone: string;
   password: string;
+  dateOfBirth?: string;
+  gender?: string;
 }
 
 export interface User {
@@ -53,6 +55,8 @@ export interface User {
   va_account_name?: string;
   va_bank_name?: string;
   has_account?: boolean;
+  gender?: string;
+  date_of_birth?: string;
 }
 
 // Wallet Types

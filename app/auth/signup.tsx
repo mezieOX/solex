@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+// import { DateInput } from "@/components/ui/date-input";
+import { GenderInput } from "@/components/ui/gender-input";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { AppColors } from "@/constants/theme";
@@ -26,6 +28,8 @@ export default function SignUpScreen() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [gender, setGender] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{
@@ -34,6 +38,8 @@ export default function SignUpScreen() {
     phone?: string;
     password?: string;
     confirmPassword?: string;
+    dateOfBirth?: string;
+    gender?: string;
   }>({});
 
   const handleSignup = async () => {
@@ -45,6 +51,8 @@ export default function SignUpScreen() {
         phone: phone.trim(),
         password,
         confirmPassword,
+        dateOfBirth,
+        gender,
       };
 
       await signupSchema.validate(formData, { abortEarly: false });
@@ -58,6 +66,10 @@ export default function SignUpScreen() {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
+        dateOfBirth: formData.dateOfBirth
+          ? formData.dateOfBirth.toISOString().split("T")[0]
+          : undefined,
+        gender: formData.gender || undefined,
       });
 
       if (result.status === "success") {
@@ -153,6 +165,31 @@ export default function SignUpScreen() {
             placeholder="000 000 0000"
             error={errors.phone}
             defaultCountry="ng"
+          />
+
+          {/* <DateInput
+            label="Date of Birth"
+            value={dateOfBirth}
+            onChange={(date) => {
+              setDateOfBirth(date);
+              if (errors.dateOfBirth)
+                setErrors({ ...errors, dateOfBirth: undefined });
+            }}
+            placeholder="Select your date of birth"
+            error={errors.dateOfBirth}
+            maximumDate={new Date()}
+            minimumDate={new Date(1900, 0, 1)}
+          /> */}
+
+          <GenderInput
+            label="Gender"
+            value={gender}
+            onChange={(selectedGender) => {
+              setGender(selectedGender);
+              if (errors.gender) setErrors({ ...errors, gender: undefined });
+            }}
+            placeholder="Select your gender"
+            error={errors.gender}
           />
 
           <Input

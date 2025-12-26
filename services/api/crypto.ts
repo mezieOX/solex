@@ -35,6 +35,7 @@ export interface ExchangeRateResponse {
   to: string;
   from_currency_id?: number;
   to_currency_id?: number;
+  receive_text?: string;
   // For crypto to fiat (buy/sell)
   rate_ngn_per_1?: number;
   rate_usd_per_1?: number;
@@ -136,21 +137,17 @@ export const cryptoApi = {
   getExchangeRateByCurrencyId: async (params: {
     currency_id: number;
     to_currency_id?: number | null;
-    to: string;
+    direction: string;
+    amount: number;
   }): Promise<ExchangeRateResponse> => {
     const queryParams: Record<string, any> = {
       currency_id: params.currency_id,
-      to: params.to,
+      ...(params.direction === "swap" && params.to_currency_id
+        ? { to_currency_id: params.to_currency_id }
+        : {}),
+      direction: params.direction,
+      amount: params.amount,
     };
-
-    // Include to_currency_id only if it's not null/undefined
-    // If null, explicitly set it to null string for API
-    if (params.to_currency_id !== null && params.to_currency_id !== undefined) {
-      queryParams.to_currency_id = params.to_currency_id;
-    } else {
-      // API expects "null" as string when to_currency_id is null
-      queryParams.to_currency_id = "null";
-    }
 
     const response = await apiClient.get<ApiResponse<ExchangeRateResponse>>(
       "/wallets/crypto/exchange-rate",

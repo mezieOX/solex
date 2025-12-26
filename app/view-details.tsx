@@ -608,6 +608,35 @@ export default function ViewDetailsScreen() {
             </View>
           </View>
 
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Status</Text>
+            <View style={styles.detailValueContainer}>
+              <Text
+                style={[
+                  styles.detailValue,
+                  styles.statusValue,
+                  {
+                    color:
+                      (transactionData?.status ||
+                        transactionData?.data?.status) === "Confirmed"
+                        ? AppColors.green
+                        : (transactionData?.status ||
+                            transactionData?.data?.status) === "Pending"
+                        ? AppColors.orange
+                        : (transactionData?.status ||
+                            transactionData?.data?.status) === "Failed"
+                        ? AppColors.red
+                        : AppColors.text,
+                  },
+                ]}
+              >
+                {transactionData?.status ||
+                  transactionData?.data?.status ||
+                  "N/A"}
+              </Text>
+            </View>
+          </View>
+
           <View style={styles.separator} />
 
           <View style={styles.detailRow}>
@@ -688,6 +717,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "gray",
   },
   detailLabel: {
     fontSize: 14,
@@ -757,6 +788,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusValue: {
-    color: AppColors.primary,
+    fontWeight: "700",
+    textTransform: "capitalize",
   },
 });

@@ -1,15 +1,12 @@
 import React from "react";
-import Svg, { ClipPath, Defs, G, Path, Rect } from "react-native-svg";
+import Svg, { Path, G, ClipPath, Defs, Rect } from "react-native-svg";
 
-interface InternetIconProps {
+interface NetworkIconProps {
   size?: number;
   color?: string;
 }
 
-export function InternetIcon({
-  size = 24,
-  color = "black",
-}: InternetIconProps) {
+export function NetworkIcon({ size = 20, color = "white" }: NetworkIconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
       <G clipPath="url(#clip0_545_7231)">
@@ -34,3 +31,4 @@ export function InternetIcon({
     </Svg>
   );
 }
+

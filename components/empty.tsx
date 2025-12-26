@@ -45,5 +45,6 @@ const styles = StyleSheet.create({
   },
   description: {
     color: Colors.dark.text,
+    textAlign: "center",
   },
 });

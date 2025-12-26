@@ -164,6 +164,8 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="exchange-crypto" />
               <Stack.Screen name="exchange-giftcard" />
+              <Stack.Screen name="sell-giftcard" />
+              <Stack.Screen name="confirm-sell-giftcard" />
               <Stack.Screen name="enable-quick-access" />
               <Stack.Screen name="modal" options={{ presentation: "modal" }} />
             </Stack>

@@ -257,7 +257,7 @@ export default function CryptoDepositScreen() {
                     <Text style={styles.currencyPrice}>
                       {formatPrice(priceData.price)}
                     </Text>
-                    {priceData.change !== 0 && (
+                    {/* {priceData.change !== 0 && (
                       <View style={styles.priceChangeContainer}>
                         <Ionicons
                           name={isPositive ? "arrow-up" : "arrow-down"}
@@ -277,12 +277,12 @@ export default function CryptoDepositScreen() {
                           {Math.abs(priceData.change).toFixed(2)}%
                         </Text>
                       </View>
-                    )}
+                    )} */}
                   </View>
                 </View>
-                <View style={styles.currencyHoldings}>
+                {/* <View style={styles.currencyHoldings}>
                   <Text style={styles.holdingsValue}>{holdings}</Text>
-                </View>
+                </View> */}
               </TouchableOpacity>
             );
           })

@@ -259,6 +259,14 @@ export default function ProfileScreen() {
       value: user?.email ? formatEmail(user.email) : "N/A",
     },
     {
+      label: "Gender",
+      value: user?.gender || "N/A",
+    },
+    {
+      label: "Date of Birth",
+      value: user?.date_of_birth || "N/A",
+    },
+    {
       label: "Mobile Number",
       value: formatPhoneNumber(user?.phone),
       showEdit: true,

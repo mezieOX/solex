@@ -263,13 +263,27 @@ export default function BTCDepositScreen() {
         )}
 
         {!isLoadingAddress && depositAddress && (
-          <Button
-            title="Save Address"
-            onPress={() => {
-              showSuccessToast({ message: "Address saved successfully" });
-            }}
-            style={styles.button}
-          />
+          <>
+            {/* Warning Section */}
+            <View style={styles.warningContainer}>
+              <View style={styles.warningContent}>
+                <Text style={styles.warningTitle}>Security Notice</Text>
+                <Text style={styles.warningText}>
+                  Please verify the address and network before sending.
+                  Cryptocurrency sent to an incorrect address or network will be
+                  permanently lost and cannot be recovered.
+                </Text>
+              </View>
+            </View>
+
+            <Button
+              title="Save Address"
+              onPress={() => {
+                showSuccessToast({ message: "Address saved successfully" });
+              }}
+              style={styles.button}
+            />
+          </>
         )}
       </ScrollView>
     </View>
@@ -354,6 +368,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: AppColors.text,
     fontWeight: "500",
+  },
+  warningContainer: {
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: AppColors.orange,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  warningContent: {
+    width: "100%",
+  },
+  warningTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: AppColors.orange,
+    marginBottom: 8,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  warningText: {
+    fontSize: 12,
+    color: AppColors.text,
+    lineHeight: 16,
+    letterSpacing: 0.2,
+    fontWeight: "400",
   },
   qrSection: {
     alignItems: "center",

@@ -12,6 +12,9 @@ export const giftCardKeys = {
     [...giftCardKeys.all, "products", countryCode] as const,
   codes: (transactionId: number) =>
     [...giftCardKeys.all, "codes", transactionId] as const,
+  exchangeRate: (from: string, to: string, amount: number) =>
+    [...giftCardKeys.all, "exchange-rate", from, to, amount] as const,
+  list: () => [...giftCardKeys.all, "list"] as const,
 };
 
 /**
@@ -69,5 +72,34 @@ export function useSellGiftCard() {
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
     },
+  });
+}
+
+/**
+ * Hook to get gift card exchange rate
+ */
+export function useGiftCardExchangeRate(
+  from: string,
+  to: string,
+  amount: number
+) {
+  return useQuery({
+    queryKey: giftCardKeys.exchangeRate(from, to, amount),
+    queryFn: () => giftCardsApi.getExchangeRate(from, to, amount),
+    enabled: !!from && !!to && amount > 0,
+    retry: false,
+    staleTime: 1 * 1000, // 1 second
+  });
+}
+
+/**
+ * Hook to get list of gift cards available for sell
+ */
+export function useGiftCardsList() {
+  return useQuery({
+    queryKey: giftCardKeys.list(),
+    queryFn: () => giftCardsApi.getGiftCardsList(),
+    retry: false,
+    staleTime: 1 * 1000, // 1 second
   });
 }

@@ -14,14 +14,16 @@ export const cryptoKeys = {
   exchangeRateByCurrencyId: (
     currencyId: number,
     toCurrencyId: number | null | undefined | string,
-    to: string
+    direction: string,
+    amount: number
   ) =>
     [
       ...cryptoKeys.all,
       "exchange-rate-by-currency-id",
       currencyId,
       toCurrencyId,
-      to,
+      direction,
+      amount,
     ] as const,
   prices: (ids: string[]) => [...cryptoKeys.all, "prices", ids] as const,
   withdrawFees: (walletId: number, address: string, amount: string) =>
@@ -78,37 +80,32 @@ export function useExchangeRate(from: string, to: string) {
  * Hook to get exchange rate by currency ID
  */
 export function useExchangeRateByCurrencyId(
-  currencyId: number | null,
-  toCurrencyId: number | null | undefined | string,
-  to: string | null,
-  enabled: boolean = true
+  currencyId: number,
+  toCurrencyId: number | null | undefined,
+  direction: string,
+  amount: number
 ) {
   return useQuery({
     queryKey: cryptoKeys.exchangeRateByCurrencyId(
       currencyId || 0,
       toCurrencyId,
-      to || ""
+      direction,
+      amount
     ),
     queryFn: () => {
-      // Convert string to number if needed, or handle null/undefined
-      let toCurrencyIdValue: number | null | undefined;
-      if (toCurrencyId === null || toCurrencyId === undefined) {
-        toCurrencyIdValue = null;
-      } else if (typeof toCurrencyId === "string") {
-        const parsed = parseInt(toCurrencyId, 10);
-        toCurrencyIdValue = isNaN(parsed) ? null : parsed;
-      } else {
-        toCurrencyIdValue = toCurrencyId;
-      }
-
+      console.log("to-currency-id...", toCurrencyId, direction, amount);
       return cryptoApi.getExchangeRateByCurrencyId({
         currency_id: currencyId!,
-        to_currency_id: toCurrencyIdValue,
-        to: to || "",
+        ...(direction === "swap" && toCurrencyId
+          ? { to_currency_id: toCurrencyId }
+          : {}),
+        direction,
+        amount,
       });
     },
+    enabled: !!direction && !!currencyId && amount > 0,
     retry: false,
-    staleTime: 1 * 1000, // 1 second
+    staleTime: 0, // Always refetch when amount changes for real-time updates
   });
 }
 

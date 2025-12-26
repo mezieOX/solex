@@ -363,6 +363,7 @@ export default function TransactionHistoryScreen() {
                     time: time,
                     name: transaction.name,
                     id: transaction.id,
+                    status: transaction.status,
                   };
 
                   router.push({

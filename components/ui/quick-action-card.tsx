@@ -1,13 +1,21 @@
 import { AppColors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface QuickActionCardProps {
   title: string;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
+  iconSize?: number;
   iconBackgroundColor?: string;
+  iconContainerStyle?: ViewStyle;
   customIcon?: React.ReactNode;
   onPress?: () => void;
 }
@@ -16,19 +24,25 @@ export function QuickActionCard({
   title,
   icon,
   iconColor = "#fff",
-  iconBackgroundColor = AppColors.orange,
+  iconSize = 24,
+  iconBackgroundColor,
+  iconContainerStyle,
   customIcon,
   onPress,
 }: QuickActionCardProps) {
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, iconContainerStyle]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View
         style={[styles.iconContainer, { backgroundColor: iconBackgroundColor }]}
       >
         {customIcon ? (
           customIcon
         ) : icon ? (
-          <Ionicons name={icon} size={32} color={iconColor} />
+          <Ionicons name={icon} size={iconSize} color={iconColor} />
         ) : null}
       </View>
       <Text style={styles.text}>{title}</Text>
@@ -40,7 +54,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 16,
     alignItems: "center",
     gap: 8,
   },

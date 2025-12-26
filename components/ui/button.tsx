@@ -6,6 +6,7 @@ import {
   Text,
   TextStyle,
   TouchableOpacity,
+  View,
   ViewStyle,
 } from "react-native";
 
@@ -17,6 +18,8 @@ interface ButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export function Button({
@@ -27,6 +30,8 @@ export function Button({
   disabled = false,
   style,
   textStyle,
+  leftIcon,
+  rightIcon,
 }: ButtonProps) {
   const buttonStyle = [
     styles.button,
@@ -58,7 +63,11 @@ export function Button({
           color={variant === "outline" ? AppColors.primary : "#fff"}
         />
       ) : (
-        <Text style={textStyles}>{title}</Text>
+        <View style={styles.buttonContent}>
+          {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
+          <Text style={textStyles}>{title}</Text>
+          {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -72,6 +81,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 50,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  leftIcon: {
+    marginRight: 0,
+  },
+  rightIcon: {
+    marginLeft: 0,
   },
   primaryButton: {
     backgroundColor: AppColors.primary,
