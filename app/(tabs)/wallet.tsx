@@ -58,8 +58,8 @@ const ACTION_BUTTONS: ActionButton[] = [
     route: "/crypto-deposit" as any,
   },
   {
-    id: "swap",
-    label: "Swap",
+    id: "convert",
+    label: "convert",
     icon: "swap-horizontal",
     route: "/exchange-crypto" as any,
   },
@@ -315,14 +315,14 @@ export default function WalletScreen() {
             style={[
               styles.section,
               {
-                marginTop: -10,
+                marginTop: -20,
               },
             ]}
           >
             <Text style={styles.sectionTitle}>Assets</Text>
             {cryptoWallets.map((wallet) => {
               const priceData = getCryptoPriceData(wallet.currency);
-              const usdValue = wallet.balance * priceData.price;
+              const usdValue = wallet.balance;
               const holdings = formatHoldings(wallet.balance);
               const isPositive = priceData.change >= 0;
 
@@ -508,6 +508,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginTop: -4,
     marginRight: 12,
+    paddingLeft: 4,
   },
   amountUSDContainer: {
     flexDirection: "row",
@@ -720,7 +721,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   balanceSection: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
   totalBalanceCard: {
     backgroundColor: AppColors.orange,

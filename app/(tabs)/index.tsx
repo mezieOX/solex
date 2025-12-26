@@ -338,7 +338,7 @@ export default function HomeScreen() {
                   },
                 ]}
               >
-                Cash Account
+                Fiat Account
               </Text>
               <View style={styles.currencyTag}>
                 <Text style={styles.currencyText}>NGN</Text>
