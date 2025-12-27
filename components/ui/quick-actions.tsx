@@ -45,8 +45,8 @@ function QuickActionSkeleton({ numColumns }: { numColumns: number }) {
             { width: cardWidth, maxWidth: cardWidth },
           ]}
         >
-          <SkeletonAvatar size={48} type="circle" />
-          <SkeletonText width="80%" height={14} style={styles.skeletonText} />
+          <SkeletonAvatar size={36} type="circle" />
+          <SkeletonText width="100%" height={12} style={styles.skeletonText} />
         </View>
       ))}
     </View>
@@ -91,7 +91,7 @@ export function QuickActions({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   actionsContainer: {
     gap: 0,
@@ -100,14 +100,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 0,
+    justifyContent: "center",
+    alignItems: "center",
   },
   skeletonCard: {
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     alignItems: "center",
-    gap: 8,
+    gap: 6,
+    justifyContent: "center",
   },
   skeletonText: {
-    marginTop: 10,
+    marginTop: 6,
+    marginLeft: 10,
   },
 });

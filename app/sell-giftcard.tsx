@@ -297,7 +297,7 @@ export default function SellGiftCardScreen() {
           leftIcon={
             <Ionicons
               name="camera-outline"
-              size={24}
+              size={18}
               color={AppColors.primary}
             />
           }
@@ -421,7 +421,7 @@ export default function SellGiftCardScreen() {
               {isSelected && (
                 <Ionicons
                   name="checkmark-circle"
-                  size={24}
+                  size={16}
                   color={AppColors.primary}
                 />
               )}
@@ -477,7 +477,7 @@ export default function SellGiftCardScreen() {
               {isSelected && (
                 <Ionicons
                   name="checkmark-circle"
-                  size={24}
+                  size={16}
                   color={AppColors.primary}
                 />
               )}
@@ -495,23 +495,23 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 12,
+    paddingBottom: 20,
   },
   input: {
     marginBottom: 0,
   },
   submitButton: {
-    marginTop: 24,
+    marginTop: 12,
   },
   brandIconText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   brandIconContainer: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     backgroundColor: AppColors.surfaceLight,
     alignItems: "center",
@@ -525,13 +525,13 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   brandLogoSmall: {
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
   },
   orContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 12,
   },
   orLine: {
     flex: 1,
@@ -539,35 +539,35 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.border,
   },
   orText: {
-    marginHorizontal: 16,
-    fontSize: 14,
+    marginHorizontal: 12,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   uploadButton: {
-    marginBottom: 20,
+    marginBottom: 12,
     borderColor: AppColors.border,
   },
   imagePreviewContainer: {
     position: "relative",
-    marginBottom: 20,
-    borderRadius: 12,
+    marginBottom: 12,
+    borderRadius: 10,
     overflow: "hidden",
   },
   imagePreview: {
     width: "100%",
-    height: 200,
-    borderRadius: 12,
+    height: 150,
+    borderRadius: 10,
   },
   removeImageButton: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     backgroundColor: AppColors.background + "CC",
-    borderRadius: 12,
+    borderRadius: 10,
   },
   currencyItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.surface,
   },
@@ -582,14 +582,14 @@ const styles = StyleSheet.create({
   currencyItemLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
     flex: 1,
   },
   currencyInfo: {
     flex: 1,
   },
   currencyCode: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
     marginBottom: 2,
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   currencyName: {
-    fontSize: 14,
+    fontSize: 11,
     color: AppColors.textSecondary,
   },
 });

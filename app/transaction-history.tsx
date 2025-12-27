@@ -274,7 +274,7 @@ export default function TransactionHistoryScreen() {
       <FlatList
         data={filters}
         horizontal
-        style={{ maxHeight: 70, minHeight: 70 }}
+        style={{ maxHeight: 56, minHeight: 56 }}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filters}
         keyExtractor={(item) => item}
@@ -402,27 +402,27 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   filters: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    gap: 8,
   },
   filterButton: {
-    paddingHorizontal: 16,
-    height: 45,
+    paddingHorizontal: 12,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: AppColors.border,
-    marginRight: 12,
-    marginBottom: 20,
+    marginRight: 8,
+    marginBottom: 12,
   },
   filterButtonActive: {
     backgroundColor: AppColors.primary,
     borderColor: AppColors.primary,
   },
   filterText: {
-    fontSize: 16,
+    fontSize: 13,
     color: AppColors.text,
   },
   filterTextActive: {
@@ -430,16 +430,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   groupContainer: {
-    marginBottom: 32,
+    marginBottom: 16,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   skeletonDate: {
     marginBottom: 16,

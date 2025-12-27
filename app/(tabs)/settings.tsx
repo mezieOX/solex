@@ -185,7 +185,7 @@ export default function SettingsScreen() {
         >
           <Ionicons
             name={item.icon}
-            size={20}
+            size={18}
             color={item.iconColor || AppColors.text}
           />
         </View>
@@ -198,7 +198,7 @@ export default function SettingsScreen() {
         {item.showChevron !== false && (
           <Ionicons
             name="chevron-forward"
-            size={20}
+            size={16}
             color={AppColors.textSecondary}
           />
         )}
@@ -311,61 +311,61 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   userSection: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 32,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 20,
   },
   avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: AppColors.primary + "20",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 12,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "600",
     color: AppColors.textSecondary,
-    marginBottom: 12,
+    marginBottom: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   sectionContent: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: "hidden",
   },
   settingsItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   settingsItemLeft: {
     flexDirection: "row",
@@ -373,15 +373,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   settingsItemText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: AppColors.text,
     flex: 1,
@@ -389,10 +389,10 @@ const styles = StyleSheet.create({
   settingsItemRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   rightText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   settingsItemWrapper: {
@@ -404,41 +404,41 @@ const styles = StyleSheet.create({
   },
   bottomSheetBackground: {
     backgroundColor: AppColors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
   },
   bottomSheetContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 14,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   bottomSheetTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: "center",
   },
   bottomSheetMessage: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 20,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   bottomSheetButtons: {
-    gap: 12,
+    gap: 8,
   },
   logoutButton: {
     backgroundColor: AppColors.red,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   logoutButtonText: {
     color: "#FFFFFF",
   },
   cancelButton: {
-    borderRadius: 12,
+    borderRadius: 10,
   },
   cancelButtonText: {
     color: AppColors.primary,

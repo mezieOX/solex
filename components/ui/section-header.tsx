@@ -41,15 +41,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "600",
     color: AppColors.text,
   },
   actionLink: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.primary,
     fontWeight: "600",
   },

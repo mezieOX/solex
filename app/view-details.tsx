@@ -536,7 +536,7 @@ export default function ViewDetailsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+          <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{config.title}</Text>
         <View style={{ width: 24 }} />
@@ -653,7 +653,7 @@ export default function ViewDetailsScreen() {
           <View style={styles.qrCodeContainer}>
             <QRCode
               value={qrCodeValue}
-              size={80}
+              size={64}
               logo={require("@/assets/images/app-logo.png")}
               logoBorderRadius={300}
             />
@@ -691,42 +691,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   successHeader: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   detailsSection: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "gray",
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     flex: 1,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: AppColors.text,
     textAlign: "right",
@@ -736,9 +736,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   detailSubValue: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
     textAlign: "right",
   },
   separator: {
@@ -750,22 +750,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 70,
-    marginBottom: 80,
+    gap: 50,
+    marginBottom: 50,
     backgroundColor: AppColors.surfaceLight,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
   },
   qrCodeContainer: {
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
   reportButton: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "gray",
@@ -773,13 +773,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   reportButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
   },
   actionButtons: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   shareButton: {
     flex: 1,

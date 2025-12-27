@@ -243,20 +243,20 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   groupContainer: {
-    marginBottom: 32,
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: AppColors.text,
     marginBottom: 16,
   },
+  dateText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: AppColors.text,
+    marginBottom: 10,
+  },
   notificationItem: {
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   notificationContent: {
     flexDirection: "row",
@@ -265,31 +265,31 @@ const styles = StyleSheet.create({
   },
   notificationMessage: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: AppColors.text,
-    marginRight: 12,
-    lineHeight: 20,
+    marginRight: 10,
+    lineHeight: 18,
   },
   notificationTime: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.textSecondary,
     textAlign: "right",
   },
   separator: {
     height: 1,
     backgroundColor: AppColors.border,
-    marginVertical: 8,
+    marginVertical: 6,
     opacity: 0.3,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 60,
+    paddingVertical: 40,
   },
   emptyText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: 12,
+    fontSize: 14,
     color: AppColors.textSecondary,
   },
   unreadNotification: {
@@ -297,30 +297,30 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   notificationTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: AppColors.primary,
-    marginLeft: 8,
-    marginTop: 4,
+    marginLeft: 6,
+    marginTop: 3,
   },
   emptyStyle: {
     height: height - 200,
   },
   skeletonDate: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   skeletonTitle: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   skeletonMessage: {
     marginBottom: 0,

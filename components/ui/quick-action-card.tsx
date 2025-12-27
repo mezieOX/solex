@@ -53,24 +53,24 @@ export function QuickActionCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: AppColors.orange,
   },
   text: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    paddingTop: 10,
-    lineHeight: 18,
+    paddingTop: 6,
+    lineHeight: 16,
   },
 });

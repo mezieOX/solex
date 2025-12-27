@@ -44,7 +44,7 @@ export function TransactionItem({
       <View style={styles.container}>
         <View style={styles.dashedLine} />
         <View style={styles.content}>
-          <SkeletonAvatar size={50} type="circle" style={styles.skeletonIcon} />
+          <SkeletonAvatar size={36} type="circle" style={styles.skeletonIcon} />
           <View style={styles.textContainer}>
             <SkeletonTitle width="70%" style={styles.skeletonTitle} />
             <SkeletonText width="50%" rows={1} />
@@ -94,7 +94,7 @@ export function TransactionItem({
           ) : defaultIcon.text ? (
             <Text style={styles.iconText}>{defaultIcon.text}</Text>
           ) : defaultIcon.name ? (
-            <Ionicons name={defaultIcon.name} size={24} color={"#000"} />
+            <Ionicons name={defaultIcon.name} size={18} color={"#000"} />
           ) : null}
         </View>
         <View style={styles.textContainer}>
@@ -146,21 +146,21 @@ export function TransactionItem({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   dashedLine: {
     height: 1,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: AppColors.primary,
     justifyContent: "center",
     alignItems: "center",
@@ -169,47 +169,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   time: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   amountContainer: {
     alignItems: "flex-end",
   },
   amount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   change: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 12,
+    marginTop: 2,
   },
   iconText: {
-    fontSize: 24,
+    fontSize: 18,
   },
   skeletonIcon: {
     marginRight: 0,
   },
   skeletonTitle: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   skeletonAmount: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   skeletonChange: {
-    marginTop: 4,
+    marginTop: 2,
   },
   status: {
-    fontSize: 12,
+    fontSize: 10,
     color: AppColors.textSecondary,
   },
 });

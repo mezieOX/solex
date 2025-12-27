@@ -68,7 +68,7 @@ export default function GiftCardCodesScreen() {
         <StatusBar style="light" />
         <ScreenTitle title="Gift Card Codes" />
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color={AppColors.error} />
+              <Ionicons name="alert-circle" size={36} color={AppColors.error} />
           <Text style={styles.errorText}>
             {error?.message || "Unable to load gift card codes"}
           </Text>
@@ -96,7 +96,7 @@ export default function GiftCardCodesScreen() {
           <View style={styles.successIconContainer}>
             <Ionicons
               name="checkmark-circle"
-              size={64}
+              size={48}
               color={AppColors.green}
             />
           </View>
@@ -164,7 +164,7 @@ export default function GiftCardCodesScreen() {
                           ? "checkmark-circle"
                           : "copy-outline"
                       }
-                      size={20}
+                      size={16}
                       color={
                         copiedField === `Card Number ${index + 1}`
                           ? AppColors.green
@@ -193,7 +193,7 @@ export default function GiftCardCodesScreen() {
                           ? "checkmark-circle"
                           : "copy-outline"
                       }
-                      size={20}
+                      size={16}
                       color={
                         copiedField === `PIN Code ${index + 1}`
                           ? AppColors.green
@@ -243,80 +243,80 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 10,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 14,
+    marginTop: 10,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   errorText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: 10,
+    fontSize: 14,
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   successHeader: {
     alignItems: "center",
-    marginBottom: 32,
-    marginTop: 20,
+    marginBottom: 20,
+    marginTop: 12,
   },
   successIconContainer: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   successTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "700",
     color: AppColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   successMessage: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   productCard: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   codesCard: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: AppColors.text,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border + "30",
   },
@@ -325,33 +325,33 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     flex: 1,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: AppColors.text,
     textAlign: "right",
     flex: 1,
   },
   codeContainer: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   codeIndex: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   codeField: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   codeLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: "500",
   },
   codeValueContainer: {
@@ -360,47 +360,47 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: AppColors.surfaceLight,
     borderRadius: 8,
-    padding: 12,
+    padding: 10,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   codeValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
     fontFamily: "monospace",
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   copyButton: {
-    padding: 4,
+    padding: 2,
   },
   codeDivider: {
     height: 1,
     backgroundColor: AppColors.border + "30",
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 12,
   },
   noticeCard: {
     flexDirection: "row",
     backgroundColor: AppColors.orange + "15",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: AppColors.orange + "30",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   noticeText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: AppColors.text,
-    marginLeft: 12,
-    lineHeight: 20,
+    marginLeft: 10,
+    lineHeight: 18,
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 16,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    paddingTop: 10,
     backgroundColor: AppColors.background,
     borderTopWidth: 1,
     borderTopColor: AppColors.border,

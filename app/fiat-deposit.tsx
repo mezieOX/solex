@@ -116,7 +116,7 @@ export default function FiatDepositScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+          <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Fiat Deposit</Text>
         <View style={{ width: 24 }} />
@@ -133,7 +133,7 @@ export default function FiatDepositScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Choose Payment Method</Text>
             <TouchableOpacity onPress={handleOpenSheet}>
-              <Ionicons name="chevron-down" size={24} color={AppColors.text} />
+              <Ionicons name="chevron-down" size={18} color={AppColors.text} />
             </TouchableOpacity>
           </View>
 
@@ -157,7 +157,7 @@ export default function FiatDepositScreen() {
               ) : (
                 <Ionicons
                   name={selectedMethod.icon}
-                  size={24}
+                  size={18}
                   color={selectedMethod.iconColor}
                 />
               )}
@@ -165,7 +165,7 @@ export default function FiatDepositScreen() {
             <Text style={styles.methodName}>{selectedMethod.name}</Text>
             <Ionicons
               name="checkmark-circle"
-              size={24}
+              size={18}
               color={AppColors.primary}
             />
           </TouchableOpacity>
@@ -215,7 +215,7 @@ export default function FiatDepositScreen() {
           <View style={styles.bottomSheetHeader}>
             <Text style={styles.bottomSheetTitle}>Choose Payment Method</Text>
             <TouchableOpacity onPress={() => bottomSheetRef.current?.dismiss()}>
-              <Ionicons name="close" size={24} color={AppColors.text} />
+              <Ionicons name="close" size={18} color={AppColors.text} />
             </TouchableOpacity>
           </View>
 
@@ -250,7 +250,7 @@ export default function FiatDepositScreen() {
                   ) : (
                     <Ionicons
                       name={method.icon}
-                      size={24}
+                      size={18}
                       color={method.iconColor}
                     />
                   )}
@@ -259,7 +259,7 @@ export default function FiatDepositScreen() {
                 {selectedMethod.id === method.id && (
                   <Ionicons
                     name="checkmark-circle"
-                    size={24}
+                    size={18}
                     color={AppColors.primary}
                   />
                 )}
@@ -290,27 +290,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   amountInput: {
     marginBottom: 0,
@@ -319,10 +319,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
@@ -330,46 +330,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   methodIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   methodName: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: AppColors.text,
   },
   button: {
-    marginTop: 20,
+    marginTop: 12,
   },
   bottomSheetBackground: {
     backgroundColor: AppColors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   bottomSheetView: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   bottomSheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   bottomSheetTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },

@@ -42,7 +42,7 @@ export function SelectorInput({
         {showIcon && (
           <Ionicons
             name="chevron-down"
-            size={20}
+            size={16}
             color={AppColors.textSecondary}
           />
         )}
@@ -53,33 +53,33 @@ export function SelectorInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   selector: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1,
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     backgroundColor: AppColors.surfaceLight,
     alignItems: "center",
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.border,
   },
   text: {
-    fontSize: 16,
+    fontSize: 14,
     color: AppColors.text,
     flex: 1,
   },

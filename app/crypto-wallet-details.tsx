@@ -108,8 +108,8 @@ const ACTION_BUTTONS: ActionButton[] = [
     route: "/crypto-deposit" as any,
   },
   {
-    id: "swap",
-    label: "Swap",
+    id: "convert",
+    label: "Convert",
     icon: "swap-horizontal",
     route: "/exchange-crypto" as any,
   },
@@ -298,7 +298,7 @@ export default function CryptoWalletDetailsScreen() {
             >
               <Ionicons
                 name={showBalance ? "eye-off-outline" : "eye-outline"}
-                size={24}
+                size={16}
                 color={AppColors.text}
               />
             </TouchableOpacity>
@@ -307,7 +307,7 @@ export default function CryptoWalletDetailsScreen() {
             <View style={styles.changeRow}>
               <Ionicons
                 name={priceData.change >= 0 ? "arrow-up" : "arrow-down"}
-                size={16}
+                size={14}
                 color={priceData.change >= 0 ? AppColors.green : AppColors.red}
               />
               <Text
@@ -340,7 +340,7 @@ export default function CryptoWalletDetailsScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Ionicons name={item.icon} size={24} color={AppColors.text} />
+                <Ionicons name={item.icon} size={18} color={AppColors.text} />
                 <Text style={styles.actionButtonLabel}>{item.label}</Text>
               </TouchableOpacity>
             )}
@@ -419,8 +419,8 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 12,
+    paddingBottom: 20,
   },
   errorContainer: {
     flex: 1,
@@ -428,20 +428,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   cryptoHeader: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 10,
   },
   cryptoIconContainer: {
-    marginBottom: 12,
+    marginBottom: 6,
   },
   cryptoIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   cryptoIconPlaceholder: {
     backgroundColor: AppColors.orange,
@@ -449,88 +449,88 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cryptoIconText: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#fff",
   },
   cryptoSymbol: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   balanceSection: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 12,
   },
   balanceLabel: {
-    fontSize: 14,
+    fontSize: 11,
     color: AppColors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   balanceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 4,
   },
   balanceAmount: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: "bold",
     color: AppColors.text,
   },
   eyeButton: {
-    padding: 4,
+    padding: 2,
   },
   changeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 2,
   },
   changeText: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "600",
   },
   actionSection: {
-    marginBottom: 32,
+    marginBottom: 12,
   },
   actionButtonsGrid: {},
   actionButtonSquare: {
     width: "31%",
     aspectRatio: 1.5,
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+    gap: 4,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   actionButtonLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600",
     color: AppColors.text,
     textAlign: "center",
   },
   transactionsSection: {
-    marginTop: 8,
+    marginTop: 6,
   },
   transactionsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   transactionsTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: AppColors.text,
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.primary,
     fontWeight: "600",
   },
   transactionsList: {
-    gap: 12,
+    gap: 8,
   },
 });

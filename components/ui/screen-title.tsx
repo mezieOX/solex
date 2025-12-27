@@ -30,7 +30,7 @@ export function ScreenTitle({
         barStyle="light-content"
       />
       <TouchableOpacity onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+        <Ionicons name="arrow-back" size={20} color={AppColors.text} />
       </TouchableOpacity>
       <Text style={[styles.title, style]}>{title}</Text>
       <View style={styles.spacer} />
@@ -43,17 +43,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingTop: 50,
   },
   title: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "500",
     color: AppColors.text,
     textAlign: "center",
   },
   spacer: {
-    width: 40,
+    width: 32,
   },
 });

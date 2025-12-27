@@ -10,7 +10,7 @@ const BulletPoint = ({ children }: { children: React.ReactNode }) => (
   <View style={styles.bulletRow}>
     <Ionicons
       name="checkmark-circle"
-      size={16}
+      size={14}
       color={AppColors.primary}
       style={styles.bulletIcon}
     />
@@ -222,63 +222,63 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: 12,
+    paddingTop: 12,
   },
   introText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
-    lineHeight: 22,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginTop: 20,
-    marginBottom: 12,
+    marginTop: 12,
+    marginBottom: 8,
   },
   sectionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
-    lineHeight: 22,
-    marginBottom: 12,
+    lineHeight: 18,
+    marginBottom: 8,
   },
   bulletContainer: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   bulletRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   bulletIcon: {
-    marginRight: 8,
-    marginTop: 3,
+    marginRight: 6,
+    marginTop: 2,
   },
   bulletText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    lineHeight: 22,
+    lineHeight: 18,
   },
   footer: {
-    marginTop: 32,
-    paddingTop: 24,
+    marginTop: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: AppColors.border + "30",
   },
   footerText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
-    lineHeight: 22,
-    marginBottom: 16,
+    lineHeight: 18,
+    marginBottom: 10,
     fontStyle: "italic",
   },
   versionText: {
-    paddingBottom: 60,
-    paddingTop: 20,
-    fontSize: 12,
+    paddingBottom: 40,
+    paddingTop: 12,
+    fontSize: 11,
     color: AppColors.textSecondary,
     textAlign: "center",
   },

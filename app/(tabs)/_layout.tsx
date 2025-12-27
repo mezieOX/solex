@@ -25,8 +25,14 @@ export default function TabLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: "500",
+          marginTop: 2,
+          paddingBottom: 0,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
+          marginBottom: 2,
         },
         tabBarButton: HapticTab,
       }}
@@ -35,10 +41,10 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, focused, size }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
-              size={size}
+              size={20}
               color={color}
             />
           ),
@@ -48,19 +54,17 @@ export default function TabLayout() {
         name="crypto"
         options={{
           title: "Crypto",
-          tabBarIcon: ({ color, size }) => (
-            <CryptoIcon size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <CryptoIcon size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="giftcard"
         options={{
           title: "Gift Card",
-          tabBarIcon: ({ color, focused, size }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "gift" : "gift-outline"}
-              size={size}
+              size={20}
               color={color}
             />
           ),
@@ -70,10 +74,10 @@ export default function TabLayout() {
         name="wallet"
         options={{
           title: "Wallet",
-          tabBarIcon: ({ color, focused, size }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "wallet" : "wallet-outline"}
-              size={size}
+              size={20}
               color={color}
             />
           ),
@@ -83,10 +87,10 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Setting",
-          tabBarIcon: ({ color, focused, size }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "settings" : "settings-outline"}
-              size={size}
+              size={20}
               color={color}
             />
           ),

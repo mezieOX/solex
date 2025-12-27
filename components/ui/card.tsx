@@ -53,20 +53,20 @@ export function Card({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: AppColors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 8,
+    borderRadius: 10,
+    padding: 12,
+    marginVertical: 6,
   },
   gradientCard: {
     backgroundColor: AppColors.surfaceLight,
   },
   backgroundImage: {
-    borderRadius: 16,
-    marginVertical: 8,
+    borderRadius: 10,
+    marginVertical: 6,
     overflow: "hidden",
   },
   backgroundImageStyle: {
-    borderRadius: 16,
+    borderRadius: 10,
   },
   cardWithBackground: {
     backgroundColor: "transparent",

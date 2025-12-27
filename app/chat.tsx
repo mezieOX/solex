@@ -33,7 +33,7 @@ export default function ChatScreen() {
         <View style={styles.errorContainer}>
           <Ionicons
             name="chatbox-ellipses-outline"
-            size={64}
+            size={48}
             color={AppColors.primary}
             style={styles.errorIcon}
           />
@@ -126,34 +126,34 @@ const styles = StyleSheet.create({
     height: height,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
     backgroundColor: AppColors.background,
   },
   errorIcon: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   errorTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "center",
   },
   errorMessage: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
+    marginBottom: 16,
+    lineHeight: 18,
   },
   retryButton: {
     backgroundColor: AppColors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.background,
   },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   webview: {
-    marginTop: Platform.OS === "android" ? RNStatusBar.currentHeight || 0 : 40,
+    marginTop: Platform.OS === "android" ? RNStatusBar.currentHeight || 0 : 30,
     flex: 1,
     width: width,
     maxHeight: height - 10,

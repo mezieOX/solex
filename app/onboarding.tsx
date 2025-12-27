@@ -50,7 +50,7 @@ export default function OnboardingScreen() {
   const subtitleScale = useRef(new Animated.Value(1)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const dotWidths = useRef(
-    onboardingData.map(() => new Animated.Value(32))
+    onboardingData.map(() => new Animated.Value(24))
   ).current;
 
   // Check if onboarding was already completed
@@ -109,7 +109,7 @@ export default function OnboardingScreen() {
   useEffect(() => {
     dotWidths.forEach((dotWidth, index) => {
       Animated.spring(dotWidth, {
-        toValue: index === currentIndex ? 40 : 32,
+        toValue: index === currentIndex ? 30 : 24,
         tension: 50,
         friction: 7,
         useNativeDriver: false,
@@ -421,35 +421,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingHorizontal: 32,
-    paddingBottom: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   animatedContent: {
     alignItems: "center",
     width: "100%",
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 13,
     color: AppColors.textSecondary,
     textAlign: "center",
-    marginBottom: 40,
-    lineHeight: 24,
+    marginBottom: 24,
+    lineHeight: 20,
   },
   pagination: {
     flexDirection: "row",
-    marginBottom: 40,
-    gap: 8,
+    marginBottom: 24,
+    gap: 6,
     alignItems: "center",
   },
   dot: {
-    height: 4,
+    height: 3,
     backgroundColor: "gray",
     borderRadius: 2,
   },
@@ -458,8 +458,8 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: "100%",
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: 12,
+    marginBottom: 24,
   },
   button: {
     width: "100%",

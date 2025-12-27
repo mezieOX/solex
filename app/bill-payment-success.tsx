@@ -86,7 +86,7 @@ export default function BillPaymentSuccessScreen() {
         <StatusBar style="light" />
         <ScreenTitle title="Payment" />
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color={AppColors.error} />
+          <Ionicons name="alert-circle" size={36} color={AppColors.error} />
           <Text style={styles.errorText}>Unable to load payment details</Text>
           <Button
             title="Go Back"
@@ -115,7 +115,7 @@ export default function BillPaymentSuccessScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.successIcon}
           >
-            <Ionicons name="checkmark" size={64} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={48} color="#FFFFFF" />
           </LinearGradient>
           <Text style={styles.successTitle}>Payment Successful!</Text>
           <Text style={styles.successSubtitle}>
@@ -132,7 +132,7 @@ export default function BillPaymentSuccessScreen() {
             <View style={styles.infoRow}>
               <Ionicons
                 name="receipt"
-                size={18}
+                size={16}
                 color={AppColors.textSecondary}
               />
               <Text style={styles.infoText}>
@@ -150,7 +150,7 @@ export default function BillPaymentSuccessScreen() {
             <View style={styles.infoRow}>
               <Ionicons
                 name="person"
-                size={18}
+                size={16}
                 color={AppColors.textSecondary}
               />
               <Text style={styles.infoText}>
@@ -190,7 +190,7 @@ export default function BillPaymentSuccessScreen() {
                       ? "checkmark"
                       : "copy-outline"
                   }
-                  size={18}
+                  size={16}
                   color={
                     copiedField === "Reference number"
                       ? AppColors.green
@@ -231,7 +231,7 @@ export default function BillPaymentSuccessScreen() {
                         ? "checkmark"
                         : "copy-outline"
                     }
-                    size={18}
+                    size={16}
                     color={
                       copiedField === "Transaction ID"
                         ? AppColors.green
@@ -273,7 +273,7 @@ export default function BillPaymentSuccessScreen() {
                         ? "checkmark"
                         : "copy-outline"
                     }
-                    size={18}
+                    size={16}
                     color={
                       copiedField === "Payment reference"
                         ? AppColors.green
@@ -302,7 +302,7 @@ export default function BillPaymentSuccessScreen() {
         <View style={styles.infoContainer}>
           <Ionicons
             name="information-circle"
-            size={20}
+            size={16}
             color={AppColors.textSecondary}
           />
           <Text style={styles.infoText}>
@@ -329,33 +329,33 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingHorizontal: 12,
+    paddingBottom: 80,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 14,
     color: AppColors.textSecondary,
-    marginTop: 16,
+    marginTop: 12,
     textAlign: "center",
   },
   successIconContainer: {
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 32,
+    marginTop: 12,
+    marginBottom: 20,
   },
   successIcon: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
     shadowColor: AppColors.green,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -363,69 +363,69 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   successTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "700",
     color: AppColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   successSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
   },
   amountCard: {
     width: "100%",
     backgroundColor: AppColors.surface,
-    padding: 24,
-    marginBottom: 16,
-    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
+    borderRadius: 10,
   },
   amountLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: "500",
   },
   amountText: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: "700",
     color: AppColors.text,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   divider: {
     height: 1,
     backgroundColor: AppColors.border,
-    marginVertical: 16,
+    marginVertical: 10,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 8,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginLeft: 8,
+    marginLeft: 6,
     flex: 1,
   },
   detailsCard: {
     width: "100%",
     backgroundColor: AppColors.surface,
-    padding: 20,
-    marginBottom: 16,
-    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
+    borderRadius: 10,
   },
   detailsTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
   },
@@ -443,14 +443,14 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     fontWeight: "500",
-    marginRight: 8,
+    marginRight: 6,
     flex: 1,
     textAlign: "right",
   },
@@ -463,19 +463,19 @@ const styles = StyleSheet.create({
   balanceValue: {
     color: AppColors.green,
     fontWeight: "600",
-    fontSize: 15,
+    fontSize: 13,
   },
   infoContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 10,
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 16,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    paddingTop: 10,
     backgroundColor: AppColors.background,
     borderTopWidth: 1,
     borderTopColor: AppColors.border,

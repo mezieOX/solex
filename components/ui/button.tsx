@@ -59,7 +59,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          size={22}
+          size={18}
           color={variant === "outline" ? AppColors.primary : "#fff"}
         />
       ) : (
@@ -75,18 +75,18 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50,
+    minHeight: 42,
   },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
   },
   leftIcon: {
     marginRight: 0,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   primaryText: {

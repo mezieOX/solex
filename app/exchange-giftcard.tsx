@@ -38,7 +38,7 @@ export default function ExchangeGiftCardScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+            <Ionicons name="arrow-back" size={20} color={AppColors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Exchange Gift Card</Text>
           <View style={{ width: 24 }} />
@@ -62,7 +62,7 @@ export default function ExchangeGiftCardScreen() {
                     <Ionicons name="add" size={32} color={AppColors.textSecondary} />
                   ) : (
                     <View style={styles.brandIcon}>
-                      <Ionicons name="gift" size={24} color={AppColors.text} />
+                      <Ionicons name="gift" size={18} color={AppColors.text} />
                     </View>
                   )}
                   <Text style={styles.brandName}>{brand.name}</Text>
@@ -81,7 +81,7 @@ export default function ExchangeGiftCardScreen() {
                 placeholder="Select amount"
                 style={styles.amountInput}
               />
-              <Ionicons name="chevron-down" size={24} color={AppColors.textSecondary} style={styles.dropdownIcon} />
+              <Ionicons name="chevron-down" size={18} color={AppColors.textSecondary} style={styles.dropdownIcon} />
             </View>
           </View>
 
@@ -96,7 +96,7 @@ export default function ExchangeGiftCardScreen() {
             />
             <Text style={styles.orText}>OR</Text>
             <TouchableOpacity style={styles.uploadButton}>
-              <Ionicons name="camera" size={24} color={AppColors.text} />
+              <Ionicons name="camera" size={18} color={AppColors.text} />
               <Text style={styles.uploadText}>Upload Card Image</Text>
             </TouchableOpacity>
           </View>
@@ -165,58 +165,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '600',
     color: AppColors.text,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   brandGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
   },
   brandCard: {
     width: '22%',
     aspectRatio: 1,
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
-    padding: 8,
+    padding: 6,
   },
   brandCardSelected: {
     borderColor: AppColors.primary,
   },
   brandIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: AppColors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   brandName: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.text,
     textAlign: 'center',
   },
@@ -224,48 +224,48 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   amountInput: {
-    paddingRight: 40,
+    paddingRight: 32,
   },
   dropdownIcon: {
     position: 'absolute',
-    right: 16,
-    top: 20,
+    right: 12,
+    top: 16,
   },
   codeInput: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   orText: {
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginVertical: 16,
+    marginVertical: 10,
   },
   uploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
+    borderRadius: 10,
+    padding: 12,
+    gap: 6,
   },
   uploadText: {
-    fontSize: 16,
+    fontSize: 14,
     color: AppColors.text,
     fontWeight: '500',
   },
   rateCard: {
     backgroundColor: AppColors.surfaceLight,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   rateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: 6,
+    marginBottom: 10,
   },
   rateTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: AppColors.text,
   },
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   rateLeft: {
     flex: 1,
@@ -283,55 +283,55 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   rateAmount: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   rateLocal: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: AppColors.primary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   rateLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.textSecondary,
   },
   rateFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 16,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: AppColors.border,
   },
   ratePerDollar: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.textSecondary,
   },
   rateValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: AppColors.text,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: AppColors.text,
   },
   button: {
-    marginTop: 20,
+    marginTop: 12,
   },
 });
 

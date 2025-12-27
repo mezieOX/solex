@@ -331,33 +331,33 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   screenTitle: {
     paddingHorizontal: 0,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   requirements: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 20,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   form: {
     width: "100%",
   },
   button: {
-    marginTop: 60,
+    marginTop: 40,
   },
   leftIcon: {
-    width: 25,
-    height: 25,
+    width: 20,
+    height: 20,
   },
 });

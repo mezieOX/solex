@@ -52,7 +52,7 @@ export function SelectionModal<T>({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={AppColors.text} />
+              <Ionicons name="close" size={18} color={AppColors.text} />
             </TouchableOpacity>
           </View>
 
@@ -67,7 +67,7 @@ export function SelectionModal<T>({
               leftIcon={
                 <Ionicons
                   name="search"
-                  size={20}
+                  size={16}
                   color={AppColors.textSecondary}
                 />
               }
@@ -114,38 +114,38 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: AppColors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
     maxHeight: "90%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   searchContainer: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   searchInput: {
     marginBottom: 0,
   },
   list: {
-    maxHeight: 400,
+    maxHeight: 300,
   },
   emptyContainer: {
-    paddingVertical: 40,
+    paddingVertical: 30,
     alignItems: "center",
     justifyContent: "center",
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
 });

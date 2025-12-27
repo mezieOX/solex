@@ -100,7 +100,7 @@ export default function VirtualAccountScreen() {
           {/* Success Icon */}
           <View style={styles.successIconContainer}>
             <View style={styles.successIcon}>
-              <Ionicons name="checkmark" size={60} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={48} color="#FFFFFF" />
             </View>
           </View>
 
@@ -144,7 +144,7 @@ export default function VirtualAccountScreen() {
                         ? "checkmark-circle"
                         : "copy-outline"
                     }
-                    size={20}
+                    size={16}
                     color={
                       copiedField === "Account Number"
                         ? AppColors.green
@@ -205,7 +205,7 @@ export default function VirtualAccountScreen() {
           <View style={styles.infoHeader}>
             <Ionicons
               name="information-circle"
-              size={24}
+              size={18}
               color={AppColors.primary}
             />
             <Text style={styles.infoTitle}>About Virtual Account</Text>
@@ -259,12 +259,12 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 80,
+    paddingHorizontal: 12,
+    paddingBottom: 50,
   },
   infoCard: {
-    marginBottom: 24,
-    padding: 16,
+    marginBottom: 12,
+    padding: 12,
     backgroundColor: AppColors.primary + "10",
     borderWidth: 1,
     borderColor: AppColors.primary + "30",
@@ -272,68 +272,68 @@ const styles = StyleSheet.create({
   infoHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-    gap: 8,
+    marginBottom: 8,
+    gap: 6,
   },
   infoTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   button: {
-    marginTop: 8,
+    marginTop: 6,
   },
   successIconContainer: {
     alignItems: "center",
-    marginBottom: 24,
-    marginTop: 20,
+    marginBottom: 12,
+    marginTop: 12,
   },
   successIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: AppColors.green,
     justifyContent: "center",
     alignItems: "center",
   },
   successTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "600",
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   successSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 20,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   detailsCard: {
-    marginBottom: 24,
-    padding: 20,
+    marginBottom: 12,
+    padding: 12,
     backgroundColor: AppColors.surfaceLight,
   },
   detailRow: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   lastDetailRow: {
     marginBottom: 0,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: "500",
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },

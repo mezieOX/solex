@@ -640,7 +640,7 @@ export default function BillPaymentScreen() {
               <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)}>
                 <Ionicons
                   name="chevron-down"
-                  size={24}
+                  size={18}
                   color={AppColors.text}
                 />
               </TouchableOpacity>
@@ -665,7 +665,7 @@ export default function BillPaymentScreen() {
                   >
                     <Ionicons
                       name={getCategoryIcon(selectedCategory.code)}
-                      size={24}
+                      size={18}
                       color="#fff"
                     />
                   </View>
@@ -685,7 +685,7 @@ export default function BillPaymentScreen() {
               )}
               <Ionicons
                 name="chevron-forward"
-                size={24}
+                size={18}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
@@ -700,7 +700,7 @@ export default function BillPaymentScreen() {
               <TouchableOpacity onPress={() => setIsBillerModalVisible(true)}>
                 <Ionicons
                   name="chevron-down"
-                  size={24}
+                  size={18}
                   color={AppColors.text}
                 />
               </TouchableOpacity>
@@ -730,7 +730,7 @@ export default function BillPaymentScreen() {
               )}
               <Ionicons
                 name="chevron-forward"
-                size={24}
+                size={18}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
@@ -745,7 +745,7 @@ export default function BillPaymentScreen() {
               <TouchableOpacity onPress={() => setIsItemModalVisible(true)}>
                 <Ionicons
                   name="chevron-down"
-                  size={24}
+                  size={18}
                   color={AppColors.text}
                 />
               </TouchableOpacity>
@@ -778,7 +778,7 @@ export default function BillPaymentScreen() {
               )}
               <Ionicons
                 name="chevron-forward"
-                size={24}
+                size={18}
                 color={AppColors.textSecondary}
               />
             </TouchableOpacity>
@@ -805,7 +805,7 @@ export default function BillPaymentScreen() {
                   <View style={styles.contactIconContainer}>
                     <Ionicons
                       name="person"
-                      size={20}
+                      size={16}
                       color={AppColors.primary}
                     />
                   </View>
@@ -934,7 +934,7 @@ export default function BillPaymentScreen() {
                         >
                           <Ionicons
                             name={getCategoryIcon(item.code)}
-                            size={24}
+                            size={18}
                             color="#fff"
                           />
                         </View>
@@ -947,7 +947,7 @@ export default function BillPaymentScreen() {
                         {isSelected && (
                           <Ionicons
                             name="checkmark-circle"
-                            size={24}
+                            size={18}
                             color={AppColors.primary}
                           />
                         )}
@@ -1048,7 +1048,7 @@ export default function BillPaymentScreen() {
                         {isSelected && (
                           <Ionicons
                             name="checkmark-circle"
-                            size={24}
+                            size={18}
                             color={AppColors.primary}
                           />
                         )}
@@ -1147,7 +1147,7 @@ export default function BillPaymentScreen() {
                         {isSelected && (
                           <Ionicons
                             name="checkmark-circle"
-                            size={24}
+                            size={18}
                             color={AppColors.primary}
                           />
                         )}
@@ -1237,7 +1237,7 @@ export default function BillPaymentScreen() {
                             { backgroundColor: AppColors.primary },
                           ]}
                         >
-                          <Ionicons name="person" size={24} color="#fff" />
+                          <Ionicons name="person" size={18} color="#fff" />
                         </View>
                         <View style={styles.infoContainer}>
                           <Text style={styles.listItemTitle}>
@@ -1249,7 +1249,7 @@ export default function BillPaymentScreen() {
                         </View>
                         <Ionicons
                           name="chevron-forward"
-                          size={20}
+                          size={16}
                           color={AppColors.textSecondary}
                         />
                       </TouchableOpacity>
@@ -1290,45 +1290,45 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   card: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   logo: {
     width: "100%",
@@ -1338,17 +1338,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   cardSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   placeholderText: {
-    fontSize: 16,
+    fontSize: 14,
     color: AppColors.textSecondary,
     flex: 1,
   },
@@ -1358,28 +1358,28 @@ const styles = StyleSheet.create({
   validationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 6,
   },
   validationIcon: {
-    marginRight: 6,
+    marginRight: 4,
   },
   validationText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.green,
     fontWeight: "500",
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 6,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.error,
     flex: 1,
   },
   button: {
-    marginTop: 20,
+    marginTop: 12,
   },
   modalOverlay: {
     flex: 1,
@@ -1388,25 +1388,25 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: AppColors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   searchContainer: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
@@ -1416,16 +1416,16 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   loadingContainer: {
-    paddingVertical: 40,
+    paddingVertical: 24,
     alignItems: "center",
   },
   listItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
@@ -1434,13 +1434,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   listItemTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   listItemSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   emptyListContainer: {
@@ -1449,42 +1449,42 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 40,
+    paddingVertical: 24,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginTop: 12,
+    marginTop: 8,
     textAlign: "center",
   },
   categoryGradientCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
   },
   categoryCardContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   categoryIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 12,
   },
   categoryCardInfo: {
     flex: 1,
   },
   categoryCardTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "700",
     color: "#fff",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   categoryCardSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: "rgba(255, 255, 255, 0.8)",
   },
   contactIconButton: {
@@ -1492,9 +1492,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   contactIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: `${AppColors.primary}15`,
     justifyContent: "center",
     alignItems: "center",

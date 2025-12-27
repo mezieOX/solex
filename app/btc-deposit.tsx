@@ -92,7 +92,7 @@ export default function BTCDepositScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+          <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{selectedWallet.symbol} Deposit</Text>
         <View style={{ width: 24 }} />
@@ -206,7 +206,7 @@ export default function BTCDepositScreen() {
                 >
                   <Ionicons
                     name={copiedAddress ? "checkmark-circle" : "copy-outline"}
-                    size={20}
+                    size={16}
                     color={copiedAddress ? AppColors.green : AppColors.text}
                   />
                 </TouchableOpacity>
@@ -229,7 +229,7 @@ export default function BTCDepositScreen() {
                           ? "checkmark-circle"
                           : "copy-outline"
                       }
-                      size={20}
+                      size={16}
                       color={
                         copiedDestinationTag ? AppColors.green : AppColors.text
                       }
@@ -305,75 +305,75 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   cryptoInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   cryptoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   cryptoIconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
   },
   cryptoIconFallback: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
   cryptoName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   networkSection: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   networkLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   networkTag: {
     alignSelf: "flex-start",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: AppColors.surface,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   networkTagText: {
-    fontSize: 16,
+    fontSize: 14,
     color: AppColors.text,
     fontWeight: "500",
   },
   warningContainer: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: AppColors.orange,
     borderWidth: 1,
@@ -391,67 +391,67 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   warningTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "700",
     color: AppColors.orange,
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: 0.4,
     textTransform: "uppercase",
   },
   warningText: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.text,
-    lineHeight: 16,
+    lineHeight: 14,
     letterSpacing: 0.2,
     fontWeight: "400",
   },
   qrSection: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   instructionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginBottom: 16,
+    marginBottom: 10,
     textAlign: "center",
   },
   qrCodeContainer: {
-    width: 250,
-    height: 250,
+    width: 200,
+    height: 200,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 10,
+    padding: 16,
     justifyContent: "center",
     alignItems: "center",
   },
   loadingContainer: {
-    padding: 40,
+    padding: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 14,
+    marginTop: 12,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   errorContainer: {
-    padding: 40,
+    padding: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   errorText: {
-    marginTop: 16,
-    fontSize: 14,
+    marginTop: 12,
+    fontSize: 12,
     color: AppColors.error,
     textAlign: "center",
   },
   retryButton: {
-    marginTop: 20,
+    marginTop: 12,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 24,
+    marginVertical: 12,
   },
   dividerLine: {
     flex: 1,
@@ -459,60 +459,60 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.border,
   },
   dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
+    marginHorizontal: 12,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   addressSection: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   addressLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   addressContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   addressText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.text,
     fontFamily: "monospace",
-    lineHeight: 18,
+    lineHeight: 16,
   },
   copyButton: {
-    marginLeft: 12,
-    padding: 8,
+    marginLeft: 10,
+    padding: 6,
   },
   infoSection: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: AppColors.text,
   },
   button: {
-    marginTop: 20,
+    marginTop: 12,
   },
   skeletonQRCode: {
     borderRadius: 12,

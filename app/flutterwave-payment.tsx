@@ -375,7 +375,7 @@ export default function FlutterwavePaymentScreen() {
             onPress={handleCloseWebView}
             style={styles.closeButton}
           >
-            <Ionicons name="close" size={24} color={AppColors.text} />
+            <Ionicons name="close" size={18} color={AppColors.text} />
           </TouchableOpacity>
           <Text style={styles.webViewHeaderTitle}>Flutterwave Payment</Text>
           <View style={{ width: 24 }} />
@@ -507,8 +507,8 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
     flexGrow: 1,
   },
   content: {
@@ -516,59 +516,59 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   amountLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "center",
   },
   amountValue: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: "bold",
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 20,
   },
   infoSection: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
   },
   infoTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     fontWeight: "500",
   },
   noteSection: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: AppColors.primary,
   },
   noteText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   paymentButtonContainer: {
-    marginTop: 20,
+    marginTop: 12,
   },
   paymentButton: {
     width: "100%",
@@ -577,21 +577,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 12,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.error,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   webViewHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 10,
     backgroundColor: AppColors.background,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,

@@ -114,7 +114,7 @@ export default function BankTransferScreen() {
           {/* Bank Info */}
           <View style={styles.bankInfo}>
             <View style={[styles.bankIcon, { backgroundColor: AppColors.red }]}>
-              <Ionicons name="business" size={24} color="#FFFFFF" />
+              <Ionicons name="business" size={18} color="#FFFFFF" />
             </View>
             <Text style={styles.bankName}>{BANK_NAME}</Text>
           </View>
@@ -131,7 +131,7 @@ export default function BankTransferScreen() {
                 >
                   <Ionicons
                     name={copiedAccount ? "checkmark" : "copy-outline"}
-                    size={20}
+                    size={16}
                     color={AppColors.text}
                   />
                 </TouchableOpacity>
@@ -148,7 +148,7 @@ export default function BankTransferScreen() {
                 >
                   <Ionicons
                     name={copiedName ? "checkmark" : "copy-outline"}
-                    size={20}
+                    size={16}
                     color={AppColors.text}
                   />
                 </TouchableOpacity>
@@ -167,81 +167,81 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   transferCard: {
     backgroundColor: AppColors.surface,
-    padding: 20,
-    paddingBottom: 40,
+    padding: 12,
+    paddingBottom: 24,
   },
   amountText: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "bold",
     color: AppColors.text,
-    marginBottom: 24,
+    marginBottom: 12,
     textAlign: "center",
   },
   instructions: {
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: 12,
+    gap: 8,
   },
   instructionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   expiryRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 8,
+    gap: 6,
+    marginTop: 6,
   },
   expiryText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   bankInfo: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: 12,
+    gap: 10,
   },
   bankIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
   },
   bankName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   accountSection: {
-    gap: 20,
+    gap: 12,
   },
   accountField: {
-    gap: 8,
+    gap: 6,
   },
   accountLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   accountValueContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.background,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   accountValue: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },

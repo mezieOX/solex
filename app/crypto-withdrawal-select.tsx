@@ -253,7 +253,7 @@ export default function CryptoWithdrawalSelectScreen() {
                       </Text>
                     )}
                   </Text>
-                  <View style={styles.currencyPriceRow}>
+                  {/* <View style={styles.currencyPriceRow}>
                     <Text style={styles.currencyPrice}>
                       {formatPrice(priceData.price)}
                     </Text>
@@ -278,7 +278,7 @@ export default function CryptoWithdrawalSelectScreen() {
                         </Text>
                       </View>
                     )}
-                  </View>
+                  </View> */}
                 </View>
                 <View style={styles.currencyHoldings}>
                   <Text style={styles.holdingsValue}>{holdings}</Text>
@@ -298,61 +298,61 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   searchInput: {
     marginBottom: 0,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   currencyCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   currencyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: AppColors.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   currencyIconImage: {
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
   },
   currencyInfo: {
     flex: 1,
   },
   currencyName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   currencyNetwork: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "400",
     color: AppColors.textSecondary,
   },
   currencyPriceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   currencyPrice: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
   },
@@ -362,21 +362,21 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   priceChange: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "500",
   },
   currencyHoldings: {
     alignItems: "flex-end",
   },
   holdingsValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   skeletonIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   skeletonName: {
-    marginBottom: 6,
+    marginBottom: 4,
   },
 });

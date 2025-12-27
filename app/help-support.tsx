@@ -220,7 +220,7 @@ export default function HelpSupportScreen() {
                   </View>
                   <Ionicons
                     name="chevron-forward"
-                    size={24}
+                    size={18}
                     color="#FFFFFF"
                     style={styles.chevron}
                   />
@@ -239,7 +239,7 @@ export default function HelpSupportScreen() {
             >
               <Ionicons
                 name="help-circle"
-                size={24}
+                size={18}
                 color={AppColors.primary}
               />
             </LinearGradient>
@@ -269,7 +269,7 @@ export default function HelpSupportScreen() {
                   </View>
                   <Ionicons
                     name={expandedFaq === index ? "chevron-up" : "chevron-down"}
-                    size={20}
+                    size={16}
                     color={
                       expandedFaq === index
                         ? AppColors.primary
@@ -317,68 +317,68 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   faqIconText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
     color: AppColors.text,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   heroSection: {
     alignItems: "center",
-    marginBottom: 32,
-    marginTop: 20,
+    marginBottom: 16,
+    marginTop: 12,
   },
   heroIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   heroTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     color: AppColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "center",
   },
   heroDescription: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
-    lineHeight: 20,
-    paddingHorizontal: 20,
+    lineHeight: 18,
+    paddingHorizontal: 12,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   sectionIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   supportOptionsContainer: {
-    gap: 16,
-    paddingTop: 16,
+    gap: 10,
+    paddingTop: 10,
   },
   supportOptionWrapper: {
-    borderRadius: 16,
+    borderRadius: 10,
     overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",
@@ -389,17 +389,17 @@ const styles = StyleSheet.create({
   supportOption: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 10,
   },
   supportIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(255, 255, 255, 0.25)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 12,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
@@ -407,20 +407,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   supportTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   supportDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: "rgba(255, 255, 255, 0.9)",
   },
   chevron: {
-    marginLeft: 8,
+    marginLeft: 6,
   },
   faqContainer: {
-    gap: 12,
+    gap: 8,
   },
   faqCard: {
     padding: 0,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: 12,
     backgroundColor: AppColors.surface,
   },
   faqHeaderActive: {
@@ -444,30 +444,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   faqIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: AppColors.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   faqIconContainerActive: {
     backgroundColor: AppColors.primary + "20",
   },
   faqQuestion: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
     color: AppColors.text,
     flex: 1,
   },
   faqAnswerContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 8,
     backgroundColor: AppColors.surface,
     position: "relative",
   },
@@ -481,15 +481,15 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   faqAnswer: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
     paddingLeft: 4,
   },
   helpCard: {
-    marginBottom: 24,
-    padding: 24,
-    borderRadius: 16,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: AppColors.orange + "40",
   },
@@ -497,27 +497,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   helpIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: AppColors.orange + "20",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
     borderWidth: 2,
     borderColor: AppColors.orange + "40",
   },
   helpTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "center",
   },
   helpDescription: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
 });

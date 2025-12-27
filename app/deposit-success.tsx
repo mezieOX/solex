@@ -35,7 +35,7 @@ export default function DepositSuccessScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+          <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Deposit Successful</Text>
         <View style={{ width: 24 }} />
@@ -45,7 +45,7 @@ export default function DepositSuccessScreen() {
         {/* Success Icon */}
         <View style={styles.successIconContainer}>
           <View style={styles.successIcon}>
-            <Ionicons name="checkmark" size={60} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={48} color="#FFFFFF" />
           </View>
         </View>
 
@@ -85,28 +85,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingHorizontal: 12,
+    paddingTop: 24,
     alignItems: "center",
   },
   successIconContainer: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   successIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: AppColors.orange,
     justifyContent: "center",
     alignItems: "center",
@@ -114,38 +114,38 @@ const styles = StyleSheet.create({
   amountCard: {
     width: "100%",
     backgroundColor: AppColors.surface,
-    padding: 24,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 10,
     alignItems: "center",
   },
   amountText: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "bold",
     color: AppColors.text,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   successMessage: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 8,
-    lineHeight: 20,
+    marginBottom: 6,
+    lineHeight: 18,
   },
   successSubMessage: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   transactionInfo: {
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.textSecondary,
-    marginBottom: 32,
+    marginBottom: 20,
     textAlign: "center",
   },
   button: {
     width: "100%",
     marginTop: "auto",
-    marginBottom: 80,
+    marginBottom: 50,
   },
 });

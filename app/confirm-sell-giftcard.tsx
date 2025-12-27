@@ -130,10 +130,10 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 12,
+    paddingBottom: 20,
   },
   submitButton: {
-    marginTop: 24,
+    marginTop: 12,
   },
 });

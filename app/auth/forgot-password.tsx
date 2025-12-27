@@ -214,28 +214,28 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 40,
-    lineHeight: 20,
+    marginBottom: 24,
+    lineHeight: 18,
   },
   form: {
     width: "100%",
   },
   button: {
-    marginTop: 100,
+    marginTop: 60,
   },
   screenTitle: {
     paddingHorizontal: 0,

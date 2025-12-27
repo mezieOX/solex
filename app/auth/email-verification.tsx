@@ -294,15 +294,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 20,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   screenTitle: {
     paddingHorizontal: 0,
@@ -313,26 +313,26 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: "center",
-    marginVertical: 32,
+    marginVertical: 20,
   },
   emailIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: "center",
     alignItems: "center",
   },
   emailIcon: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
   },
   resendContainer: {
-    marginTop: 15,
+    marginTop: 10,
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 20,
   },
   resendText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   resendLink: {
@@ -346,6 +346,6 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
   },
   button: {
-    marginTop: 20,
+    marginTop: 12,
   },
 });

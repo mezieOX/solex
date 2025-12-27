@@ -248,28 +248,28 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
+    marginBottom: 20,
   },
   logoGlow: {
     shadowColor: AppColors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowRadius: 15,
+    elevation: 8,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 90,
+    height: 90,
   },
   textContainer: {
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 6,
   },
   text: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "700",
     color: AppColors.text,
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
     textAlign: "center",
   },
 });

@@ -46,7 +46,7 @@ export default function CryptoWithdrawalSuccessScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+          <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Withdrawal Successful</Text>
         <View style={{ width: 24 }} />
@@ -56,7 +56,7 @@ export default function CryptoWithdrawalSuccessScreen() {
         {/* Success Icon */}
         <View style={styles.successIconContainer}>
           <View style={styles.successIcon}>
-            <Ionicons name="checkmark" size={60} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={48} color="#FFFFFF" />
           </View>
         </View>
 
@@ -112,55 +112,55 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingHorizontal: 12,
+    paddingTop: 24,
     alignItems: "center",
   },
   successIconContainer: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   successIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: AppColors.red,
     justifyContent: "center",
     alignItems: "center",
   },
   amountText: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "bold",
     color: AppColors.text,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   messageCard: {
     width: "100%",
     backgroundColor: AppColors.surface,
-    padding: 20,
-    marginBottom: 32,
+    padding: 12,
+    marginBottom: 20,
   },
   successMessage: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   buttonContainer: {
     width: "100%",
-    gap: 12,
+    gap: 8,
     marginTop: "auto",
-    marginBottom: 40,
+    marginBottom: 20,
   },
   viewDetailsButton: {
     width: "100%",

@@ -304,7 +304,7 @@ export default function ProfileScreen() {
             {/* Profile Picture Section Skeleton */}
             <View style={styles.profileSection}>
               <SkeletonAvatar
-                size={100}
+                size={90}
                 type="circle"
                 style={styles.skeletonAvatar}
               />
@@ -368,7 +368,7 @@ export default function ProfileScreen() {
                   {updateProfileImageMutation.isPending ? (
                     <ActivityIndicator size="small" color={AppColors.text} />
                   ) : (
-                    <Ionicons name="camera" size={20} color={AppColors.text} />
+                    <Ionicons name="camera" size={16} color={AppColors.text} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -415,7 +415,7 @@ export default function ProfileScreen() {
                               ? "checkmark-circle"
                               : "copy-outline"
                           }
-                          size={20}
+                          size={16}
                           color={
                             copiedField === field.label
                               ? AppColors.green
@@ -443,7 +443,7 @@ export default function ProfileScreen() {
                         ) : (
                           <Feather
                             name="edit"
-                            size={20}
+                            size={16}
                             color={AppColors.text}
                           />
                         )}
@@ -452,7 +452,7 @@ export default function ProfileScreen() {
                     {field.showChevron && (
                       <Ionicons
                         name="chevron-forward"
-                        size={20}
+                        size={16}
                         color={AppColors.textSecondary}
                       />
                     )}
@@ -473,45 +473,45 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   profileSection: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 24,
   },
   profileImageContainer: {
     position: "relative",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
   },
   profileImagePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: AppColors.primary + "20",
     justifyContent: "center",
     alignItems: "center",
   },
   profileImageBorder: {
     position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
     borderColor: AppColors.orange,
   },
   cameraIconContainer: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: AppColors.background,
     justifyContent: "center",
     alignItems: "center",
@@ -519,20 +519,20 @@ const styles = StyleSheet.create({
     borderColor: AppColors.orange,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "600",
     color: AppColors.text,
   },
   detailsSection: {
-    borderRadius: 12,
-    paddingBottom: 40,
+    borderRadius: 10,
+    paddingBottom: 24,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border + "30",
   },
@@ -540,19 +540,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
     flex: 1,
   },
   detailValueContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     flex: 1,
     justifyContent: "flex-end",
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
     textAlign: "right",

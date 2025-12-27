@@ -210,7 +210,7 @@ export default function SignUpScreen() {
               >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
+                  size={16}
                   color={AppColors.textSecondary}
                 />
               </TouchableOpacity>
@@ -235,7 +235,7 @@ export default function SignUpScreen() {
               >
                 <Ionicons
                   name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
+                  size={16}
                   color={AppColors.textSecondary}
                 />
               </TouchableOpacity>
@@ -271,62 +271,62 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppColors.background,
-    paddingTop: 30,
+    paddingTop: 20,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 35,
+    marginBottom: 24,
   },
   logo: {
-    width: 50,
-    height: 50,
-    marginRight: 12,
+    width: 40,
+    height: 40,
+    marginRight: 10,
   },
   appName: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "500",
     color: AppColors.text,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     color: AppColors.text,
     textAlign: "center",
-    marginBottom: 45,
+    marginBottom: 32,
   },
   form: {
     width: "100%",
   },
   button: {
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: 6,
+    marginBottom: 16,
   },
   loginContainer: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 20,
   },
   loginText: {
-    paddingTop: 25,
-    fontSize: 16,
+    paddingTop: 16,
+    fontSize: 14,
     color: AppColors.text,
   },
   linkText: {
     color: AppColors.primary,
     fontWeight: "500",
-    marginHorizontal: 9,
+    marginHorizontal: 6,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   dividerLine: {
     flex: 1,
@@ -335,20 +335,20 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
   },
   dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
+    marginHorizontal: 12,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   socialButtons: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
-    marginBottom: 60,
+    gap: 12,
+    marginBottom: 40,
   },
   socialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     backgroundColor: AppColors.surface,
     borderWidth: 1,
     borderColor: AppColors.border,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   socialButtonImage: {
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
   },
 });

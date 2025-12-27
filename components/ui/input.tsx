@@ -49,47 +49,47 @@ export function Input({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   label: {
     fontWeight: "500",
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 6,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "transparent",
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: AppColors.border,
-    paddingHorizontal: 16,
-    minHeight: 56,
+    paddingHorizontal: 12,
+    minHeight: 44,
   },
   inputContainerError: {
     borderColor: AppColors.error,
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: AppColors.text,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   inputWithLeftIcon: {
-    paddingLeft: 12,
+    paddingLeft: 8,
   },
   inputWithRightIcon: {
-    paddingRight: 12,
+    paddingRight: 8,
   },
   leftIcon: {
-    marginRight: 8,
+    marginRight: 6,
   },
   rightIcon: {
-    marginLeft: 8,
+    marginLeft: 6,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: 10,
     color: AppColors.error,
     marginTop: 4,
   },

@@ -154,7 +154,7 @@ Network: ${withdrawalData?.network || "N/A"}
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.text} />
+          <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>View Details</Text>
         <View style={{ width: 24 }} />
@@ -188,7 +188,7 @@ Network: ${withdrawalData?.network || "N/A"}
               >
                 <Ionicons
                   name="copy-outline"
-                  size={20}
+                  size={16}
                   color={AppColors.primary}
                 />
               </TouchableOpacity>
@@ -209,7 +209,7 @@ Network: ${withdrawalData?.network || "N/A"}
               <TouchableOpacity onPress={() => handleCopy(reference, "Reference")}>
                 <Ionicons
                   name="copy-outline"
-                  size={20}
+                  size={16}
                   color={AppColors.primary}
                 />
               </TouchableOpacity>
@@ -269,79 +269,79 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: 50,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   detailsCard: {
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
   },
   detailRow: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 6,
     fontWeight: "500",
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   addressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   addressText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 11,
     color: AppColors.text,
     fontFamily: "monospace",
-    lineHeight: 18,
+    lineHeight: 16,
   },
   referenceText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     fontFamily: "monospace",
   },
   qrSection: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 16,
-    marginBottom: 24,
+    gap: 12,
+    marginBottom: 12,
   },
   qrCodeContainer: {
     backgroundColor: "#FFFFFF",
-    padding: 12,
-    borderRadius: 12,
+    padding: 10,
+    borderRadius: 10,
   },
   reportButton: {
     flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: AppColors.border,
     backgroundColor: AppColors.surface,
@@ -349,14 +349,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   reportButtonText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "600",
     color: AppColors.text,
   },
   actionButtons: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 20,
+    gap: 8,
+    marginTop: 12,
   },
   shareButton: {
     flex: 1,

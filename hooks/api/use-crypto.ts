@@ -93,7 +93,6 @@ export function useExchangeRateByCurrencyId(
       amount
     ),
     queryFn: () => {
-      console.log("to-currency-id...", toCurrencyId, direction, amount);
       return cryptoApi.getExchangeRateByCurrencyId({
         currency_id: currencyId!,
         ...(direction === "swap" && toCurrencyId
@@ -103,7 +102,11 @@ export function useExchangeRateByCurrencyId(
         amount,
       });
     },
-    enabled: !!direction && !!currencyId && amount > 0,
+    enabled:
+      !!direction &&
+      !!currencyId &&
+      amount > 0 &&
+      (direction !== "swap" || !!toCurrencyId),
     retry: false,
     staleTime: 0, // Always refetch when amount changes for real-time updates
   });

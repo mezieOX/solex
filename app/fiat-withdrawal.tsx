@@ -211,7 +211,7 @@ export default function FiatWithdrawalScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Select Bank</Text>
             <TouchableOpacity onPress={handleOpenSheet}>
-              <Ionicons name="chevron-down" size={24} color={AppColors.text} />
+              <Ionicons name="chevron-down" size={18} color={AppColors.text} />
             </TouchableOpacity>
           </View>
 
@@ -236,7 +236,7 @@ export default function FiatWithdrawalScreen() {
                     >
                       <Ionicons
                         name={bankIconData.icon}
-                        size={24}
+                        size={18}
                         color={bankIconData.iconColor}
                       />
                     </View>
@@ -255,7 +255,7 @@ export default function FiatWithdrawalScreen() {
             )}
             <Ionicons
               name="chevron-forward"
-              size={24}
+              size={18}
               color={AppColors.textSecondary}
             />
           </TouchableOpacity>
@@ -336,7 +336,7 @@ export default function FiatWithdrawalScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Choose or Connect Account</Text>
               <TouchableOpacity onPress={handleCloseModal}>
-                <Ionicons name="close" size={24} color={AppColors.text} />
+                <Ionicons name="close" size={18} color={AppColors.text} />
               </TouchableOpacity>
             </View>
 
@@ -379,7 +379,7 @@ export default function FiatWithdrawalScreen() {
                         {isSelected && (
                           <Ionicons
                             name="checkmark-circle"
-                            size={24}
+                            size={18}
                             color={AppColors.primary}
                           />
                         )}
@@ -434,17 +434,17 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   amountInput: {
     marginBottom: 0,
@@ -456,10 +456,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
@@ -467,31 +467,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   accountIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
     overflow: "hidden",
   },
   accountInfo: {
     flex: 1,
   },
   accountNumber: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   accountName: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.textSecondary,
   },
   accountNameContainer: {
@@ -500,20 +500,20 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   accountNameIcon: {
-    marginRight: 6,
+    marginRight: 4,
   },
   accountNameText: {
-    fontSize: 14,
+    fontSize: 12,
     color: AppColors.text,
     fontWeight: "500",
   },
   accountNameError: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#FF6B6B",
-    marginTop: 4,
+    marginTop: 2,
   },
   button: {
-    marginTop: 20,
+    marginTop: 12,
   },
   modalOverlay: {
     flex: 1,
@@ -522,11 +522,11 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: AppColors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   bankListContainer: {
     flex: 1,

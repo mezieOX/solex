@@ -225,10 +225,6 @@ export default function CryptoDepositScreen() {
           />
         ) : (
           filteredCurrencies.map((currency) => {
-            const priceData = getCurrencyPriceData(currency);
-            const holdings = getCurrencyHoldings(currency);
-            const isPositive = priceData.change >= 0;
-
             return (
               <TouchableOpacity
                 key={`${currency.currency_id}-${currency.network}`}
@@ -254,9 +250,9 @@ export default function CryptoDepositScreen() {
                     )}
                   </Text>
                   <View style={styles.currencyPriceRow}>
-                    <Text style={styles.currencyPrice}>
+                    {/* <Text style={styles.currencyPrice}>
                       {formatPrice(priceData.price)}
-                    </Text>
+                    </Text> */}
                     {/* {priceData.change !== 0 && (
                       <View style={styles.priceChangeContainer}>
                         <Ionicons
@@ -298,61 +294,61 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   searchInput: {
     marginBottom: 0,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   currencyCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: AppColors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: AppColors.border,
   },
   currencyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: AppColors.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   currencyIconImage: {
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
   },
   currencyInfo: {
     flex: 1,
   },
   currencyName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   currencyNetwork: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "400",
     color: AppColors.textSecondary,
   },
   currencyPriceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   currencyPrice: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: AppColors.text,
   },
@@ -362,25 +358,25 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   priceChange: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "500",
   },
   currencyHoldings: {
     alignItems: "flex-end",
   },
   holdingsValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: AppColors.text,
   },
   skeletonIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   skeletonName: {
-    marginBottom: 6,
+    marginBottom: 4,
   },
   skeletonPrice: {
-    marginRight: 8,
+    marginRight: 6,
   },
   skeletonChange: {
     marginLeft: 4,
