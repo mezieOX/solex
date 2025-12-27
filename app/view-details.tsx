@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import QRCode from "react-native-qrcode-svg";
+import { QRCodeComponent } from "@/components/ui/qr-code";
 
 // Transaction type definitions
 type TransactionType =
@@ -650,14 +650,12 @@ export default function ViewDetailsScreen() {
 
         {/* QR Code and Report */}
         <View style={styles.qrReportSection}>
-          <View style={styles.qrCodeContainer}>
-            <QRCode
-              value={qrCodeValue}
-              size={64}
-              logo={require("@/assets/images/app-logo.png")}
-              logoBorderRadius={300}
-            />
-          </View>
+          <QRCodeComponent
+            value={qrCodeValue}
+            size={60}
+            showLogo={true}
+            containerStyle={styles.qrCodeContainer}
+          />
           <TouchableOpacity style={styles.reportButton}>
             <Text style={styles.reportButtonText}>Report</Text>
           </TouchableOpacity>

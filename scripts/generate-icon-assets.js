@@ -23,8 +23,6 @@ async function generateBlackBackground() {
   })
   .png()
   .toFile(outputPath);
-  
-  console.log('✓ Generated black background image:', outputPath);
 }
 
 // Generate optimized icon with padding (smaller logo on black background)
@@ -32,7 +30,6 @@ async function generateOptimizedIcon() {
   const logoPath = path.join(assetsDir, 'app-logo.png');
   
   if (!fs.existsSync(logoPath)) {
-    console.log('⚠ app-logo.png not found, skipping optimized icon generation');
     return;
   }
 
@@ -61,18 +58,12 @@ async function generateOptimizedIcon() {
     }])
     .png()
     .toFile(outputPath);
-
-  console.log('✓ Generated optimized icon with smaller logo:', outputPath);
 }
 
 async function main() {
   try {
     await generateBlackBackground();
     await generateOptimizedIcon();
-    console.log('\n✅ Icon assets generated successfully!');
-    console.log('\nNext steps:');
-    console.log('1. Update app.json to use android-icon-background-black.png for Android background');
-    console.log('2. Optionally use app-icon-optimized.png if you want a pre-composed icon');
   } catch (error) {
     console.error('Error generating icon assets:', error);
     process.exit(1);

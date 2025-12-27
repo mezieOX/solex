@@ -225,9 +225,7 @@ export default function CryptoWithdrawalSelectScreen() {
           />
         ) : (
           filteredCurrencies.map((currency) => {
-            const priceData = getCurrencyPriceData(currency);
             const holdings = getCurrencyHoldings(currency);
-            const isPositive = priceData.change >= 0;
 
             return (
               <TouchableOpacity
@@ -244,12 +242,12 @@ export default function CryptoWithdrawalSelectScreen() {
                   />
                 </View>
                 <View style={styles.currencyInfo}>
-                  <Text style={styles.currencyName}>
-                    {currency.name}
+                  <Text style={styles.currencyName}>{currency.name}</Text>
+                  <Text style={styles.currencyNetwork}>
+                    {currency.coin}{" "}
                     {currency.network && currency.network !== currency.name && (
                       <Text style={styles.currencyNetwork}>
-                        {" "}
-                        ({currency.network})
+                        {""}({currency.network})
                       </Text>
                     )}
                   </Text>

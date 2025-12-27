@@ -240,16 +240,19 @@ export default function CryptoDepositScreen() {
                   />
                 </View>
                 <View style={styles.currencyInfo}>
-                  <Text style={styles.currencyName}>
-                    {currency.name}
-                    {currency.network && currency.network !== currency.name && (
-                      <Text style={styles.currencyNetwork}>
-                        {" "}
-                        ({currency.network})
-                      </Text>
-                    )}
-                  </Text>
+                  <Text style={styles.currencyName}>{currency.name}</Text>
                   <View style={styles.currencyPriceRow}>
+                    <Text style={styles.currencyNetwork}>
+                      {currency.coin}
+                      {""}
+                      {currency.network &&
+                        currency.network !== currency.name && (
+                          <Text style={styles.currencyNetwork}>
+                            {" "}
+                            ({currency.network})
+                          </Text>
+                        )}
+                    </Text>
                     {/* <Text style={styles.currencyPrice}>
                       {formatPrice(priceData.price)}
                     </Text> */}

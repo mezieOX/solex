@@ -3,7 +3,7 @@ import { ScreenTitle } from "@/components/ui/screen-title";
 import { TransactionItem } from "@/components/ui/transaction-item";
 import { AppColors } from "@/constants/theme";
 import { useCryptoPrices } from "@/hooks/api/use-crypto";
-import { useTransactions, useWallets } from "@/hooks/api/use-wallet";
+import { useTransactions } from "@/hooks/api/use-wallet";
 import { Wallet } from "@/services/api/wallet";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -99,13 +99,13 @@ const ACTION_BUTTONS: ActionButton[] = [
     id: "send",
     label: "Send",
     icon: "arrow-up",
-    route: "/crypto-withdrawal-select" as any,
+    route: "/crypto-withdrawal" as any,
   },
   {
     id: "receive",
     label: "Receive",
     icon: "arrow-down",
-    route: "/crypto-deposit" as any,
+    route: "/btc-deposit" as any,
   },
   {
     id: "convert",
@@ -131,8 +131,6 @@ export default function CryptoWalletDetailsScreen() {
       return null;
     }
   }, [params.wallet]);
-
-  const { data: walletsData } = useWallets();
 
   // Get CoinGecko IDs for crypto prices
   const cryptoIds = useMemo(() => {
@@ -167,19 +165,6 @@ export default function CryptoWalletDetailsScreen() {
     if (!wallet?.currency) return { price: 0, change: 0 };
     return getCryptoPriceData(wallet.currency);
   }, [wallet?.currency, getCryptoPriceData]);
-
-  // Format USD value
-  const formatUSD = (value: number) => {
-    return `$${new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value)}`;
-  };
-
-  // Format crypto balance
-  const formatCryptoBalance = (balance: number) => {
-    return balance.toFixed(8);
-  };
 
   // Get transactions for this wallet
   const transactionParams = useMemo(() => {
@@ -252,16 +237,14 @@ export default function CryptoWalletDetailsScreen() {
     );
   }
 
-  const coinName = COIN_NAMES[wallet.currency.toUpperCase()] || wallet.currency;
-  const usdValue = wallet.balance * priceData.price;
   const balanceDisplay = showBalance
-    ? `${wallet.currency} ${formatCryptoBalance(wallet.balance)}`
+    ? ` ${Number(wallet.balance).toFixed(6)} ${wallet.currency}`
     : "*****";
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <ScreenTitle title={`${coinName} Wallet`} />
+      <ScreenTitle title={`${wallet?.name} (${wallet?.network}) Wallet`} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -333,10 +316,47 @@ export default function CryptoWalletDetailsScreen() {
               <TouchableOpacity
                 style={styles.actionButtonSquare}
                 onPress={() => {
-                  router.push({
-                    pathname: item.route,
-                    params: { wallet: JSON.stringify(wallet) },
-                  });
+                  if (item.route === "/crypto-withdrawal") {
+                    router.push({
+                      pathname: item.route,
+                      params: {
+                        currencyId: wallet.id.toString(),
+                        currency: JSON.stringify({
+                          id: wallet.id,
+                          name: wallet.name,
+                          symbol: wallet.currency,
+                          image_url: wallet.image_url,
+                          network: wallet.network,
+                          balance: wallet.balance,
+                        }),
+                        network: wallet.network,
+                      },
+                    });
+                  } else if (item.route === "/btc-deposit") {
+                    router.push({
+                      pathname: item.route,
+                      params: {
+                        currencyId: wallet?.currency_id?.toString(),
+                        wallet: JSON.stringify({
+                          id: wallet.currency_id,
+                          name: wallet.name,
+                          symbol: wallet.currency,
+                          image_url: wallet.image_url,
+                          network: wallet.network,
+                          min_deposit: wallet.meta?.min_deposit,
+                        }),
+                        network: wallet.network,
+                      },
+                    });
+                  } else {
+                    router.push({
+                      pathname: item.route,
+                      params: {
+                        currencyId: wallet.id.toString(),
+                        network: wallet.network,
+                      },
+                    });
+                  }
                 }}
                 activeOpacity={0.8}
               >

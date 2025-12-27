@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import QRCode from "react-native-qrcode-svg";
+import { QRCodeComponent } from "@/components/ui/qr-code";
 import * as ClipboardLib from "expo-clipboard";
 import { showSuccessToast } from "@/utils/toast";
 import * as Sharing from "expo-sharing";
@@ -233,9 +233,7 @@ Network: ${withdrawalData?.network || "N/A"}
 
         {/* QR Code and Report Section */}
         <View style={styles.qrSection}>
-          <View style={styles.qrCodeContainer}>
-            <QRCode value={qrCodeValue} size={150} color="#000" backgroundColor="#fff" />
-          </View>
+          <QRCodeComponent value={qrCodeValue} size={120} showLogo={false} />
           <TouchableOpacity style={styles.reportButton}>
             <Text style={styles.reportButtonText}>Report</Text>
           </TouchableOpacity>

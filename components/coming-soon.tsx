@@ -1,10 +1,14 @@
 import { AppColors } from "@/constants/theme";
 import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-export default function ComingSoon() {
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+export default function ComingSoon({
+  style,
+}: {
+  style?: StyleProp<ViewStyle>;
+}) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <Image
         source={require("@/assets/images/marked.png")}
         style={styles.image}

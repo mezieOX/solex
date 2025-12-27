@@ -1,5 +1,6 @@
 import Skeleton from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
+import { QRCodeComponent } from "@/components/ui/qr-code";
 import { AppColors } from "@/constants/theme";
 import { useCryptoDepositAddress } from "@/hooks/api/use-crypto";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
@@ -17,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import QRCode from "react-native-qrcode-svg";
 
 const { height } = Dimensions.get("window");
 export default function BTCDepositScreen() {
@@ -29,7 +29,7 @@ export default function BTCDepositScreen() {
   const currencyId = useMemo(() => {
     const id = params.currencyId as string;
     return id ? parseInt(id, 10) : null;
-  }, [params.currencyId]);
+  }, [params.currencyId, params.wallet]);
 
   const selectedNetwork = useMemo(() => {
     return (params.network as string) || "Bitcoin";
@@ -56,7 +56,7 @@ export default function BTCDepositScreen() {
 
   const depositAddress = addressData?.address || "";
   const minDeposit =
-    addressData?.minimum_deposit || selectedWallet.min_deposit || "0.00";
+    addressData?.min_deposit || selectedWallet.min_deposit || "0.00";
   const confirmationsRequired = addressData?.confirmations_required || 0;
   const destinationTag = addressData?.destinationTag || "";
 
@@ -137,7 +137,7 @@ export default function BTCDepositScreen() {
               >
                 <Skeleton
                   type="square"
-                  width={210}
+                  width={100}
                   height={210}
                   style={[
                     styles.skeletonQRCode,
@@ -172,18 +172,12 @@ export default function BTCDepositScreen() {
         ) : (
           <>
             <View style={styles.qrSection}>
-              <Text style={styles.instructionText}>
-                Scan the QR code to get receiver address
-              </Text>
-              <View style={styles.qrCodeContainer}>
-                <QRCode
-                  value={depositAddress}
-                  size={210}
-                  color="#000"
-                  logo={require("@/assets/images/app-logo.png")}
-                  logoBorderRadius={500}
-                />
-              </View>
+              <QRCodeComponent
+                value={depositAddress}
+                size={180}
+                label="Scan the QR code to get receiver address"
+                showLogo={true}
+              />
             </View>
 
             {/* Divider */}

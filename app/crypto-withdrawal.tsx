@@ -374,7 +374,9 @@ export default function CryptoWithdrawalScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={20} color={AppColors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crypto Withdrawal</Text>
+        <Text style={styles.headerTitle}>
+          {selectedCurrency?.name} Withdrawal
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 

@@ -143,7 +143,7 @@ export default function WalletScreen() {
   const formatHoldings = (balance: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 8,
+      maximumFractionDigits: 6,
     }).format(balance);
   };
 
@@ -322,7 +322,14 @@ export default function WalletScreen() {
             <Text style={styles.sectionTitle}>Assets</Text>
             {cryptoWallets.map((wallet) => {
               const priceData = getCryptoPriceData(wallet.currency);
-              const usdValue = wallet.balance;
+              const calculatedUsdValue = wallet.balance * priceData.price;
+              // For stablecoins like USDT/USDC, if price is 0, assume 1:1 with USD
+              const usdValue =
+                priceData.price === 0 &&
+                (wallet.currency.toUpperCase() === "USDT" ||
+                  wallet.currency.toUpperCase() === "USDC")
+                  ? wallet.balance
+                  : calculatedUsdValue;
               const holdings = formatHoldings(wallet.balance);
               const isPositive = priceData.change >= 0;
 
@@ -349,14 +356,21 @@ export default function WalletScreen() {
                   </View>
                   <View style={styles.currencyInfo}>
                     <Text style={styles.coinTicker}>
-                      {wallet.currency}
+                      {wallet.name}
                       {wallet.network && wallet.network !== wallet.currency && (
-                        <Text style={styles.coinName}> ({wallet.network})</Text>
+                        <Text style={styles.coinName}>
+                          {" "}
+                          (
+                          {wallet.network === "Bitcoin"
+                            ? "BTC"
+                            : wallet.network}
+                          )
+                        </Text>
                       )}
                     </Text>
                     <View style={styles.amountUSDContainer}>
-                      <Text style={styles.amountUSD}>
-                        {formatUSD(usdValue)}
+                      <Text style={styles.amountValue}>
+                        {formatUSD(priceData.price)}
                       </Text>
                       <View style={styles.amountColumn}>
                         {priceData.change !== 0 && (
@@ -386,7 +400,8 @@ export default function WalletScreen() {
                     </View>
                   </View>
                   <View style={styles.currencyHoldings}>
-                    <Text style={styles.holdingsValue}>${holdings}</Text>
+                    <Text style={styles.holdingsValue}>{holdings}</Text>
+                    <Text style={styles.amountUSD}>{formatUSD(usdValue)}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -507,7 +522,6 @@ const styles = StyleSheet.create({
   },
   amountColumn: {
     alignItems: "flex-start",
-    marginTop: -4,
     marginRight: 10,
     paddingLeft: 4,
   },
@@ -524,9 +538,9 @@ const styles = StyleSheet.create({
     color: AppColors.text,
   },
   amountValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
-    color: AppColors.text,
+    color: "gray",
     marginBottom: 2,
   },
   amountUSD: {

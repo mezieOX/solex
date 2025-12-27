@@ -20,7 +20,7 @@ interface SellGiftCardParams {
   cardCode?: string;
   pin?: string;
   notes?: string;
-  cardImage?: string;
+  cardImages?: string;
 }
 
 export default function ConfirmSellGiftCardScreen() {
@@ -45,6 +45,17 @@ export default function ConfirmSellGiftCardScreen() {
       return;
     }
 
+    // Parse images array from JSON string
+    let images: string[] | undefined;
+    if (typedParams.cardImages) {
+      try {
+        images = JSON.parse(typedParams.cardImages);
+      } catch (error) {
+        // If parsing fails, treat as empty array
+        images = undefined;
+      }
+    }
+
     try {
       const result = await sellGiftCard.mutateAsync({
         range_id: typedParams.rangeId,
@@ -52,7 +63,7 @@ export default function ConfirmSellGiftCardScreen() {
         code: typedParams.cardCode || "",
         pin: typedParams.pin || undefined,
         notes: typedParams.notes || undefined,
-        image: typedParams.cardImage || undefined,
+        images: images && images.length > 0 ? images : undefined,
       });
 
       if (result) {
@@ -68,6 +79,8 @@ export default function ConfirmSellGiftCardScreen() {
         error?.data?.message ||
         "Failed to submit gift card. Please try again.";
       showErrorToast({ message: errorMessage });
+
+      console.log(error);
     }
   };
 

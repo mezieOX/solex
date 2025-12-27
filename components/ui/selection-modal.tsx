@@ -24,6 +24,7 @@ interface SelectionModalProps<T> {
   getIsSelected?: (item: T) => boolean;
   emptyText?: string;
   searchPlaceholder?: string;
+  enableSearch?: boolean;
 }
 
 export function SelectionModal<T>({
@@ -39,6 +40,7 @@ export function SelectionModal<T>({
   getIsSelected,
   emptyText = "No items found",
   searchPlaceholder = "Search...",
+  enableSearch = true,
 }: SelectionModalProps<T>) {
   return (
     <Modal
@@ -57,22 +59,24 @@ export function SelectionModal<T>({
           </View>
 
           {/* Search Input */}
-          <View style={styles.searchContainer}>
-            <Input
-              value={searchQuery}
-              onChangeText={onSearchChange}
-              placeholder={searchPlaceholder}
-              style={styles.searchInput}
-              placeholderTextColor={AppColors.textSecondary}
-              leftIcon={
-                <Ionicons
-                  name="search"
-                  size={16}
-                  color={AppColors.textSecondary}
-                />
-              }
-            />
-          </View>
+          {enableSearch ? (
+            <View style={styles.searchContainer}>
+              <Input
+                value={searchQuery}
+                onChangeText={onSearchChange}
+                placeholder={searchPlaceholder}
+                style={styles.searchInput}
+                placeholderTextColor={AppColors.textSecondary}
+                leftIcon={
+                  <Ionicons
+                    name="search"
+                    size={16}
+                    color={AppColors.textSecondary}
+                  />
+                }
+              />
+            </View>
+          ) : null}
 
           {items.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -149,4 +153,3 @@ const styles = StyleSheet.create({
     color: AppColors.textSecondary,
   },
 });
-

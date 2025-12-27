@@ -9,6 +9,8 @@ export interface Wallet {
   id: number;
   type: "fiat" | "crypto";
   currency: string;
+  currency_id?: number;
+  name?: string;
   provider: string;
   balance: number;
   external_address: string | null;

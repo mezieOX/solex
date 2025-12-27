@@ -127,7 +127,7 @@ export interface SellGiftCardRequest {
   range_id: string;
   amount: string;
   code: string;
-  image?: string;
+  images?: string[];
   pin?: string;
   notes?: string;
 }
@@ -238,19 +238,19 @@ export const giftCardsApi = {
     if (data.notes) {
       formData.append("notes", data.notes);
     }
-    if (data.image) {
-      // For React Native, we need to create a proper file object
-      // The image should be a file URI that can be converted to FormData
-      const imageUri = data.image;
-      const filename = imageUri.split("/").pop() || "image.jpg";
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image/jpeg";
+    if (data.images && data.images.length > 0) {
+      // Append each image to FormData as an array
+      data.images.forEach((imageUri, index) => {
+        const filename = imageUri.split("/").pop() || `image_${index}.jpg`;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image/jpeg";
 
-      formData.append("image", {
-        uri: imageUri,
-        name: filename,
-        type: type,
-      } as any);
+        formData.append("images[]", {
+          uri: imageUri,
+          name: filename,
+          type: type,
+        } as any);
+      });
     }
 
     const response = await apiClient.post<ApiResponse<SellGiftCardResponse>>(

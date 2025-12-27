@@ -156,10 +156,10 @@ export default function GiftCardScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <ScreenTitle title="Gift Cards" />
+      <ScreenTitle title="Sell Gift Cards" />
 
       {/* Tabs */}
-      <View style={styles.tabContainer}>
+      {/* <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "sell" && styles.activeTab]}
           onPress={() => setActiveTab("sell")}
@@ -186,7 +186,7 @@ export default function GiftCardScreen() {
             Buy
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {activeTab === "buy" ? (
         // <>
@@ -274,22 +274,6 @@ export default function GiftCardScreen() {
             contentContainerStyle={styles.sellContainer}
             showsVerticalScrollIndicator={false}
           >
-            {/* Available Gift Card Section */}
-            <View style={styles.sectionContainer}>
-              <SectionHeader
-                title="Available Gift Card"
-                titleStyle={styles.sectionTitleSmall}
-              />
-              <View style={styles.availableCardsContainer}>
-                {/* Placeholder cards for owned gift cards */}
-                {[1, 2, 3].map((index) => (
-                  <View key={index} style={styles.availableCardPlaceholder}>
-                    <View style={styles.placeholderCard}></View>
-                  </View>
-                ))}
-              </View>
-            </View>
-
             {/* Get More Gift Cards Section */}
             <View style={styles.sectionContainer}>
               <SectionHeader

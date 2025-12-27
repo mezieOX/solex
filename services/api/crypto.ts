@@ -24,7 +24,7 @@ export interface CryptoCurrenciesResponse {
 export interface CryptoDepositAddressResponse {
   address: string;
   qr_code?: string;
-  minimum_deposit?: string;
+  min_deposit?: string;
   confirmations_required?: number;
   destinationTag?: string;
 }

@@ -4,9 +4,14 @@ import { Input } from "@/components/ui/input";
 import { ScreenTitle } from "@/components/ui/screen-title";
 import { SelectionModal } from "@/components/ui/selection-modal";
 import { SelectorInput } from "@/components/ui/selector-input";
+import { Tabs } from "@/components/ui/tabs";
 import { AppColors } from "@/constants/theme";
 import { useGiftCardsList } from "@/hooks/api/use-giftcards";
-import { GiftCardForSell, GiftCardRange } from "@/services/api/giftcards";
+import {
+  GiftCardCurrency,
+  GiftCardForSell,
+  GiftCardRange,
+} from "@/services/api/giftcards";
 import { showErrorToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -26,8 +31,13 @@ export default function SellGiftCardScreen() {
   const params = useLocalSearchParams();
 
   // Form state
+  const [cardType, setCardType] = useState<"physical" | "ecode">("physical");
   const [selectedGiftCard, setSelectedGiftCard] =
     useState<GiftCardForSell | null>(null);
+  const [selectedCurrency, setSelectedCurrency] =
+    useState<GiftCardCurrency | null>(null);
+  const [isCurrencyManuallySelected, setIsCurrencyManuallySelected] =
+    useState(false);
   const [selectedRange, setSelectedRange] = useState<GiftCardRange | null>(
     null
   );
@@ -35,8 +45,9 @@ export default function SellGiftCardScreen() {
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [notes, setNotes] = useState("");
-  const [cardImage, setCardImage] = useState<string | null>(null);
+  const [cardImages, setCardImages] = useState<string[]>([]);
   const [isGiftCardModalVisible, setIsGiftCardModalVisible] = useState(false);
+  const [isCurrencyModalVisible, setIsCurrencyModalVisible] = useState(false);
   const [isRangeModalVisible, setIsRangeModalVisible] = useState(false);
   const [giftCardSearchQuery, setGiftCardSearchQuery] = useState("");
 
@@ -50,11 +61,16 @@ export default function SellGiftCardScreen() {
       );
       if (giftCard) {
         setSelectedGiftCard(giftCard);
-        // Auto-select first available range if any
-        const firstCurrency = giftCard.physical?.[0] || giftCard.ecode?.[0];
-        if (firstCurrency?.ranges?.[0]) {
-          setSelectedRange(firstCurrency.ranges[0]);
-        }
+        // Auto-select first available currency and range from current cardType
+        const cardTypeData =
+          cardType === "physical" ? giftCard.physical : giftCard.ecode;
+        const firstCurrency = cardTypeData?.find(
+          (currency) => currency.ranges && currency.ranges.length > 0
+        );
+        // Don't auto-select currency - let user select manually
+        setSelectedCurrency(null);
+        setIsCurrencyManuallySelected(false);
+        setSelectedRange(null);
       }
     } else if (params.brandName && giftCardsListData) {
       // Fallback: find by brand name
@@ -63,13 +79,83 @@ export default function SellGiftCardScreen() {
       );
       if (giftCard) {
         setSelectedGiftCard(giftCard);
-        const firstCurrency = giftCard.physical?.[0] || giftCard.ecode?.[0];
-        if (firstCurrency?.ranges?.[0]) {
-          setSelectedRange(firstCurrency.ranges[0]);
-        }
+        // Don't auto-select currency - let user select manually
+        setSelectedCurrency(null);
+        setIsCurrencyManuallySelected(false);
+        setSelectedRange(null);
       }
     }
-  }, [params.giftCardId, params.brandName, giftCardsListData]);
+  }, [params.giftCardId, params.brandName, giftCardsListData, cardType]);
+
+  // Check if gift card has data for each card type
+  const hasPhysical = useMemo(() => {
+    if (!selectedGiftCard) return false;
+    return (
+      selectedGiftCard.physical &&
+      selectedGiftCard.physical.length > 0 &&
+      selectedGiftCard.physical.some(
+        (currency) => currency.ranges && currency.ranges.length > 0
+      )
+    );
+  }, [selectedGiftCard]);
+
+  const hasEcode = useMemo(() => {
+    if (!selectedGiftCard) return false;
+    return (
+      selectedGiftCard.ecode &&
+      selectedGiftCard.ecode.length > 0 &&
+      selectedGiftCard.ecode.some(
+        (currency) => currency.ranges && currency.ranges.length > 0
+      )
+    );
+  }, [selectedGiftCard]);
+
+  // Update selected range when cardType changes
+  useEffect(() => {
+    if (!selectedGiftCard) {
+      setSelectedRange(null);
+      return;
+    }
+
+    // Check if current cardType is available, if not switch to available one
+    if (cardType === "physical" && !hasPhysical) {
+      if (hasEcode) {
+        setCardType("ecode");
+        return;
+      }
+      setSelectedRange(null);
+      return;
+    }
+
+    if (cardType === "ecode" && !hasEcode) {
+      if (hasPhysical) {
+        setCardType("physical");
+        return;
+      }
+      setSelectedRange(null);
+      return;
+    }
+
+    // Don't auto-select currency when cardType changes - let user select manually
+    setSelectedCurrency(null);
+    setIsCurrencyManuallySelected(false);
+    setSelectedRange(null);
+  }, [cardType, selectedGiftCard, hasPhysical, hasEcode]);
+
+  // Update selected range when currency changes (only if manually selected)
+  useEffect(() => {
+    if (!selectedCurrency || !isCurrencyManuallySelected) {
+      setSelectedRange(null);
+      return;
+    }
+
+    // Auto-select first range from selected currency
+    if (selectedCurrency.ranges?.[0]) {
+      setSelectedRange(selectedCurrency.ranges[0]);
+    } else {
+      setSelectedRange(null);
+    }
+  }, [selectedCurrency, isCurrencyManuallySelected]);
 
   // Calculate sell transaction summary using selected range rate
   const calculateSellSummary = () => {
@@ -83,33 +169,40 @@ export default function SellGiftCardScreen() {
     return { value, rate, total };
   };
 
-  // Get all available ranges from selected giftcard
-  const availableRanges = useMemo(() => {
+  // Get available currencies from selected giftcard filtered by cardType
+  const availableCurrencies = useMemo(() => {
     if (!selectedGiftCard) return [];
+    const cardTypeData =
+      cardType === "physical"
+        ? selectedGiftCard.physical
+        : selectedGiftCard.ecode;
+    return (
+      cardTypeData?.filter(
+        (currency) => currency.ranges && currency.ranges.length > 0
+      ) || []
+    );
+  }, [selectedGiftCard, cardType]);
+
+  // Get available ranges from selected giftcard filtered by cardType and currency
+  const availableRanges = useMemo(() => {
+    if (!selectedGiftCard || !selectedCurrency) return [];
     const ranges: Array<{
       range: GiftCardRange;
       currency: string;
       type: "physical" | "ecode";
     }> = [];
 
-    selectedGiftCard.physical?.forEach((currency) => {
-      currency.ranges?.forEach((range) => {
-        ranges.push({
-          range,
-          currency: currency.currency_code,
-          type: "physical",
-        });
-      });
-    });
-
-    selectedGiftCard.ecode?.forEach((currency) => {
-      currency.ranges?.forEach((range) => {
-        ranges.push({ range, currency: currency.currency_code, type: "ecode" });
+    // Only include ranges from the selected currency
+    selectedCurrency.ranges?.forEach((range) => {
+      ranges.push({
+        range,
+        currency: selectedCurrency.currency_code,
+        type: cardType,
       });
     });
 
     return ranges;
-  }, [selectedGiftCard]);
+  }, [selectedGiftCard, cardType, selectedCurrency]);
 
   // Filter giftcards based on search
   const filteredGiftCards = useMemo(() => {
@@ -134,18 +227,31 @@ export default function SellGiftCardScreen() {
         return;
       }
 
+      // Check if we've reached the max limit
+      const remainingSlots = 5 - cardImages.length;
+      if (remainingSlots <= 0) {
+        showErrorToast({
+          message: "Maximum of 5 images allowed",
+        });
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsMultipleSelection: true,
         quality: 0.8,
+        selectionLimit: remainingSlots,
       });
 
       if (result.canceled || !result.assets || result.assets.length === 0) {
         return;
       }
 
-      setCardImage(result.assets[0].uri);
+      // Add new images to existing ones, up to max 5
+      const newImages = result.assets
+        .slice(0, remainingSlots)
+        .map((asset) => asset.uri);
+      setCardImages((prev) => [...prev, ...newImages]);
     } catch (error: any) {
       showErrorToast({
         message: error?.message || "Failed to upload image",
@@ -153,8 +259,17 @@ export default function SellGiftCardScreen() {
     }
   };
 
+  // Remove a specific image
+  const handleRemoveImage = (index: number) => {
+    setCardImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleContinue = () => {
-    if (!selectedRange || !amount.trim() || (!cardCode.trim() && !cardImage)) {
+    if (
+      !selectedRange ||
+      !amount.trim() ||
+      (!cardCode.trim() && cardImages.length === 0)
+    ) {
       showErrorToast({ message: "Please fill in all required fields" });
       return;
     }
@@ -191,7 +306,7 @@ export default function SellGiftCardScreen() {
         cardCode: cardCode.trim() || "",
         pin: pin.trim() || "",
         notes: notes.trim() || "",
-        cardImage: cardImage || "",
+        cardImages: JSON.stringify(cardImages),
       },
     });
   };
@@ -217,47 +332,120 @@ export default function SellGiftCardScreen() {
         {/* Gift Card Selector */}
         <SelectorInput
           label="Gift Card"
-          value={selectedGiftCard?.name || ""}
+          value={selectedGiftCard?.name || (params.brandName as string) || ""}
           placeholder="Select gift card"
-          onPress={() => {}}
+          onPress={() => {
+            setIsGiftCardModalVisible(true);
+          }}
           showIcon={false}
           icon={
-            selectedGiftCard?.image_url ? (
+            params.brandLogo ? (
+              <Image
+                source={{ uri: params.brandLogo as string }}
+                style={styles.brandLogo}
+                contentFit="contain"
+              />
+            ) : selectedGiftCard?.image_url ? (
               <Image
                 source={{ uri: selectedGiftCard.image_url }}
                 style={styles.brandLogo}
                 contentFit="contain"
               />
-            ) : selectedGiftCard?.name ? (
+            ) : selectedGiftCard?.name || params.brandName ? (
               <Text style={styles.brandIconText}>
-                {selectedGiftCard.name.charAt(0).toUpperCase()}
+                {(selectedGiftCard?.name || (params.brandName as string))
+                  .charAt(0)
+                  .toUpperCase()}
               </Text>
             ) : (
               <View style={styles.brandIconContainer} />
             )
           }
         />
+        <Tabs
+          options={[
+            {
+              id: "physical",
+              label: "Physical",
+              disabled: !hasPhysical,
+            },
+            {
+              id: "ecode",
+              label: "E-code",
+              disabled: !hasEcode,
+            },
+          ]}
+          activeTab={cardType}
+          onTabChange={(tabId) => {
+            const newCardType = tabId as "physical" | "ecode";
+            // Check if the tab is disabled
+            if (
+              (newCardType === "physical" && !hasPhysical) ||
+              (newCardType === "ecode" && !hasEcode)
+            ) {
+              showErrorToast({
+                message: `No ${
+                  newCardType === "physical" ? "physical" : "e-code"
+                } gift cards available for this brand`,
+              });
+              return;
+            }
+            setCardType(newCardType);
+          }}
+        />
+
+        {/* Currency Selector */}
+        {selectedGiftCard && (
+          <SelectorInput
+            label="Select Currency"
+            value={
+              isCurrencyManuallySelected && selectedCurrency
+                ? selectedCurrency.currency_code
+                : ""
+            }
+            placeholder="No curency selected"
+            onPress={() => {
+              if (selectedGiftCard && availableCurrencies.length > 0) {
+                setIsCurrencyModalVisible(true);
+              }
+            }}
+            borderColor={AppColors.border}
+            icon={
+              isCurrencyManuallySelected && selectedCurrency?.currency_icon ? (
+                <Image
+                  source={{ uri: selectedCurrency.currency_icon }}
+                  style={styles.currencyIcon}
+                  contentFit="contain"
+                />
+              ) : null
+            }
+          />
+        )}
 
         {/* Range Selector */}
-        <SelectorInput
-          label="Rate Range"
-          value={
-            selectedRange
-              ? `${selectedRange.min}-${selectedRange.max} ${
-                  availableRanges.find(
-                    (r) => r.range.range_id === selectedRange.range_id
-                  )?.currency || ""
-                } (₦${selectedRange.rate.toLocaleString("en-NG")})`
-              : ""
-          }
-          placeholder="Select rate range"
-          onPress={() => {
-            if (selectedGiftCard) {
-              setIsRangeModalVisible(true);
+        {isCurrencyManuallySelected && selectedCurrency && (
+          <SelectorInput
+            label="Select Face Value"
+            value={
+              selectedRange
+                ? `${selectedRange.min} - ${selectedRange.max} ${
+                    selectedCurrency?.currency_code || ""
+                  } (₦${selectedRange.rate.toLocaleString("en-NG")})`
+                : ""
             }
-          }}
-          borderColor={AppColors.border}
-        />
+            placeholder="Enter face value"
+            onPress={() => {
+              if (selectedGiftCard && selectedCurrency) {
+                setIsRangeModalVisible(true);
+              } else {
+                showErrorToast({
+                  message: "Please select a currency first",
+                });
+              }
+            }}
+            borderColor={AppColors.border}
+          />
+        )}
 
         {/* Amount Input */}
         <Input
@@ -266,32 +454,18 @@ export default function SellGiftCardScreen() {
           onChangeText={setAmount}
           placeholder={
             selectedRange
-              ? `Enter amount (${selectedRange.min}-${selectedRange.max})`
+              ? `Enter amount (${selectedRange.min} - ${selectedRange.max})`
               : "Enter amount"
           }
           keyboardType="numeric"
           style={styles.input}
         />
 
-        {/* Gift Card Code Input */}
-        <Input
-          label="Enter Gift Card Code"
-          value={cardCode}
-          onChangeText={setCardCode}
-          placeholder="Enter gift card code"
-          style={styles.input}
-        />
-
-        {/* Or Separator */}
-        <View style={styles.orContainer}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>Or</Text>
-          <View style={styles.orLine} />
-        </View>
-
         {/* Upload Card Image */}
         <Button
-          title="Upload Card Image"
+          title={`Upload Card Image${
+            cardImages.length > 0 ? ` (${cardImages.length}/5)` : ""
+          }`}
           onPress={handleImageUpload}
           variant="outline"
           leftIcon={
@@ -302,19 +476,42 @@ export default function SellGiftCardScreen() {
             />
           }
           style={styles.uploadButton}
+          disabled={cardImages.length >= 5}
         />
 
-        {cardImage && (
-          <View style={styles.imagePreviewContainer}>
-            <Image source={{ uri: cardImage }} style={styles.imagePreview} />
-            <TouchableOpacity
-              style={styles.removeImageButton}
-              onPress={() => setCardImage(null)}
-            >
-              <Ionicons name="close-circle" size={24} color={AppColors.error} />
-            </TouchableOpacity>
+        {/* Images Grid */}
+        {cardImages.length > 0 && (
+          <View style={styles.imagesGridContainer}>
+            {cardImages.map((imageUri, index) => (
+              <View key={index} style={styles.imageCard}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.imageCardPreview}
+                  contentFit="cover"
+                />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => handleRemoveImage(index)}
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={AppColors.error}
+                  />
+                </TouchableOpacity>
+              </View>
+            ))}
           </View>
         )}
+
+        {/* Gift Card Code Input */}
+        {/* <Input
+          label="Gift Card Code (Optional)"
+          value={cardCode}
+          onChangeText={setCardCode}
+          placeholder="Enter gift card code"
+          style={styles.input}
+        /> */}
 
         {/* Current Exchange Rate Section */}
         {amount && selectedRange && calculateSellSummary() && (
@@ -338,22 +535,12 @@ export default function SellGiftCardScreen() {
           />
         )}
 
-        {/* PIN Input */}
-        <Input
-          label="PIN (Optional)"
-          value={pin}
-          onChangeText={setPin}
-          placeholder="Enter PIN if available"
-          secureTextEntry
-          style={styles.input}
-        />
-
         {/* Notes Input */}
         <Input
-          label="Notes (Optional)"
+          label="Comment (Optional)"
           value={notes}
           onChangeText={setNotes}
-          placeholder="Additional notes or comments"
+          placeholder="Optional comment e.g You can type your code heres"
           multiline
           numberOfLines={4}
           style={styles.input}
@@ -377,12 +564,10 @@ export default function SellGiftCardScreen() {
         getIsSelected={(giftcard) => selectedGiftCard?.id === giftcard.id}
         onSelect={(giftcard) => {
           setSelectedGiftCard(giftcard);
+          // Don't auto-select currency - let user select manually
+          setSelectedCurrency(null);
+          setIsCurrencyManuallySelected(false);
           setSelectedRange(null);
-          // Auto-select first available range
-          const firstCurrency = giftcard.physical?.[0] || giftcard.ecode?.[0];
-          if (firstCurrency?.ranges?.[0]) {
-            setSelectedRange(firstCurrency.ranges[0]);
-          }
           setGiftCardSearchQuery("");
         }}
         onClose={() => {
@@ -430,13 +615,82 @@ export default function SellGiftCardScreen() {
         )}
       />
 
+      {/* Currency Selection Modal */}
+      <SelectionModal
+        visible={isCurrencyModalVisible}
+        title="Select Currency"
+        searchQuery=""
+        onSearchChange={() => {}}
+        items={availableCurrencies}
+        getItemKey={(currency) => currency.currency_code}
+        getIsSelected={(currency) =>
+          selectedCurrency?.currency_code === currency.currency_code
+        }
+        onSelect={(currency) => {
+          setSelectedCurrency(currency);
+          setIsCurrencyManuallySelected(true);
+          // Auto-select first range from selected currency
+          if (currency.ranges?.[0]) {
+            setSelectedRange(currency.ranges[0]);
+          } else {
+            setSelectedRange(null);
+          }
+          setIsCurrencyModalVisible(false);
+        }}
+        onClose={() => {
+          setIsCurrencyModalVisible(false);
+        }}
+        emptyText="No currencies available"
+        searchPlaceholder=""
+        renderItem={(currency, isSelected) => (
+          <View
+            style={[
+              styles.currencyItem,
+              isSelected && styles.currencyItemSelected,
+            ]}
+          >
+            <View style={styles.currencyItemContent}>
+              <View style={styles.currencyItemLeft}>
+                {currency.currency_icon && (
+                  <View style={styles.brandIconContainer}>
+                    <Image
+                      source={{ uri: currency.currency_icon }}
+                      style={styles.brandLogoSmall}
+                      contentFit="contain"
+                    />
+                  </View>
+                )}
+                <View style={styles.currencyInfo}>
+                  <Text
+                    style={[
+                      styles.currencyCode,
+                      isSelected && styles.currencyCodeSelected,
+                    ]}
+                  >
+                    {currency.currency_code}
+                  </Text>
+                </View>
+              </View>
+              {isSelected && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={AppColors.primary}
+                />
+              )}
+            </View>
+          </View>
+        )}
+      />
+
       {/* Range Selection Modal */}
       <SelectionModal
         visible={isRangeModalVisible}
-        title="Select Rate Range"
+        title="Select Face Value"
         searchQuery=""
         onSearchChange={() => {}}
         items={availableRanges}
+        enableSearch={false}
         getItemKey={(item) => item.range.range_id.toString()}
         getIsSelected={(item) =>
           selectedRange?.range_id === item.range.range_id
@@ -466,11 +720,11 @@ export default function SellGiftCardScreen() {
                       isSelected && styles.currencyCodeSelected,
                     ]}
                   >
-                    {item.range.min}-{item.range.max} {item.currency} (
-                    {item.type})
+                    {item.range.min}-{item.range.max} {item.currency}
                   </Text>
                   <Text style={styles.currencyName}>
-                    Rate: ₦{item.range.rate.toLocaleString("en-NG")} per unit
+                    Rate: {item.currency}{" "}
+                    {item.range.rate.toLocaleString("en-NG")}
                   </Text>
                 </View>
               </View>
@@ -527,6 +781,12 @@ const styles = StyleSheet.create({
   brandLogoSmall: {
     width: 24,
     height: 24,
+    borderRadius: 800,
+  },
+  currencyIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 800,
   },
   orContainer: {
     flexDirection: "row",
@@ -547,23 +807,32 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderColor: AppColors.border,
   },
-  imagePreviewContainer: {
-    position: "relative",
+  imagesGridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 12,
-    borderRadius: 10,
-    overflow: "hidden",
+    marginHorizontal: -4,
   },
-  imagePreview: {
+  imageCard: {
+    position: "relative",
+    width: "31%",
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: AppColors.surface,
+    margin: 4,
+  },
+  imageCardPreview: {
     width: "100%",
-    height: 150,
-    borderRadius: 10,
+    height: "100%",
   },
   removeImageButton: {
     position: "absolute",
-    top: 6,
-    right: 6,
+    top: 4,
+    right: 4,
     backgroundColor: AppColors.background + "CC",
-    borderRadius: 10,
+    borderRadius: 12,
+    padding: 2,
   },
   currencyItem: {
     paddingVertical: 10,

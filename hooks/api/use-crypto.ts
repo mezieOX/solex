@@ -60,6 +60,7 @@ export function useCryptoDepositAddress(currencyId: number | null) {
     queryFn: () => cryptoApi.getDepositAddress(currencyId!),
     enabled: currencyId !== null,
     retry: false,
+    staleTime: 1 * 1000, // 1 second
   });
 }
 
