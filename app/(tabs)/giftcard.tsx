@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ExchangeRateCard } from "@/components/ui/exchange-rate-card";
 import { Input } from "@/components/ui/input";
 import { ScreenTitle } from "@/components/ui/screen-title";
-import { SectionHeader } from "@/components/ui/section-header";
 import { TransactionSummaryCard } from "@/components/ui/transaction-summary-card";
 import { AppColors } from "@/constants/theme";
 import {
@@ -13,7 +12,7 @@ import {
   useGiftCardProducts,
   useGiftCardsList,
 } from "@/hooks/api/use-giftcards";
-import { GiftCardForSell, GiftCardProduct } from "@/services/api/giftcards";
+import { GiftCardProduct } from "@/services/api/giftcards";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -21,7 +20,6 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
 import {
-  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
@@ -275,56 +273,144 @@ export default function GiftCardScreen() {
             showsVerticalScrollIndicator={false}
           >
             {/* Get More Gift Cards Section */}
-            <View style={styles.sectionContainer}>
-              <SectionHeader
-                title="Get More Gift Cards"
-                titleStyle={styles.sectionTitleSmall}
-              />
-              {isLoadingList ? (
-                <ScrollView
-                  contentContainerStyle={[
-                    styles.gridContent,
-                    {
-                      padding: isLoadingList ? 0 : 20,
-                    },
-                  ]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  <View style={styles.gridContainer}>
-                    {[1, 2, 3, 4].map((index) => (
-                      <View
-                        key={index}
-                        style={[styles.giftCardContainer, styles.skeletonCard]}
-                      />
-                    ))}
-                  </View>
-                </ScrollView>
-              ) : listError ? (
-                <Error message="Failed to load gift cards" onRetry={() => {}} />
-              ) : (
-                <FlatList
-                  data={filteredGiftCardsForSell}
-                  numColumns={2}
-                  keyExtractor={(giftcard) => giftcard.id.toString()}
-                  contentContainerStyle={styles.sellGridContent}
-                  columnWrapperStyle={styles.gridRow}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={false}
-                  renderItem={({
-                    item: giftcard,
-                  }: {
-                    item: GiftCardForSell;
-                  }) => {
-                    // Get the first available currency and range for display
-                    const firstCurrency =
-                      giftcard.physical?.[0] || giftcard.ecode?.[0];
-                    const firstRange = firstCurrency?.ranges?.[0];
-                    const minRate = firstRange?.rate || 0;
-                    // const currencyCode = firstCurrency?.currency_code || "USD";
+            {/* <View style={styles.sectionContainer}>
+                <SectionHeader
+                  title="Get More Gift Cards"
+                  titleStyle={styles.sectionTitleSmall}
+                />
+                {isLoadingList ? (
+                  <ScrollView
+                    contentContainerStyle={[
+                      styles.gridContent,
+                      {
+                        padding: isLoadingList ? 0 : 20,
+                      },
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <View style={styles.gridContainer}>
+                      {[1, 2, 3, 4].map((index) => (
+                        <View
+                          key={index}
+                          style={[styles.giftCardContainer, styles.skeletonCard]}
+                        />
+                      ))}
+                    </View>
+                  </ScrollView>
+                ) : listError ? (
+                  <Error message="Failed to load gift cards" onRetry={() => {}} />
+                ) : (
+                  <FlatList
+                    data={filteredGiftCardsForSell}
+                    numColumns={2}
+                    keyExtractor={(giftcard) => giftcard.id.toString()}
+                    contentContainerStyle={styles.sellGridContent}
+                    columnWrapperStyle={styles.gridRow}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
+                    renderItem={({
+                      item: giftcard,
+                    }: {
+                      item: GiftCardForSell;
+                    }) => {
+                      // Get the first available currency and range for display
+                      const firstCurrency =
+                        giftcard.physical?.[0] || giftcard.ecode?.[0];
+                      const firstRange = firstCurrency?.ranges?.[0];
+                      const minRate = firstRange?.rate || 0;
+                      // const currencyCode = firstCurrency?.currency_code || "USD";
 
-                    return (
+                      return (
+                        <TouchableOpacity
+                          style={styles.giftCardContainer}
+                          onPress={() => {
+                            router.push({
+                              pathname: "/sell-giftcard",
+                              params: {
+                                giftCardId: giftcard.id.toString(),
+                                brandName: giftcard.name,
+                                brandLogo: giftcard.image_url,
+                              },
+                            });
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <View style={styles.giftCardImageContainer}>
+                            <Image
+                              source={{ uri: giftcard.image_url }}
+                              style={styles.giftCardImage}
+                              contentFit="contain"
+                            />
+                          </View>
+                          <View style={styles.giftCardBanner}>
+                            <Text style={styles.giftCardBrand} numberOfLines={1}>
+                              {giftcard.name}
+                            </Text>
+                            {minRate > 0 && (
+                              <Text style={styles.giftCardPrice}>
+                                ₦{minRate.toLocaleString("en-NG")}
+                              </Text>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }}
+                    ListEmptyComponent={() => (
+                      <Empty
+                        title="No gift cards found"
+                        description="Try adjusting your search"
+                      />
+                    )}
+                  />
+                )}
+              </View> */}
+
+            {/* New Gift Card List */}
+            {isLoadingList ? (
+              <View style={styles.loadingContainer}>
+                {[1, 2, 3, 4, 5, 6, 7].map((index) => (
+                  <View key={index} style={styles.giftCardListItemSkeleton} />
+                ))}
+              </View>
+            ) : listError ? (
+              <Error message="Failed to load gift cards" onRetry={() => {}} />
+            ) : (
+              <View style={styles.giftCardListContainer}>
+                {filteredGiftCardsForSell.map((giftcard) => {
+                  // Get the first available currency and range for display
+                  const firstCurrency =
+                    giftcard.physical?.[0] || giftcard.ecode?.[0];
+                  const firstRange = firstCurrency?.ranges?.[0];
+                  const minRate = firstRange?.rate || 0;
+
+                  return (
+                    <View key={giftcard.id} style={styles.giftCardListItem}>
+                      <View style={styles.giftCardListItemIcon}>
+                        <Image
+                          source={{ uri: giftcard.image_url }}
+                          style={styles.giftCardListItemImage}
+                          contentFit="contain"
+                        />
+                      </View>
+                      <View style={styles.giftCardListItemContent}>
+                        <Text
+                          style={styles.giftCardListItemName}
+                          numberOfLines={1}
+                        >
+                          {giftcard.name}
+                        </Text>
+                        {minRate > 0 && (
+                          <Text style={styles.giftCardListItemValue}>
+                            ₦
+                            {minRate.toLocaleString("en-NG", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </Text>
+                        )}
+                      </View>
                       <TouchableOpacity
-                        style={styles.giftCardContainer}
+                        style={styles.giftCardListItemButton}
                         onPress={() => {
                           router.push({
                             pathname: "/sell-giftcard",
@@ -337,35 +423,21 @@ export default function GiftCardScreen() {
                         }}
                         activeOpacity={0.8}
                       >
-                        <View style={styles.giftCardImageContainer}>
-                          <Image
-                            source={{ uri: giftcard.image_url }}
-                            style={styles.giftCardImage}
-                            contentFit="contain"
-                          />
-                        </View>
-                        <View style={styles.giftCardBanner}>
-                          <Text style={styles.giftCardBrand} numberOfLines={1}>
-                            {giftcard.name}
-                          </Text>
-                          {minRate > 0 && (
-                            <Text style={styles.giftCardPrice}>
-                              ₦{minRate.toLocaleString("en-NG")}
-                            </Text>
-                          )}
-                        </View>
+                        <Text style={styles.giftCardListItemButtonText}>
+                          Sell
+                        </Text>
                       </TouchableOpacity>
-                    );
-                  }}
-                  ListEmptyComponent={() => (
-                    <Empty
-                      title="No gift cards found"
-                      description="Try adjusting your search"
-                    />
-                  )}
-                />
-              )}
-            </View>
+                    </View>
+                  );
+                })}
+                {filteredGiftCardsForSell.length === 0 && (
+                  <Empty
+                    title="No gift cards found"
+                    description="Try adjusting your search"
+                  />
+                )}
+              </View>
+            )}
           </ScrollView>
         </>
       )}
@@ -1127,5 +1199,67 @@ const styles = StyleSheet.create({
   },
   modalScrollContent: {
     paddingBottom: 12,
+  },
+  giftCardListContainer: {
+    gap: 12,
+    marginTop: 12,
+  },
+  giftCardListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 10,
+    padding: 12,
+    gap: 12,
+  },
+  giftCardListItemIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: AppColors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  giftCardListItemImage: {
+    width: "100%",
+    height: "100%",
+  },
+  giftCardListItemContent: {
+    flex: 1,
+    gap: 4,
+  },
+  giftCardListItemName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  giftCardListItemValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
+  },
+  giftCardListItemButton: {
+    backgroundColor: AppColors.green,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minWidth: 70,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  giftCardListItemButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  giftCardListItemSkeleton: {
+    height: 74,
+    backgroundColor: AppColors.surface,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  loadingContainer: {
+    marginTop: 12,
   },
 });
